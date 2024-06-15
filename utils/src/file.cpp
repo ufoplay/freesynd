@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -78,7 +79,7 @@ static std::string exeFolder() {
  * Return the path to the resources storesd in the bundle.
  * @param resourcePath The path to set
  * @return True if everything is ok.
- */ 
+ */
 static bool getResourcePath(fs::path& resourcePath) {
     // let's check to see if we're inside an application bundle first.
     CFBundleRef main = CFBundleGetMainBundle();
@@ -103,17 +104,17 @@ static bool getResourcePath(fs::path& resourcePath) {
     char *buf = (char *)malloc(1024);
     FSRefMakePath(&fs, (UInt8 *)buf, 1024);
     CFRelease(url);
-    
+
     resourcePath.assign(buf);
     free(buf);
     return true;
 }
 #endif
 
-/*! @brief 
- * @param iniFolder 
- * @param freesyndIni 
- * @return 
+/*! @brief
+ * @param iniFolder
+ * @param freesyndIni
+ * @return
  */
 bool File::getFreesyndConf(const std::string& iniFolder, ConfigFile &freesyndIni) {
 #if defined(__APPLE__)
@@ -140,7 +141,7 @@ bool File::getFreesyndConf(const std::string& iniFolder, ConfigFile &freesyndIni
         // Sets a default dir that will be seen as to be set
         freesyndIni.add("data_dir", "To_Be_Set");
     }
-    
+
     // Read the freesynd_data_dir preference
     key = CFSTR("freesynd_data_dir");
     value = (CFStringRef)CFPreferencesCopyAppValue(key,
@@ -262,17 +263,17 @@ std::string File::getOriginalDataFullPath(const std::string& filename, bool uppe
     std::string second_part = filename;
 
     if (uppercase) {
-        std::transform(second_part.begin(), second_part.end(), second_part.begin(), 
-                    [](unsigned char c){ 
+        std::transform(second_part.begin(), second_part.end(), second_part.begin(),
+                    [](unsigned char c){
                         return (std::toupper(c)); }
                   );
     } else {
-        std::transform(second_part.begin(), second_part.end(), second_part.begin(), 
-                    [](unsigned char c){ 
+        std::transform(second_part.begin(), second_part.end(), second_part.begin(),
+                    [](unsigned char c){
                         return (std::tolower(c)); }
                   );
     }
-    
+
 
     return (dataPath_ / second_part).string();
 }
@@ -365,8 +366,8 @@ void File::setOriginalDataFolder(const std::string& path) {
 
 
 /*!
- * @brief 
- * @param path 
+ * @brief
+ * @param path
  */
 void File::setFreesyndDataFolder(const std::string& path) {
     if (path.size() != 0) {
