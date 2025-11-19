@@ -69,6 +69,12 @@ SearchMissionMenu::SearchMissionMenu(MenuManager * m):
     cursorOnShow_ = kMenuCursor;
     addStatic(0, 40, fs_eng::kScreenWidth, "SEARCH MISSION", FontManager::SIZE_4, false);
 
+    addStatic(250, 95, "Mission ID", FontManager::SIZE_1, true);
+    pmissionIdTF_ = addTextField(350, 93, 40, 21, FontManager::SIZE_2, 2, false, true);
+
+    selectMissionButId_ = addImageOption(395, 95, fs_eng::Sprite::MSPR_TAX_INCR,
+        fs_eng::Sprite::MSPR_TAX_INCR, true);
+
     initPedTypeListAndWidget();
 
     initVehicleTypeListAndWidget();
@@ -115,7 +121,14 @@ bool SearchMissionMenu::handleBeforeShow()
 {
     initSearchCriterias();
 
+    getMenuManager()->getColorFromMenuPalette(fs_eng::kMenuPaletteColorLightGreen, greenColor_);
+
     return true;
+}
+
+void SearchMissionMenu::handleRender() {
+    
+    g_System.drawRect({350, 92}, 35, 23, greenColor_);
 }
 
 bool SearchMissionMenu::matchMissionWithPedType(fs_knl::Mission *pMission) {
@@ -184,5 +197,13 @@ void SearchMissionMenu::handleAction(const ActionDesc &action) {
 
         searchOnVehicleType_ = true;
         vehicleTypeCriteria_ = pType->getType();
+    } else if (action.id == selectMissionButId_) {
+        int missionId = std::stoi(pmissionIdTF_->getText());
+        // first clear result list
+        g_editorCtrl.getMissionResultList().clear();
+
+        g_editorCtrl.getMissionResultList().push_back(missionId);
+
+        menu_manager_->gotoMenu(fs_edit_menus::kMenuIdMissionEditor);
     }
 }

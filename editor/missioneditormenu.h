@@ -21,17 +21,23 @@
  * 
  */
 
-#ifndef EDITOR_EDITORMENUID_H_
-#define EDITOR_EDITORMENUID_H_
+#ifndef EDITOR_MISSIONEDITORMENU_H_
+#define EDITOR_MISSIONEDITORMENU_H_
 
-namespace fs_edit_menus {
-    static const int kMenuIdMain = 0;
-    static const int kMenuIdFont = 2;
-    static const int kMenuIdAnim = 3;
-    static const int kMenuIdSrchMis = 4;
-    static const int kMenuIdListMis = 5;
-    static const int kMenuIdAudio = 7;
-    static const int kMenuIdMissionEditor = 8;
+#include "fs-engine/menus/menu.h"
+
+/*!
+ * The mission editor menu allows the display of a mission and map.
+ */
+class MissionEditorMenu : public fs_eng::Menu {
+public:
+    MissionEditorMenu(fs_eng::MenuManager *m);
+    virtual ~MissionEditorMenu();
+
+    bool handleBeforeShow() override;
+    void handleRender() override;
+    void handleLeave() override;
+
 };
 
-#endif // EDITOR_EDITORMENUID_H_
+#endif // EDITOR_MISSIONEDITORMENU_H_

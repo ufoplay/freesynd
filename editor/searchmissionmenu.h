@@ -63,6 +63,7 @@ public:
     ~SearchMissionMenu();
 
     bool handleBeforeShow() override;
+    void handleRender() override;
     void handleAction(const ActionDesc &action) override;
 
 protected:
@@ -75,8 +76,10 @@ protected:
 
 protected:
     int searchButId_;
+    fs_eng::TextField *pmissionIdTF_;
     fs_eng::ListBox *pPedTypeListBox_;
     fs_eng::ListBox *pVehicleTypeListBox_;
+    int selectMissionButId_;
 
     VectorModel<PedTypeAdapter *> pedTypeList_;
     VectorModel<VehicleTypeAdapter *> vehicleTypeList_;
@@ -86,6 +89,10 @@ protected:
 
     bool searchOnVehicleType_;
     uint8 vehicleTypeCriteria_;
+
+    //! The green color
+    fs_eng::FSColor greenColor_;
+
 };
 
 #endif // SEARCHMISSIONMENU_H_

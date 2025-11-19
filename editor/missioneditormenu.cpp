@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2015, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -21,17 +21,34 @@
  * 
  */
 
-#ifndef EDITOR_EDITORMENUID_H_
-#define EDITOR_EDITORMENUID_H_
+#include "missioneditormenu.h"
 
-namespace fs_edit_menus {
-    static const int kMenuIdMain = 0;
-    static const int kMenuIdFont = 2;
-    static const int kMenuIdAnim = 3;
-    static const int kMenuIdSrchMis = 4;
-    static const int kMenuIdListMis = 5;
-    static const int kMenuIdAudio = 7;
-    static const int kMenuIdMissionEditor = 8;
-};
+#include "editorapp.h"
+#include "editormenuid.h"
 
-#endif // EDITOR_EDITORMENUID_H_
+using fs_eng::MenuManager;
+using fs_eng::Menu;
+using fs_eng::FontManager;
+
+MissionEditorMenu::MissionEditorMenu(MenuManager * m):
+    Menu(m, fs_edit_menus::kMenuIdMissionEditor, fs_edit_menus::kMenuIdMain)
+{
+    isCachable_ = false;
+    cursorOnShow_ = kMenuCursor;    
+}
+
+MissionEditorMenu::~MissionEditorMenu() {
+   
+}
+
+bool MissionEditorMenu::handleBeforeShow() {
+    int missionId = g_editorCtrl.getMissionResultList().back();
+
+    printf("Mission id  = %d\n", missionId);
+
+    return true;
+}
+
+void MissionEditorMenu::handleRender() {}
+
+void MissionEditorMenu::handleLeave() {}

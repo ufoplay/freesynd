@@ -32,6 +32,7 @@
 #include "audiomenu.h"
 #include "searchmissionmenu.h"
 #include "listmissionmenu.h"
+#include "missioneditormenu.h"
 
 fs_eng::Menu * EditorMenuFactory::createCustomMenu(const int menuId) {
     fs_eng::Menu *pMenu = NULL;
@@ -48,6 +49,8 @@ fs_eng::Menu * EditorMenuFactory::createCustomMenu(const int menuId) {
         pMenu = new ListMissionMenu(pManager_);
     } else if (menuId == fs_edit_menus::kMenuIdAudio) {
         pMenu = new AudioMenu(pManager_);
+    } else if (menuId == fs_edit_menus::kMenuIdMissionEditor) {
+        pMenu = new MissionEditorMenu(pManager_);
     } else {
         FSERR(Log::k_FLG_UI, "EditorMenuFactory", "createMenu", ("Cannot create Menu : unknown id (%d)", menuId));
     }
