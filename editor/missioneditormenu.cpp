@@ -25,6 +25,8 @@
 
 #include "fs-engine/gfx/animationmanager.h"
 #include "fs-kernel/model/ped.h"
+#include "fs-kernel/model/vehicle.h"
+#include "fs-kernel/model/static.h"
 #include "editormenuid.h"
 #include "editorcontroller.h"
 
@@ -36,10 +38,11 @@ using fs_eng::FontManager;
 const int kScrollStep = 16;
 
 MissionEditorMenu::MissionEditorMenu(MenuManager * m):
-    Menu(m, fs_edit_menus::kMenuIdMissionEditor, fs_edit_menus::kMenuIdMain)
+    Menu(m, fs_edit_menus::kMenuIdMissionEditor, fs_edit_menus::kMenuIdMain),
+    target_(nullptr)
 {
     isCachable_ = false;
-    cursorOnShow_ = kMenuCursor;    
+    cursorOnShow_ = kGameplayCursor; 
 }
 
 MissionEditorMenu::~MissionEditorMenu() {
@@ -357,6 +360,16 @@ bool MissionEditorMenu::handleTick(uint32_t elapsed) {
         change = scrollOnY(mousePos);
     }
 
+    updateTarget(mousePos);
+
+    if (target_) {
+        g_System.useTargetCursor();
+    } else if (mousePos.x > 128) {
+            g_System.usePointerCursor();
+    } else {
+            g_System.usePointerYellowCursor();
+    }
+
     return true;
 }
 
@@ -374,3 +387,89 @@ void MissionEditorMenu::handleMouseUp([[maybe_unused]] Point2D point, int button
 {}
 
 void MissionEditorMenu::handleClickOnMap(Point2D point, int button) {}
+
+void MissionEditorMenu::updateTarget(Point2D point) {
+    target_ = nullptr;
+    if (point.x > 128) {
+        for (size_t i = mission_->getSquad()->size(); mission_ && i < mission_->numPeds(); ++i) {
+            fs_knl::PedInstance *p = mission_->ped(i);
+            if (p->isAlive() && p->isDrawable()) {
+                Point2D scPt;
+                mission_->get_map()->tileToScreenPoint(p->position(), &scPt);
+                int px = scPt.x - 10;
+                int py = scPt.y - (1 + p->tileZ()) * fs_eng::Tile::kTileHeight/3
+                    - (p->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
+
+                if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
+                    point.x - 129 + displayOriginPt_.x < px + 21 && point.y + displayOriginPt_.y < py + 34)
+                {
+                    // mouse pointer is on the object, so it's the new target
+                    target_ = p;
+                    break;
+                }
+            }
+        }
+
+        if (target_ == nullptr) {
+            for (size_t i = 0; mission_ && i < mission_->numVehicles(); ++i) {
+                fs_knl::Vehicle *v = mission_->vehicle(i);
+                // TrainHead cannot be selected to prevent player from putting agents in it
+                if (v->isAlive() && v->getType() != fs_knl::Vehicle::kVehicleTypeTrainHead) {
+                    Point2D scPt;
+                    mission_->get_map()->tileToScreenPoint(v->position(), &scPt);
+                    int px = scPt.x - 20;
+                    int py = scPt.y - 10 - v->tileZ() * fs_eng::Tile::kTileHeight/3;
+
+                    if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
+                        point.x - 129 + displayOriginPt_.x < px + 40 && point.y + displayOriginPt_.y < py + 32)
+                    {
+                        target_ = v;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (target_ == nullptr) {
+            for (size_t i = 0; mission_ && i < mission_->numWeaponsOnGround(); ++i) {
+                fs_knl::WeaponInstance *w = mission_->weaponOnGround(i);
+
+                if (w->isDrawable()) {
+                    Point2D scPt;
+                    mission_->get_map()->tileToScreenPoint(w->position(), &scPt);
+                    int px = scPt.x - 10;
+                    int py = scPt.y + 4 - w->tileZ() * fs_eng::Tile::kTileHeight/3
+                        - (w->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
+
+                    if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
+                        point.x - 129 + displayOriginPt_.x < px + 20 && point.y + displayOriginPt_.y < py + 15)
+                    {
+                        target_ = w;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (target_ == nullptr) {
+            for (size_t i = 0; mission_ && i < mission_->numStatics(); ++i) {
+                fs_knl::Static *s = mission_->statics(i);
+
+                if (s->isDrawable()) {
+                    Point2D scPt;
+                    mission_->get_map()->tileToScreenPoint(s->position(), &scPt);
+                    int px = scPt.x - 10;
+                    int py = scPt.y + 4 - s->tileZ() * fs_eng::Tile::kTileHeight/3
+                        - (s->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
+
+                    if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
+                        point.x - 129 + displayOriginPt_.x < px + 20 && point.y + displayOriginPt_.y < py + 15)
+                    {
+                        target_ = s;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -582,28 +582,6 @@ void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t st
                 }
             }
         }
-#if 0
-#ifdef _DEBUG
-        for (int i = 0; mission_ && i < mission_->numStatics(); ++i) {
-            Static *s = mission_->statics(i);
-
-            if (s->map() != -1) {
-                Point2D scPt;
-                mission_->get_map()->tileToScreenPoint(w->position(), &scPt);
-                int px = scPt.x - 10;
-                int py = scPt.y + 4 - s->tileZ() * Tile::kTileHeight/3
-                    - (s->offZ() * Tile::kTileHeight/3) / 128;
-
-                if (x - 129 + displayOriginPt_.x >= px && y + displayOriginPt_.y >= py &&
-                    x - 129 + displayOriginPt_.x < px + 20 && y + displayOriginPt_.y < py + 15)
-                {
-                    target_ = s;
-                    break;
-                }
-            }
-        }
-#endif
-#endif
     }
 
     if (target_) {

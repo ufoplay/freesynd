@@ -61,6 +61,8 @@ protected:
     int isMousePositionScrollonX(Point2D point);
     int isMousePositionScrollonY(Point2D point);
 
+    void updateTarget(Point2D point);
+
 protected:
     fs_knl::Mission *mission_;
     /*! This is a projection in 2D of a point on a the map. This point represents the top
@@ -71,6 +73,8 @@ protected:
     MapRenderer map_renderer_;
     //! The palette of colors used for this mission
     fs_eng::Palette missionPalette_;
+    /*! Object mouse cursor is above*/
+    fs_knl::ShootableMapObject *target_;
 };
 
 #endif // EDITOR_MISSIONEDITORMENU_H_
