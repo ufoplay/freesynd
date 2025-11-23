@@ -25,6 +25,8 @@
 #define EDITOR_MISSIONEDITORMENU_H_
 
 #include "fs-engine/menus/menu.h"
+#include "fs-engine/menus/menumanager.h"
+#include "maprenderer.h"
 
 /*!
  * The mission editor menu allows the display of a mission and map.
@@ -38,6 +40,37 @@ public:
     void handleRender() override;
     void handleLeave() override;
 
+    bool handleTick(uint32_t elapsed) override;
+
+protected:
+    void initWorldCoords();
+
+    bool handleUnMappedKey(const fs_eng::FS_Key key) override;
+
+    void handleMouseMotion(Point2D point, uint32_t state) override;
+    bool handleMouseDown(Point2D point, int button) override;
+    void handleMouseUp(Point2D point, int button) override;
+
+    //! Handles the user's click on the map
+    void handleClickOnMap(Point2D point, int button);
+
+    //! Scroll the map horizontally.
+    bool scrollOnX(Point2D point);
+    //! Scroll the map vertically.
+    bool scrollOnY(Point2D point);
+    int isMousePositionScrollonX(Point2D point);
+    int isMousePositionScrollonY(Point2D point);
+
+protected:
+    fs_knl::Mission *mission_;
+    /*! This is a projection in 2D of a point on a the map. This point represents the top
+     * left corner of the screen and it moves inside the map's borders.*/
+    Point2D displayOriginPt_;
+    Point2D scroll_;
+    /*! This renderer is in charge of drawing the map.*/
+    MapRenderer map_renderer_;
+    //! The palette of colors used for this mission
+    fs_eng::Palette missionPalette_;
 };
 
 #endif // EDITOR_MISSIONEDITORMENU_H_

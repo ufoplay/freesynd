@@ -121,14 +121,12 @@ bool SearchMissionMenu::handleBeforeShow()
 {
     initSearchCriterias();
 
-    getMenuManager()->getColorFromMenuPalette(fs_eng::kMenuPaletteColorLightGreen, greenColor_);
-
     return true;
 }
 
 void SearchMissionMenu::handleRender() {
     
-    g_System.drawRect({350, 92}, 35, 23, greenColor_);
+    g_System.drawRect({350, 92}, 35, 23, menu_manager_->kMenuColorLightGreen);
 }
 
 bool SearchMissionMenu::matchMissionWithPedType(fs_knl::Mission *pMission) {

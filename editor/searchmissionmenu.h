@@ -89,10 +89,6 @@ protected:
 
     bool searchOnVehicleType_;
     uint8 vehicleTypeCriteria_;
-
-    //! The green color
-    fs_eng::FSColor greenColor_;
-
 };
 
 #endif // SEARCHMISSIONMENU_H_

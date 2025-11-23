@@ -149,6 +149,11 @@ public:
     //! Handles mouse button released
     void mouseUpEvent(Point2D point, int button);
 
+    /*!
+     * @brief Call to update the state of objects managed in this menu
+     * @param elapsed Elapsed time since last call
+     * @return True if everythin ok, false elsewise
+     */
     virtual bool handleTick([[maybe_unused]] uint32_t elapsed) { return true; }
 
     //! A structure to hold infos on the action to handle
