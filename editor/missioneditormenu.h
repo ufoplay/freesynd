@@ -49,7 +49,6 @@ protected:
 
     void handleMouseMotion(Point2D point, uint32_t state) override;
     bool handleMouseDown(Point2D point, int button) override;
-    void handleMouseUp(Point2D point, int button) override;
 
     //! Handles the user's click on the map
     void handleClickOnMap(Point2D point, int button);
@@ -61,7 +60,9 @@ protected:
     int isMousePositionScrollonX(Point2D point);
     int isMousePositionScrollonY(Point2D point);
 
-    void updateTarget(Point2D point);
+    void updateCursorFromTarget(Point2D point);
+
+    void drawCurrentTileSelector();
 
 protected:
     fs_knl::Mission *mission_;
@@ -74,7 +75,10 @@ protected:
     //! The palette of colors used for this mission
     fs_eng::Palette missionPalette_;
     /*! Object mouse cursor is above*/
-    fs_knl::ShootableMapObject *target_;
+    fs_knl::ShootableMapObject *targetHovered_;
+    fs_knl::ShootableMapObject *targetSelected_;
+    fs_knl::TilePoint currentTilePos_;
+    fs_eng::Tile  *currentTile_;
 };
 
 #endif // EDITOR_MISSIONEDITORMENU_H_

@@ -39,10 +39,11 @@ const int kScrollStep = 16;
 
 MissionEditorMenu::MissionEditorMenu(MenuManager * m):
     Menu(m, fs_edit_menus::kMenuIdMissionEditor, fs_edit_menus::kMenuIdMain),
-    target_(nullptr)
+    targetHovered_(nullptr), targetSelected_(nullptr), currentTile_(nullptr)
 {
     isCachable_ = false;
     cursorOnShow_ = kGameplayCursor; 
+    currentTilePos_.reset();
 }
 
 MissionEditorMenu::~MissionEditorMenu() {
@@ -68,6 +69,7 @@ bool MissionEditorMenu::handleBeforeShow() {
 void MissionEditorMenu::handleRender() {
     map_renderer_.render(displayOriginPt_);
     g_System.drawFillRect({0,0}, 129, fs_eng::kScreenHeight, menu_manager_->kMenuColorBlack);
+    drawCurrentTileSelector();
 }
 
 void MissionEditorMenu::handleLeave() {
@@ -140,6 +142,16 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
         scroll_.y = -kScrollStep;
     } else if (key.keyCode == fs_eng::kKeyCode_Down) { // Scroll the map to the bottom
         scroll_.y = kScrollStep;
+    } else if (key.keyCode == fs_eng::kKeyCode_A) { // Scroll the map to the bottom
+        if (currentTile_ && currentTilePos_.tz < mission_->get_map()->maxZ()) {
+            currentTilePos_.tz++;
+            currentTile_ = mission_->get_map()->getTileAt(currentTilePos_);
+        }
+    } else if (key.keyCode == fs_eng::kKeyCode_Q) { // Scroll the map to the bottom
+        if (currentTile_ && currentTilePos_.tz > 0) {
+            currentTilePos_.tz--;
+            currentTile_ = mission_->get_map()->getTileAt(currentTilePos_);
+        }
     } else {
         consumed = false;
     }
@@ -360,21 +372,16 @@ bool MissionEditorMenu::handleTick(uint32_t elapsed) {
         change = scrollOnY(mousePos);
     }
 
-    updateTarget(mousePos);
-
-    if (target_) {
-        g_System.useTargetCursor();
-    } else if (mousePos.x > 128) {
-            g_System.usePointerCursor();
-    } else {
-            g_System.usePointerYellowCursor();
-    }
+    updateCursorFromTarget(mousePos);
 
     return true;
 }
 
 bool MissionEditorMenu::handleMouseDown(Point2D point, int button)
 {
+    if (point.x > 129) {
+        handleClickOnMap(point, button);
+    }
     return true;
 }
 
@@ -383,13 +390,29 @@ void MissionEditorMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32
     scroll_.y = isMousePositionScrollonY(point) * kScrollStep;
 }
 
-void MissionEditorMenu::handleMouseUp([[maybe_unused]] Point2D point, int button)
-{}
+void MissionEditorMenu::handleClickOnMap(Point2D point, int button) {
+    fs_knl::TilePoint mapPt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
+                    displayOriginPt_.y + point.y);
+    currentTile_ = mission_->get_map()->getTileAt(mapPt);
 
-void MissionEditorMenu::handleClickOnMap(Point2D point, int button) {}
+    currentTilePos_.tx = mapPt.tx;
+    currentTilePos_.ty = mapPt.ty;
+    currentTilePos_.tz = mapPt.tz;
 
-void MissionEditorMenu::updateTarget(Point2D point) {
-    target_ = nullptr;
+    printf("Tile %d -> x:%d, y:%d, z:%d\n",
+        currentTile_->id(), mapPt.tx, mapPt.ty, mapPt.tz, mapPt.ox, mapPt.oy);
+
+    if (targetHovered_) {
+        printf("   > target(%i) : %s at %d, %d, %d\n",
+            targetHovered_->id(), targetHovered_->natureName(), 
+            targetHovered_->position().ox, targetHovered_->position().oy, targetHovered_->position().oz);
+    }
+
+    return;
+}
+
+void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
+    targetHovered_ = nullptr;
     if (point.x > 128) {
         for (size_t i = mission_->getSquad()->size(); mission_ && i < mission_->numPeds(); ++i) {
             fs_knl::PedInstance *p = mission_->ped(i);
@@ -404,13 +427,13 @@ void MissionEditorMenu::updateTarget(Point2D point) {
                     point.x - 129 + displayOriginPt_.x < px + 21 && point.y + displayOriginPt_.y < py + 34)
                 {
                     // mouse pointer is on the object, so it's the new target
-                    target_ = p;
+                    targetHovered_ = p;
                     break;
                 }
             }
         }
 
-        if (target_ == nullptr) {
+        if (targetHovered_ == nullptr) {
             for (size_t i = 0; mission_ && i < mission_->numVehicles(); ++i) {
                 fs_knl::Vehicle *v = mission_->vehicle(i);
                 // TrainHead cannot be selected to prevent player from putting agents in it
@@ -423,14 +446,14 @@ void MissionEditorMenu::updateTarget(Point2D point) {
                     if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
                         point.x - 129 + displayOriginPt_.x < px + 40 && point.y + displayOriginPt_.y < py + 32)
                     {
-                        target_ = v;
+                        targetHovered_ = v;
                         break;
                     }
                 }
             }
         }
 
-        if (target_ == nullptr) {
+        if (targetHovered_ == nullptr) {
             for (size_t i = 0; mission_ && i < mission_->numWeaponsOnGround(); ++i) {
                 fs_knl::WeaponInstance *w = mission_->weaponOnGround(i);
 
@@ -444,14 +467,14 @@ void MissionEditorMenu::updateTarget(Point2D point) {
                     if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
                         point.x - 129 + displayOriginPt_.x < px + 20 && point.y + displayOriginPt_.y < py + 15)
                     {
-                        target_ = w;
+                        targetHovered_ = w;
                         break;
                     }
                 }
             }
         }
 
-        if (target_ == nullptr) {
+        if (targetHovered_ == nullptr) {
             for (size_t i = 0; mission_ && i < mission_->numStatics(); ++i) {
                 fs_knl::Static *s = mission_->statics(i);
 
@@ -465,11 +488,45 @@ void MissionEditorMenu::updateTarget(Point2D point) {
                     if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
                         point.x - 129 + displayOriginPt_.x < px + 20 && point.y + displayOriginPt_.y < py + 15)
                     {
-                        target_ = s;
+                        targetHovered_ = s;
                         break;
                     }
                 }
             }
         }
+    }
+
+    if (targetHovered_) {
+        g_System.useTargetCursor();
+    } else if (point.x > 128) {
+            g_System.usePointerCursor();
+    } else {
+            g_System.usePointerYellowCursor();
+    }
+}
+
+void MissionEditorMenu::drawCurrentTileSelector() {
+    if (currentTile_) {
+        Point2D tileTop;
+        mission_->get_map()->tileToScreenPoint(currentTilePos_, &tileTop);
+        // First draw a contour around the tile on the map to clearly see it
+        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y),
+                            tileTop.add(-displayOriginPt_.x + 129 + fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
+                            menu_manager_->kMenuColorYellow);
+
+        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y),
+                            tileTop.add(-displayOriginPt_.x + 129 - fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
+                            menu_manager_->kMenuColorYellow);
+
+        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight *2),
+                            tileTop.add(-displayOriginPt_.x + 129 + fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
+                            menu_manager_->kMenuColorYellow);
+        
+        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight *2),
+                            tileTop.add(-displayOriginPt_.x + 129 - fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
+                            menu_manager_->kMenuColorYellow);
+
+        // Then draw the tile on the left side to better isolate it
+        mission_->get_map()->getTileManager()->drawTile(currentTile_, 20, 50);
     }
 }

@@ -228,6 +228,15 @@ fs_eng::Tile * Map::getTileAt(int x, int y, int z)
     return a_tiles_[(y * max_x_ + x) * max_z_ + z];
 }
 
+/*!
+ * Return the tile at given position.
+ * @param tilePt Coord of the tile. Only uses tx, ty and tz
+ * @return If coord are out of map limit, return a default tile
+ */
+fs_eng::Tile * Map::getTileAt(const TilePoint &tilePt) {
+    return getTileAt(tilePt.tx, tilePt.ty, tilePt.tz);
+}
+
 int Map::tileAt(int x, int y, int z)
 {
     if (x < 0 || x >= max_x_)

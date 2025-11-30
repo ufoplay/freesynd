@@ -65,6 +65,8 @@ public:
 
     fs_eng::TileManager * getTileManager() { return tileManager_; }
     fs_eng::Tile * getTileAt(int x, int y, int z);
+    //! Return the tile at given position. Only uses tx, ty and tz
+    fs_eng::Tile * getTileAt(const TilePoint &tilePt);
     int tileAt(int x, int y, int z);
     void patchMap(int x, int y, int z, uint8_t tileNum);
     //! Return true if tile at given position is traversable by car
