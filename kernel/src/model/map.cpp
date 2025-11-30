@@ -37,7 +37,7 @@ namespace fs_knl {
 Map::Map(fs_eng::TileManager * tileManager, uint16_t anId) : tileManager_(tileManager)
 {
     id_ = anId;
-    a_tiles_ = NULL;
+    a_tiles_ = nullptr;
     assert(tileManager != nullptr);
 }
 
@@ -46,50 +46,33 @@ Map::~Map()
     delete[] a_tiles_;
 }
 
-bool Map::loadMap(uint8_t * mapData)
-{
-    LOG(Log::k_FLG_GFX, "Map", "loadMap", ("Loading Map %d.", id_));
-    max_x_ = fs_utl::READ_LE_UINT32(mapData + 0);
-    max_y_ = fs_utl::READ_LE_UINT32(mapData + 4);
-    max_z_ = fs_utl::READ_LE_UINT32(mapData + 8);
+/*!
+ * Set the list of tiles used for this map.
+ * Loading tiles from game files is done in MapManager.
+ * @param maxX Number of tile on X axis
+ * @param maxY Number of tile on Y axis
+ * @param maxZ Number of tile on Z axis
+ * @param tiles The array of tiles. The array has one level more than
+ * in game file for range checking
+ */
+void Map::setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles) {
+    max_x_ = maxX;
+    max_y_ = maxY;
+    max_z_ = maxZ;
 
-    LOG(Log::k_FLG_GFX, "Map", "loadMap",
-        ("Map size in tiles: max_x = %d, max_y = %d, max_z = %d.", max_x_, max_y_, max_z_));
-
-    uint32_t *lookup = new uint32_t[max_x_ * max_y_];
-    // NOTE : increased map height by 1 to enable range check on higher tiles
-    a_tiles_ = new fs_eng::Tile*[max_x_ * max_y_ * (max_z_ + 1)];
-
-    for (int i = 0; i < max_x_ * max_y_; i++)
-        lookup[i] = fs_utl::READ_LE_UINT32(mapData + 12 + i * 4);
-    for (int h = 0, z_real = max_z_ + 1; h < max_y_; h++)
-        for (int w = 0; w < max_x_; w++) {
-            int idx = h * max_x_ + w;
-
-            for (int z = 0; z < max_z_; z++) {
-                uint8_t tileNum = *(mapData + 12 + lookup[idx] + z);
-                a_tiles_[idx * z_real + z] = tileManager_->getTile(tileNum);
-
-            }
-        }
-    delete[] lookup;
-
-    max_z_++;
-    for (int h = 0, z = max_z_ - 1; h < max_y_; h++) {
-        for (int w = 0; w < max_x_; w++) {
-            a_tiles_[(h * max_x_ + w) * max_z_ + z] = tileManager_->getTile(0);
-        }
+    int size = max_x_ * max_y_ * max_z_;
+    a_tiles_ = new fs_eng::Tile*[size];
+    
+    for (int i=0; i<size; i++) {
+        a_tiles_[i] = tiles[i];
     }
 
     map_width_ = (max_x_ + max_y_) * (fs_eng::Tile::kTileWidth / 2);
     map_height_ = (max_x_ + max_y_ + max_z_) * fs_eng::Tile::kTileHeight / 3;
-    LOG(Log::k_FLG_GFX, "Map", "loadMap",
+    LOG(Log::k_FLG_GFX, "Map", "setTiles",
         ("Map size in pixels: width = %d, height = %d.", map_width_, map_height_));
-
-    LOG(Log::k_FLG_GFX, "Map", "loadMap", ("Loading finished"));
-
-    return true;
 }
+
 
 void Map::mapDimensions(int *x, int *y, int *z)
 {

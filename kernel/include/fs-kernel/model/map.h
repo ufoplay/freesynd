@@ -40,7 +40,8 @@ public:
     Map(fs_eng::TileManager *tileManager, uint16_t anId);
     ~Map();
 
-    bool loadMap(uint8_t *mapData);
+    //! Set the array of tiles in the map
+    void setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles);
 
     uint16_t id() { return id_; }
     int width() { return map_width_; }

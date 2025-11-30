@@ -39,9 +39,15 @@ public:
     ~MapManager();
 
     //! Load the map with the given id if not in cache
-    Map * loadMap(uint16_t i_mapNum);
+    Map * getMap(uint16_t mapId);
     //! Sets the palette for the given mission
     bool loadPalette(int paletteId);
+
+protected:
+    //! Create a new Map using the game data
+    Map * createMap(uint16_t mapId, uint8_t * mapData);
+    //! Use to correct some data after loading the map
+    void patchMap(uint16_t mapId);
 
 protected:
     //! a cache of the latest maps
