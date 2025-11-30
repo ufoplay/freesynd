@@ -141,6 +141,10 @@ public:
 
     void render(const Point2D &worldPos);
 
+    int incrMaxZtoDraw();
+
+    int decrMaxZtoDraw();
+
 private:
     //! The width of the left control panel in Gameplaymenu
     static const int kGameplayPanelWidth;
@@ -171,6 +175,8 @@ private:
     Pool<ObjectToDraw> pool_;
     /*! This map contains for each tile the list of objects to draw.*/
     std::map<int, ObjectToDraw *> objectsByTile_;
+    //! The highest Z level that the editor renderer can draw
+    int maxZtoDraw_;
 };
 
 #endif  // EDITOR_MAPRENDERER_H_

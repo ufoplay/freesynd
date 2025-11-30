@@ -73,7 +73,7 @@ protected:
     Point2D displayOriginPt_;
     Point2D scroll_;
     /*! This renderer is in charge of drawing the map.*/
-    EditorMapRenderer map_renderer_;
+    EditorMapRenderer mapRenderer_;
     //! The palette of colors used for this mission
     fs_eng::Palette missionPalette_;
     /*! Object mouse cursor is above*/
@@ -87,6 +87,7 @@ protected:
     std::string targetDesc_;
     std::string targetLocDescXYZ_;
     std::string targetLocDescOXYZ_;
+    std::string maxZDesc_;
 };
 
 #endif // EDITOR_MISSIONEDITORMENU_H_

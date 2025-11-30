@@ -39,6 +39,23 @@ const int EditorMapRenderer::kGameplayPanelWidth = 129;
 void EditorMapRenderer::init(fs_knl::Mission *pMission) {
     pMission_ = pMission;
     pMap_ = pMission->get_map();
+    maxZtoDraw_ = pMap_->maxZ();
+}
+
+int EditorMapRenderer::incrMaxZtoDraw() {
+    if (maxZtoDraw_ < pMap_->maxZ()) {
+        maxZtoDraw_++;
+    }
+
+    return maxZtoDraw_;
+}
+
+int EditorMapRenderer::decrMaxZtoDraw() {
+    if (maxZtoDraw_ > 0) {
+        maxZtoDraw_--;
+    }
+
+    return maxZtoDraw_;
 }
 
 /**
@@ -92,7 +109,7 @@ void EditorMapRenderer::render(const Point2D &viewport) {
                         continue;
 #endif
                     // draw a tile
-                    if (tile_z < pMap_->maxZ()) {
+                    if (tile_z < maxZtoDraw_) {
                         fs_eng::Tile *pTile = pMap_->getTileAt(tile_x, tile_y, tile_z);
                         if (pTile->notTransparent()) {
                             int dx = 0, dy = 0;

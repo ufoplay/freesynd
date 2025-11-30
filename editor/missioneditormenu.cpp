@@ -39,8 +39,7 @@ const int kScrollStep = 16;
 
 MissionEditorMenu::MissionEditorMenu(MenuManager * m):
     Menu(m, fs_edit_menus::kMenuIdMissionEditor, fs_edit_menus::kMenuIdMain),
-    targetHovered_(nullptr), targetSelected_(nullptr), currentTile_(nullptr)
-{
+    targetHovered_(nullptr), targetSelected_(nullptr), currentTile_(nullptr) {
     isCachable_ = false;
     cursorOnShow_ = kGameplayCursor; 
     currentTilePos_.reset();
@@ -59,7 +58,8 @@ bool MissionEditorMenu::handleBeforeShow() {
     missionPalette_ = mission_->get_map()->getTileManager()->getPalette();
     g_AnimMgr.setPalette(missionPalette_);
 
-    map_renderer_.init(mission_);
+    mapRenderer_.init(mission_);
+    maxZDesc_ = std::format("Z = {}/{}", mission_->get_map()->maxZ(), mission_->get_map()->maxZ());
 
     menu_manager_->resetSinceMouseDown();
 
@@ -67,7 +67,7 @@ bool MissionEditorMenu::handleBeforeShow() {
 }
 
 void MissionEditorMenu::handleRender() {
-    map_renderer_.render(displayOriginPt_);
+    mapRenderer_.render(displayOriginPt_);
     g_System.drawFillRect({0,0}, 129, fs_eng::kScreenHeight, menu_manager_->kMenuColorBlack);
     drawCurrentTileSelector();
 }
@@ -142,17 +142,21 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
         scroll_.y = -kScrollStep;
     } else if (key.keyCode == fs_eng::kKeyCode_Down) { // Scroll the map to the bottom
         scroll_.y = kScrollStep;
-    } else if (key.keyCode == fs_eng::kKeyCode_A) { // Scroll the map to the bottom
+    } else if (key.keyCode == fs_eng::kKeyCode_S) { // Scroll the map to the bottom
         if (currentTile_ && currentTilePos_.tz < mission_->get_map()->maxZ()) {
             currentTilePos_.tz++;
             selectCurrentTile(currentTilePos_);
         }
-    } else if (key.keyCode == fs_eng::kKeyCode_Q) { // Scroll the map to the bottom
+    } else if (key.keyCode == fs_eng::kKeyCode_X) { // Scroll the map to the bottom
         if (currentTile_ && currentTilePos_.tz > 0) {
             currentTilePos_.tz--;
             selectCurrentTile(currentTilePos_);
         }
-    } else {
+    } else if (key.keyCode == fs_eng::kKeyCode_A) { // Increase max Z for drawing
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.incrMaxZtoDraw(), mission_->get_map()->maxZ());
+    } else if (key.keyCode == fs_eng::kKeyCode_Q) { // Decrease max Z for drawing
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.decrMaxZtoDraw(), mission_->get_map()->maxZ());
+    }else {
         consumed = false;
     }
 
@@ -389,7 +393,7 @@ void MissionEditorMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32
     scroll_.y = isMousePositionScrollonY(point) * kScrollStep;
 }
 
-void MissionEditorMenu::handleClickOnMap(Point2D point, int button) {
+void MissionEditorMenu::handleClickOnMap(Point2D point, [[maybe_unused]] int button) {
     if (targetHovered_) {
         targetDesc_ = std::format("{} ({})", targetHovered_->natureName(), targetHovered_->id());
         targetLocDescXYZ_ = std::format("At {}, {}, {}", 
@@ -542,4 +546,6 @@ void MissionEditorMenu::drawCurrentTileSelector() {
         gameFont()->drawText(10, 350, tileDesc_, menu_manager_->kMenuColorLightGreen);
         gameFont()->drawText(10, 365, locationDesc_, menu_manager_->kMenuColorLightGreen);
     }
+
+    gameFont()->drawText(10, 380, maxZDesc_, menu_manager_->kMenuColorLightGreen);
 }
