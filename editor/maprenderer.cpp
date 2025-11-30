@@ -34,9 +34,9 @@
 
 #include "fs-engine/config.h"
 
-const int MapRenderer::kGameplayPanelWidth = 129;
+const int EditorMapRenderer::kGameplayPanelWidth = 129;
 
-void MapRenderer::init(fs_knl::Mission *pMission) {
+void EditorMapRenderer::init(fs_knl::Mission *pMission) {
     pMission_ = pMission;
     pMap_ = pMission->get_map();
 }
@@ -44,7 +44,7 @@ void MapRenderer::init(fs_knl::Mission *pMission) {
 /**
  * Draw tiles and map objects.
  */
-void MapRenderer::render(const Point2D &viewport) {
+void EditorMapRenderer::render(const Point2D &viewport) {
     // TODO: list of bugs to fix in rendering
     //  - Some advert panels lack a corner
     fs_knl::TilePoint mtp = pMap_->screenToTilePoint(viewport.x, viewport.y);
@@ -133,14 +133,14 @@ void MapRenderer::render(const Point2D &viewport) {
     }*/
 #endif
 
-    DEBUG_SPEED_LOG("MapRenderer::render")
+    DEBUG_SPEED_LOG("EditorMapRenderer::render")
 }
 
-int MapRenderer::tileHashKey(fs_knl::MapObject * m) {
+int EditorMapRenderer::tileHashKey(fs_knl::MapObject * m) {
     return tileHashKey(m->position());
 }
 
-void MapRenderer::listObjectsToDraw(const Point2D &viewport) {
+void EditorMapRenderer::listObjectsToDraw(const Point2D &viewport) {
     /*if (tilex < 0)
         tilex = 0;
     if (tiley < 0)
@@ -199,7 +199,7 @@ void MapRenderer::listObjectsToDraw(const Point2D &viewport) {
  * \return bool
  *
  */
-bool MapRenderer::isObjectInsideDrawingArea(fs_knl::MapObject *pObject, const Point2D &viewport) {
+bool EditorMapRenderer::isObjectInsideDrawingArea(fs_knl::MapObject *pObject, const Point2D &viewport) {
     Point2D objectViewport;
     pMission_->get_map()->tileToScreenPoint(pObject->position(), &objectViewport);
 
@@ -218,7 +218,7 @@ bool MapRenderer::isObjectInsideDrawingArea(fs_knl::MapObject *pObject, const Po
  * \return int number of objects for debug
  *
  */
-int MapRenderer::drawObjectsOnTile(const fs_knl::TilePoint & tilePos, const Point2D &screenPos) {
+int EditorMapRenderer::drawObjectsOnTile(const fs_knl::TilePoint & tilePos, const Point2D &screenPos) {
     int tileKey = tileHashKey(tilePos);
     int nbDrawnObjects = 0;
 
@@ -247,7 +247,7 @@ int MapRenderer::drawObjectsOnTile(const fs_knl::TilePoint & tilePos, const Poin
  * \return void
  *
  */
-void MapRenderer::addObjectToDraw(fs_knl::MapObject *pObjectToAdd) {
+void EditorMapRenderer::addObjectToDraw(fs_knl::MapObject *pObjectToAdd) {
     int tileKey;
     ObjectToDraw *pNewEntry = pool_.getResource();
     pNewEntry->setObject(pObjectToAdd);
@@ -298,7 +298,7 @@ void MapRenderer::addObjectToDraw(fs_knl::MapObject *pObjectToAdd) {
  * \return void
  *
  */
-void MapRenderer::freeUnreleasedResources() {
+void EditorMapRenderer::freeUnreleasedResources() {
     int nbFreed = 0;
     std::map<int, ObjectToDraw *>::iterator itr = objectsByTile_.begin();
     while (itr != objectsByTile_.end()) {

@@ -145,12 +145,12 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
     } else if (key.keyCode == fs_eng::kKeyCode_A) { // Scroll the map to the bottom
         if (currentTile_ && currentTilePos_.tz < mission_->get_map()->maxZ()) {
             currentTilePos_.tz++;
-            currentTile_ = mission_->get_map()->getTileAt(currentTilePos_);
+            selectCurrentTile(currentTilePos_);
         }
     } else if (key.keyCode == fs_eng::kKeyCode_Q) { // Scroll the map to the bottom
         if (currentTile_ && currentTilePos_.tz > 0) {
             currentTilePos_.tz--;
-            currentTile_ = mission_->get_map()->getTileAt(currentTilePos_);
+            selectCurrentTile(currentTilePos_);
         }
     } else {
         consumed = false;
@@ -359,17 +359,16 @@ bool MissionEditorMenu::scrollOnY(Point2D mousePos) {
     return change;
 }
 
-bool MissionEditorMenu::handleTick(uint32_t elapsed) {
-    bool change = false;
+bool MissionEditorMenu::handleTick([[maybe_unused]] uint32_t elapsed) {
     Point2D mousePos;
     g_System.getMousePos(mousePos);
     // Scroll the map
     if (scroll_.x != 0) {
-        change = scrollOnX(mousePos);
+        scrollOnX(mousePos);
     }
 
     if (scroll_.y != 0) {
-        change = scrollOnY(mousePos);
+        scrollOnY(mousePos);
     }
 
     updateCursorFromTarget(mousePos);
@@ -391,24 +390,31 @@ void MissionEditorMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32
 }
 
 void MissionEditorMenu::handleClickOnMap(Point2D point, int button) {
-    fs_knl::TilePoint mapPt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
-                    displayOriginPt_.y + point.y);
-    currentTile_ = mission_->get_map()->getTileAt(mapPt);
-
-    currentTilePos_.tx = mapPt.tx;
-    currentTilePos_.ty = mapPt.ty;
-    currentTilePos_.tz = mapPt.tz;
-
-    printf("Tile %d -> x:%d, y:%d, z:%d\n",
-        currentTile_->id(), mapPt.tx, mapPt.ty, mapPt.tz, mapPt.ox, mapPt.oy);
-
     if (targetHovered_) {
-        printf("   > target(%i) : %s at %d, %d, %d\n",
-            targetHovered_->id(), targetHovered_->natureName(), 
-            targetHovered_->position().ox, targetHovered_->position().oy, targetHovered_->position().oz);
+        targetDesc_ = std::format("{} ({})", targetHovered_->natureName(), targetHovered_->id());
+        targetLocDescXYZ_ = std::format("At {}, {}, {}", 
+                                    targetHovered_->position().tx, targetHovered_->position().ty, targetHovered_->position().tz);
+        targetLocDescOXYZ_ = std::format("- {}, {}, {}", 
+                                    targetHovered_->position().ox, targetHovered_->position().oy, targetHovered_->position().oz);
+        selectCurrentTile(targetHovered_->position());
+    } else {
+        fs_knl::TilePoint mapPt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
+                    displayOriginPt_.y + point.y);
+        selectCurrentTile(mapPt);
     }
 
     return;
+}
+
+void MissionEditorMenu::selectCurrentTile(const fs_knl::TilePoint &tilePt) {
+    currentTile_ = mission_->get_map()->getTileAt(tilePt);
+
+    currentTilePos_.tx = tilePt.tx;
+    currentTilePos_.ty = tilePt.ty;
+    currentTilePos_.tz = tilePt.tz;
+
+    tileDesc_ = std::format("Tile {}", currentTile_->id());
+    locationDesc_ = std::format("At {}, {}, {}", currentTilePos_.tx, currentTilePos_.ty, currentTilePos_.tz);
 }
 
 void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
@@ -526,7 +532,14 @@ void MissionEditorMenu::drawCurrentTileSelector() {
                             tileTop.add(-displayOriginPt_.x + 129 - fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
                             menu_manager_->kMenuColorYellow);
 
+        // Draw target information
+        gameFont()->drawText(10, 140, targetDesc_, menu_manager_->kMenuColorLightGreen);
+        gameFont()->drawText(10, 155, targetLocDescXYZ_, menu_manager_->kMenuColorLightGreen);
+        gameFont()->drawText(10, 170, targetLocDescOXYZ_, menu_manager_->kMenuColorLightGreen);
+        
         // Then draw the tile on the left side to better isolate it
-        mission_->get_map()->getTileManager()->drawTile(currentTile_, 20, 50);
+        mission_->get_map()->getTileManager()->drawTile(currentTile_, 33, 300);
+        gameFont()->drawText(10, 350, tileDesc_, menu_manager_->kMenuColorLightGreen);
+        gameFont()->drawText(10, 365, locationDesc_, menu_manager_->kMenuColorLightGreen);
     }
 }

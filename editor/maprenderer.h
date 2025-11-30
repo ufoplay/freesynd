@@ -133,9 +133,9 @@ private:
     int totalResourceCreated_;
 };
 
-class MapRenderer {
+class EditorMapRenderer {
 public:
-    MapRenderer() : pool_(10) {}
+    EditorMapRenderer() : pool_(10) {}
 
     void init(fs_knl::Mission *pMission);
 
