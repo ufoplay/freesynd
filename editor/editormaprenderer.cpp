@@ -23,7 +23,7 @@
  * 
  */
 
-#include "maprenderer.h"
+#include "editormaprenderer.h"
 
 #include "fs-engine/gfx/tilemanager.h"
 #include "fs-engine/system/system.h"

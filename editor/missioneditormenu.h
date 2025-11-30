@@ -26,7 +26,7 @@
 
 #include "fs-engine/menus/menu.h"
 #include "fs-engine/menus/menumanager.h"
-#include "maprenderer.h"
+#include "editormaprenderer.h"
 
 /*!
  * The mission editor menu allows the display of a mission and map.

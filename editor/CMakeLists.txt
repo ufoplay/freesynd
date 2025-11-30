@@ -31,7 +31,7 @@ set(DEV_TOOLS_HEADERS
 	animmenu.h
 	searchmissionmenu.h
 	listmissionmenu.h
-	maprenderer.h
+	editormaprenderer.h
 	missioneditormenu.h)
 
 add_executable (fs-editor
@@ -45,7 +45,7 @@ add_executable (fs-editor
 	animmenu.cpp
 	searchmissionmenu.cpp
 	listmissionmenu.cpp
-	maprenderer.cpp
+	editormaprenderer.cpp
 	missioneditormenu.cpp
 	${DEV_TOOLS_HEADERS}
 )
