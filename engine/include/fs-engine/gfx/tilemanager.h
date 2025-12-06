@@ -66,6 +66,8 @@ public:
     static const int kBlocksPerSubTileRow;
     //! (COLOR_BYTES_PER_BLOCK + ALPHA_BYTES_PER_BLOCK) * BLOCKS_PER_SUBTILE_ROW
     static const int kSubTileRowLength;
+    //! The index of the tile that is used for empty space
+    static const int kIndexTransparentTile;
 
     TileManager();
     ~TileManager();

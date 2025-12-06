@@ -59,7 +59,7 @@ TEST_CASE( "ObjectiveDesc", "[kernel][objectivedesc]" ) {
     agent2.setHealth(10);
     agent3.setHealth(10);
     LevelData::MapInfos infos;
-    fs_knl::Mission mission(infos, nullptr);
+    fs_knl::Mission mission;
     mission.getSquad()->setMember(0, &agent1);
     mission.getSquad()->setMember(1, &agent2);
     mission.getSquad()->setMember(2, &agent3);

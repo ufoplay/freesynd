@@ -43,9 +43,19 @@ public:
     //! Set the array of tiles in the map
     void setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles);
 
+    /**
+     * @name Map attibutes
+     */
+    ///@{
     uint16_t id() { return id_; }
+    int maxX() { return max_x_; }
+    int maxY() { return max_y_; }
+    int maxZ() { return max_z_; }
     int width() { return map_width_; }
     int height() { return map_height_; }
+    fs_eng::TileManager * getTileManager() { return tileManager_; }
+    ///@}
+
     void mapDimensions(int *x, int *y, int *z);
     //! Clip x,y,z to map dimensions
     void adjXYZ(int &x, int &y, int &z);
@@ -59,12 +69,8 @@ public:
     //! Converts a screen position in pixel into a Map tile position
     TilePoint screenToTilePoint(int x, int y);
 
-    int maxX() { return max_x_; }
-    int maxY() { return max_y_; }
-    int maxZ() { return max_z_; }
     int maxZAt(int x, int y);
 
-    fs_eng::TileManager * getTileManager() { return tileManager_; }
     fs_eng::Tile * getTileAt(int x, int y, int z);
     //! Return the tile at given position. Only uses tx, ty and tz
     fs_eng::Tile * getTileAt(const TilePoint &tilePt);
@@ -95,13 +101,16 @@ public:
     /*! Constant for the minimap overlay : this is an enemy agent. */
     static const uint8_t kOverlayEnemyAgent;
 
-    MiniMap(Map *p_map);
+    MiniMap();
     ~MiniMap();
 
     /*! Returns the map width in tiles.*/
     int max_x() { return mmax_x_;}
     /*! Returns the map height in tiles.*/
     int max_y() { return mmax_y_;}
+
+    bool init(Map *p_map);
+
     uint8_t getColourAt(int x, int y);
 
     //! Defines a source on the minimap for the signal

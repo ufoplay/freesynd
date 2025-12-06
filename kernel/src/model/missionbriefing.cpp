@@ -143,7 +143,8 @@ bool MissionBriefing::loadBriefing(uint8 * data, int size) {
  */
 void MissionBriefing::init_minimap(Map *p_map, LevelData::LevelDataAll &level_data) {
     // Create the minimap
-    p_minimap_ = new MiniMap(p_map);
+    p_minimap_ = new MiniMap();
+    p_minimap_->init(p_map);
 
     // Then create the minimap overlay
     // First, put zero every where

@@ -144,8 +144,11 @@ public:
     static const uint8_t kBMaskBlockerTargetObjectUpdated;
     static const uint8_t kBMaskBlockerTargetPosUpdated;
 
-    Mission(const LevelData::MapInfos & map_infos, Map *pMap);
+    Mission();
     virtual ~Mission();
+
+    // Initialize the mission with mapInfos and a map
+    bool init(const LevelData::MapInfos & map_infos, Map *pMap);
 
     /**
      * @name Mission life cycle and objectives
@@ -191,10 +194,42 @@ public:
     int mapWidth();
     int mapHeight();
 
-    int minX() { return min_x_; }
-    int minY() { return min_y_; }
-    int maxX() { return max_x_; }
-    int maxY() { return max_y_; }
+
+    /*!
+     * @brief Compare the given point with the minimum origin for this map
+     * @param point 
+     * @return True is X coordinate of the point is less than min origin
+     */
+    bool isScrollMinLimitHitOnX(const fs_knl::TilePoint &point) {
+        return point.tx < minWorldOrigin_.x;
+    }
+    /*!
+     * @brief Compare the given point with the minimum origin for this map
+     * @param point 
+     * @return True is Y coordinate of the point is less than min origin
+     */
+    bool isScrollMinLimitHitOnY(const fs_knl::TilePoint &point) {
+        return point.ty < minWorldOrigin_.y;
+    }
+    /*!
+     * @brief Compare the given point with the maximum origin for this map
+     * @param point 
+     * @return True is X coordinate of the point is greater than max origin
+     */
+    bool isScrollMaxLimitHitOnX(const fs_knl::TilePoint &point) {
+        return point.tx > maxWorldOrigin_.x;
+    }
+    /*!
+     * @brief Compare the given point with the maximum origin for this map
+     * @param point 
+     * @return True is Y coordinate of the point is greater than max origin
+     */
+    bool isScrollMaxLimitHitOnY(const fs_knl::TilePoint &point) {
+        return point.ty > maxWorldOrigin_.y;
+    }
+
+    //! Check that given point is whithin scroll limit and change if necessary
+    void clipWorldOrigin(fs_knl::TilePoint &point);
 
     //*************************************
     // Map objects
@@ -319,13 +354,6 @@ protected:
     //! At the end of the mission calculate all stats
     void updateStats();
 
-    /*!
-     * Sets the given map for the mission.
-     * If p_map is not null, creates a minimap from it.
-     * \param p_map The map to set.
-     */
-    void set_map(Map *p_map);
-
 protected:
 
     /*! List of all vehicles, cars and train.*/
@@ -356,7 +384,18 @@ protected:
      */
     Status status_;
 
-    int min_x_, min_y_, max_x_, max_y_;
+    /*!
+     * This is the coordinate of the point that the world origin used to display
+     * the game cannot cross on the top left.
+     * Its value is given in tile on X and Y axis and it comes from the game file in MapInfo.
+     */
+    Point2D minWorldOrigin_;
+    /*!
+     * This is the coordinate of the point that the world origin used to display
+     * the game cannot cross on the bottom right.
+     * Its value is given in tile on X and Y axis and it comes from the game file in MapInfo.
+     */
+    Point2D maxWorldOrigin_;
     /*!
      * The id of the map for that mission.
      */

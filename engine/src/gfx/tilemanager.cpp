@@ -68,6 +68,7 @@ const int TileManager::kSubTileRowLength = (4 + 1) * kBlocksPerSubTileRow;
 const int TileManager::kNumOfTilesPerRow = 16;
 const int TileManager::kNumOfTilesPerCol = 16;
 const int TileManager::kTileColorKeyIndex = 255;
+const int TileManager::kIndexTransparentTile = 0;
 
 /*!
  * Default constructor.

@@ -337,7 +337,7 @@ Mission * MissionManager::create_mission(LevelData::LevelDataAll &level_data) {
         return NULL;
     }
 
-    Mission *p_mission = new Mission(level_data.mapinfos, pMap);
+    Mission *p_mission = new Mission();
 
     // Init indexes
     DataIndex di;
@@ -347,6 +347,10 @@ Mission * MissionManager::create_mission(LevelData::LevelDataAll &level_data) {
 
 
     try {
+        if (!p_mission->init(level_data.mapinfos, pMap)) {
+            FSERR(Log::k_FLG_GAME, "MissionManager", "loadMission", ("Failed to load mission : init failed\n"));
+            return nullptr;
+        }
         LOG(Log::k_FLG_GAME, "MissionManager", "create_mission", ("Vehicles creation"));
         createVehicles(level_data, di, p_mission);
 

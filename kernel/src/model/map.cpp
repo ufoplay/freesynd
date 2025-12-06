@@ -298,12 +298,23 @@ const uint8_t MiniMap::kOverlayOurAgent = 1;
 const uint8_t MiniMap::kOverlayEnemyAgent = 2;
 
 /*!
- * Construct the minimap from the given map.
- * \param p_map
+ * Construct the minimap.
  */
-MiniMap::MiniMap(Map *p_map) {
+MiniMap::MiniMap() :
+    a_minimap_(nullptr),
+    mmax_x_(0), mmax_y_(0),
+    p_target_(nullptr) {}
+
+MiniMap::~MiniMap() {
+    if (a_minimap_) {
+        free(a_minimap_);
+        a_minimap_ = nullptr;
+    }
+}
+
+bool MiniMap::init(Map *p_map) {
     // walkdata based colours
-    uint8_t minimap_colours_[] = {
+    uint8_t minimap_colours[] = {
         8,  7,  7,  7,
         7,  7, 10, 10,
        10, 10,  0, 10,
@@ -317,22 +328,17 @@ MiniMap::MiniMap(Map *p_map) {
     a_minimap_ = (uint8_t *)( malloc(mmax_x_ * mmax_y_) );
     if(a_minimap_ == NULL) {
         FSERR(Log::k_FLG_MEM, "MiniMap", "MiniMap", ("memory allocation failed"));
-        return;
+        return false;
     }
     for (unsigned short y = 0; y < mmax_y_; y++) {
         unsigned short yadd = y * mmax_x_;
         for (unsigned short x = 0; x < mmax_x_; x++) {
             fs_eng::Tile::EType type = p_map->getTileAt(x, y, 0)->type();
-            a_minimap_[x + yadd] = minimap_colours_[type];
+            a_minimap_[x + yadd] = minimap_colours[type];
         }
     }
-}
 
-MiniMap::~MiniMap() {
-    if (a_minimap_) {
-        free(a_minimap_);
-        a_minimap_ = NULL;
-    }
+    return true;
 }
 
 /*!

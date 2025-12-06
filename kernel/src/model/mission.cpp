@@ -73,21 +73,16 @@ void MissionStats::init(size_t nbAgents) {
  * @param map_infos 
  * @param pMap 
  */
-Mission::Mission(const LevelData::MapInfos & map_infos, Map *pMap) :
-        squad_(std::make_unique<Squad>()) {
+Mission::Mission() :
+        squad_(std::make_unique<Squad>()), 
+        p_map_(nullptr), p_minimap_(nullptr),
+        cur_objective_(0) {
     status_ = kMissionStatusRunning;
-
     mtsurfaces_ = NULL;
     mdpoints_ = NULL;
     mdpoints_cp_ = NULL;
-    i_map_id_ = fs_utl::READ_LE_UINT16(map_infos.map);
-    min_x_= fs_utl::READ_LE_UINT16(map_infos.min_x) / 2;
-    min_y_ = fs_utl::READ_LE_UINT16(map_infos.min_y) / 2;
-    max_x_ = fs_utl::READ_LE_UINT16(map_infos.max_x) / 2;
-    max_y_ = fs_utl::READ_LE_UINT16(map_infos.max_y) / 2;
-    cur_objective_ = 0;
-    p_minimap_ = NULL;
-    set_map(pMap);
+    minWorldOrigin_ = {0, 0};
+    maxWorldOrigin_ = {0, 0};
 }
 
 Mission::~Mission()
@@ -111,6 +106,39 @@ Mission::~Mission()
     if (p_minimap_) {
         delete p_minimap_;
     }
+}
+
+/*!
+ * Sets the given map for the mission.
+ * If p_map is not null, creates a minimap from it.
+ * @param map_infos 
+ * @param pMap The map to set.
+ * @return True if everything is ok
+ */
+bool Mission::init(const LevelData::MapInfos & map_infos, Map *pMap) {
+    i_map_id_ = fs_utl::READ_LE_UINT16(map_infos.map);
+    minWorldOrigin_ = {
+        fs_utl::READ_LE_UINT16(map_infos.min_x) / 2, 
+        fs_utl::READ_LE_UINT16(map_infos.min_y) / 2};
+    maxWorldOrigin_ = {
+        fs_utl::READ_LE_UINT16(map_infos.max_x) / 2,
+        fs_utl::READ_LE_UINT16(map_infos.max_y) / 2};
+    
+    if (!pMap) {
+        LOG(Log::k_FLG_GAME, "Mission", "init", ("Map is null"));
+        return false;
+    }
+
+    p_map_ = pMap;
+    p_map_->mapDimensions(&mmax_x_, &mmax_y_, &mmax_z_);
+
+    if (p_minimap_) {
+        delete p_minimap_;
+    }
+    // TODO : change with new init method
+    p_minimap_ = new MiniMap();
+
+    return p_minimap_->init(p_map_);
 }
 
 /*!
@@ -162,23 +190,6 @@ void Mission::objectiveMsg(std::string& msg) {
     }
 }
 
-/*!
- * Sets the given map for the mission.
- * Creates a minimap from it.
- * \param p_map The map to set.
- */
-void Mission::set_map(Map *p_map) {
-    if (p_map) {
-        p_map_ = p_map;
-        p_map_->mapDimensions(&mmax_x_, &mmax_y_, &mmax_z_);
-
-        if (p_minimap_) {
-            delete p_minimap_;
-        }
-        p_minimap_ = new MiniMap(p_map_);
-    }
-}
-
 int Mission::mapWidth()
 {
     return p_map_->width();
@@ -187,6 +198,24 @@ int Mission::mapWidth()
 int Mission::mapHeight()
 {
     return p_map_->height();
+}
+
+/*!
+ * @brief 
+ * @param point 
+ */
+void Mission::clipWorldOrigin(fs_knl::TilePoint &point) {
+    if (point.tx < minWorldOrigin_.x)
+        point.tx = minWorldOrigin_.x;
+    else if (point.tx > maxWorldOrigin_.x) {
+        point.tx = maxWorldOrigin_.x;
+    }
+
+    if (point.ty < minWorldOrigin_.y)
+        point.ty = minWorldOrigin_.y;
+    else if (point.ty > maxWorldOrigin_.y) {
+        point.ty = maxWorldOrigin_.y;
+    }
 }
 
 /**
