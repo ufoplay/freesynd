@@ -74,9 +74,9 @@ void MissionStats::init(size_t nbAgents) {
  * @param pMap 
  */
 Mission::Mission() :
-        squad_(std::make_unique<Squad>()), 
+        cur_objective_(0),
         p_map_(nullptr), p_minimap_(nullptr),
-        cur_objective_(0) {
+        squad_(std::make_unique<Squad>()) {
     status_ = kMissionStatusRunning;
     mtsurfaces_ = NULL;
     mdpoints_ = NULL;
@@ -116,7 +116,6 @@ Mission::~Mission()
  * @return True if everything is ok
  */
 bool Mission::init(const LevelData::MapInfos & map_infos, Map *pMap) {
-    i_map_id_ = fs_utl::READ_LE_UINT16(map_infos.map);
     minWorldOrigin_ = {
         fs_utl::READ_LE_UINT16(map_infos.min_x) / 2, 
         fs_utl::READ_LE_UINT16(map_infos.min_y) / 2};
