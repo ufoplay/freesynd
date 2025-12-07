@@ -144,6 +144,8 @@ public:
     int incrMaxZtoDraw();
 
     int decrMaxZtoDraw();
+    int setMaxZtoDrawToMin();
+    int setMaxZtoDrawToMax();
 
 private:
     //! The width of the left control panel in Gameplaymenu

@@ -191,10 +191,6 @@ public:
     int map() { return i_map_id_; }
     uint16_t mapId() { return i_map_id_; }
 
-    int mapWidth();
-    int mapHeight();
-
-
     /*!
      * @brief Compare the given point with the minimum origin for this map
      * @param point 

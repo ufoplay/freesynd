@@ -123,9 +123,11 @@ bool Mission::init(const LevelData::MapInfos & map_infos, Map *pMap) {
     maxWorldOrigin_ = {
         fs_utl::READ_LE_UINT16(map_infos.max_x) / 2,
         fs_utl::READ_LE_UINT16(map_infos.max_y) / 2};
+
+    LOG(Log::k_FLG_GAME, "Mission", "init", ("Min XY(%d, %d), max XY(%d, %d)\n", minWorldOrigin_.x, minWorldOrigin_.y, maxWorldOrigin_.x, maxWorldOrigin_.y));
     
     if (!pMap) {
-        LOG(Log::k_FLG_GAME, "Mission", "init", ("Map is null"));
+        FSERR(Log::k_FLG_GAME, "Mission", "init", ("Map is null"));
         return false;
     }
 
@@ -188,16 +190,6 @@ void Mission::objectiveMsg(std::string& msg) {
     } else {
         msg = "";
     }
-}
-
-int Mission::mapWidth()
-{
-    return p_map_->width();
-}
-
-int Mission::mapHeight()
-{
-    return p_map_->height();
 }
 
 /*!
@@ -2362,7 +2354,7 @@ bool Mission::getWalkable(TilePoint &mtp) {
     int bx, by, box, boy;
     int bz = mmax_z_;
     unsigned int cindx;
-    unsigned char twd;
+    uint8_t walkData;
     do {
         bz--;
         // using lowered Z, at start postion is at top of tile not at bottom
@@ -2378,11 +2370,11 @@ bool Mission::getWalkable(TilePoint &mtp) {
             break;
         cindx = bx + by * mmax_x_ + bz * mmax_m_xy;
         if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable) {
-            twd = mtsurfaces_[cindx];
+            walkData = mtsurfaces_[cindx];
             int dx = 0;
             int dy = 0;
-            switch (twd) {
-                case 0x01:
+            switch (walkData) {
+                case fs_eng::Tile::kSlopeSN :
                     dy = ((boy + 128) * 2) / 3;
                     dx = box + 128 - dy / 2;
                     if (dx < 256) {
@@ -2403,7 +2395,7 @@ bool Mission::getWalkable(TilePoint &mtp) {
                         }
                     }
                     break;
-                case 0x02:
+                case fs_eng::Tile::kSlopeNS:
                     if (boy < 128) {
                         dy = boy * 2;
                         dx = box + boy;
@@ -2428,7 +2420,7 @@ bool Mission::getWalkable(TilePoint &mtp) {
                         // TODO : add check 0x01?
                     }
                     break;
-                case 0x03:
+                case fs_eng::Tile::kSlopeEW:
                     if (box < 128) {
                         dx = box * 2;
                         dy = box + boy;
@@ -2453,7 +2445,7 @@ bool Mission::getWalkable(TilePoint &mtp) {
                         // TODO : 0x04?
                     }
                     break;
-                case 0x04:
+                case fs_eng::Tile::kSlopeWE:
                     dx = ((box + 128) * 2) / 3;
                     dy = boy + 128 - dx / 2;
                     if (dy < 256) {
@@ -2482,10 +2474,10 @@ bool Mission::getWalkable(TilePoint &mtp) {
         } else if (bz - 1 >= 0) {
             cindx = bx + by * mmax_x_ + (bz - 1) * mmax_m_xy;
             if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable) {
-                twd = mtsurfaces_[cindx];
+                walkData = mtsurfaces_[cindx];
                 int dx = 0;
                 int dy = 0;
-                switch (twd) {
+                switch (walkData) {
                     case 0x01:
                         dy = (boy * 2) / 3;
                         dx = box - dy / 2;

@@ -108,17 +108,7 @@ void MissionEditorMenu::initWorldCoords() {
     // Check if the position is within map borders
     fs_knl::TilePoint mpt = mission_->get_map()->screenToTilePoint(start.x, start.y);
 
-    if (mpt.tx < mission_->minX())
-        mpt.tx = mission_->minX();
-
-    if (mpt.ty < mission_->minY())
-        mpt.ty = mission_->minY();
-
-    if (mpt.tx > mission_->maxX())
-        mpt.tx = mission_->maxX();
-
-    if (mpt.ty > mission_->maxY())
-        mpt.ty = mission_->maxY();
+    mission_->clipWorldOrigin(mpt);
 
     // recalculating new screen coords
     fs_knl::TilePoint newPoint(mpt.tx,
@@ -129,34 +119,71 @@ void MissionEditorMenu::initWorldCoords() {
     mission_->get_map()->tileToScreenPoint(newPoint, &msp);
     displayOriginPt_.x = msp.x;
     displayOriginPt_.y = msp.y;
+
+    Point2D mspNew;
+    mission_->get_map()->convertTilepointTo2D(newPoint, mspNew);
+
+    printf(" msp XY(%d, %d), mspNew XY(%d, %d)\n", msp.x, msp.y, mspNew.x, mspNew.y);
 }
 
 bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
     bool consumed = true;
 
     if (key.keyCode == fs_eng::kKeyCode_Left) { // Scroll the map to the left
-        scroll_.x = -kScrollStep;
+         if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+            if (currentTile_ && currentTilePos_.ty < mission_->get_map()->maxY()) { // move selected tile
+                currentTilePos_.ty++;
+                selectCurrentTile(currentTilePos_);
+            }
+        } else {
+            scroll_.x = -kScrollStep;
+        }
     } else if (key.keyCode == fs_eng::kKeyCode_Right) { // Scroll the map to the right
-        scroll_.x = kScrollStep;
-    } else if (key.keyCode == fs_eng::kKeyCode_Up) { // Scroll the map to the top
-        scroll_.y = -kScrollStep;
-    } else if (key.keyCode == fs_eng::kKeyCode_Down) { // Scroll the map to the bottom
-        scroll_.y = kScrollStep;
-    } else if (key.keyCode == fs_eng::kKeyCode_S) { // Scroll the map to the bottom
-        if (currentTile_ && currentTilePos_.tz < mission_->get_map()->maxZ()) {
-            currentTilePos_.tz++;
-            selectCurrentTile(currentTilePos_);
+        if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+            if (currentTile_ && currentTilePos_.ty > 0) { // move selected tile
+                currentTilePos_.ty--;
+                selectCurrentTile(currentTilePos_);
+            }
+        }  else {
+            scroll_.x = kScrollStep;
         }
-    } else if (key.keyCode == fs_eng::kKeyCode_X) { // Scroll the map to the bottom
-        if (currentTile_ && currentTilePos_.tz > 0) {
-            currentTilePos_.tz--;
-            selectCurrentTile(currentTilePos_);
+    } else if (key.keyCode == fs_eng::kKeyCode_Up) { 
+        if (g_System.isKeyModStatePressed(fs_eng::KMD_CTRL)) {
+            if (currentTile_ && currentTilePos_.tz < mission_->get_map()->maxZ()) { // select tile above current
+                currentTilePos_.tz++;
+                selectCurrentTile(currentTilePos_);
+            }
+        } if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+            if (currentTile_ && currentTilePos_.tx > 0) { // move selected tile
+                currentTilePos_.tx--;
+                selectCurrentTile(currentTilePos_);
+            }
+        } else { // Scroll the map to the top
+            scroll_.y = -kScrollStep;
         }
-    } else if (key.keyCode == fs_eng::kKeyCode_A) { // Increase max Z for drawing
+    } else if (key.keyCode == fs_eng::kKeyCode_Down) { 
+        if (g_System.isKeyModStatePressed(fs_eng::KMD_CTRL)) {
+            if (currentTile_ && currentTilePos_.tz > 0) { // select tile below current
+                currentTilePos_.tz--;
+                selectCurrentTile(currentTilePos_);
+            }
+        } if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+            if (currentTile_ && currentTilePos_.tx < mission_->get_map()->maxX()) { // select tile below current
+                currentTilePos_.tx++;
+                selectCurrentTile(currentTilePos_);
+            }
+        } else { // Scroll the map to the bottom
+            scroll_.y = kScrollStep;
+        }
+    } else if (key.keyCode == fs_eng::kKeyCode_PageUp) { // Increase max Z for drawing
         maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.incrMaxZtoDraw(), mission_->get_map()->maxZ());
-    } else if (key.keyCode == fs_eng::kKeyCode_Q) { // Decrease max Z for drawing
+    } else if (key.keyCode == fs_eng::kKeyCode_PageDown) { // Decrease max Z for drawing
         maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.decrMaxZtoDraw(), mission_->get_map()->maxZ());
-    }else {
+    } else if (key.keyCode == fs_eng::kKeyCode_Home) { // Decrease max Z to minimum
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxZtoDrawToMin(), mission_->get_map()->maxZ());
+    } else if (key.keyCode == fs_eng::kKeyCode_End) { // Decrease max Z to minimum
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxZtoDrawToMax(), mission_->get_map()->maxZ());
+    } else {
         consumed = false;
     }
 
@@ -199,14 +226,14 @@ bool MissionEditorMenu::scrollOnX(Point2D mousePos) {
 
     // Scroll to the right
     if (scroll_.x > 0) {
-        if (mpt.ty < mission_->minY()) {
+        if (mission_->isScrollMinLimitHitOnY(mpt)) {
             // we hit the upper right border of the map
             // so we scroll down until the far right corner
             int newWorldY = displayOriginPt_.y + kScrollStep;
             newOriginX += kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.ty < mission_->minY() || mpt.tx > mission_->maxX()) {
+            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
                 // We hit the corner so don't scroll
                 return false;
             } else {
@@ -214,14 +241,14 @@ bool MissionEditorMenu::scrollOnX(Point2D mousePos) {
                 displayOriginPt_.y = newWorldY;
                 change = true;
             }
-        } else if (mpt.tx > mission_->maxX()) {
+        } else if (mission_->isScrollMaxLimitHitOnX(mpt)) {
             // we hit the lower right border of the map
             // so we scroll up until the far right corner
             int newWorldY = displayOriginPt_.y - kScrollStep;
             newOriginX += kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.ty < mission_->minY() || mpt.tx > mission_->maxX()) {
+            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
                 return false;
             } else {
                 displayOriginPt_.x = newOriginX;
@@ -235,28 +262,28 @@ bool MissionEditorMenu::scrollOnX(Point2D mousePos) {
         }
 
     } else { // Scroll to the left
-        if (mpt.tx < mission_->minX()) {
+        if (mission_->isScrollMinLimitHitOnX(mpt)) {
             // we hit the upper left border of the map
             // so we scroll down until the far left corner
             int newWorldY = displayOriginPt_.y + kScrollStep;
             newOriginX -= kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.tx < mission_->minX() || mpt.ty > mission_->maxY()) {
+            if (mission_->isScrollMinLimitHitOnX(mpt) || mission_->isScrollMaxLimitHitOnY(mpt)) {
                 return false;
             } else {
                 displayOriginPt_.x = newOriginX;
                 displayOriginPt_.y = newWorldY;
                 change = true;
             }
-        } else if (mpt.ty > mission_->maxY()) {
+        } else if (mission_->isScrollMaxLimitHitOnY(mpt)) {
             // we hit the lower left border of the map
             // so we scroll up until the far left corner
             int newWorldY = displayOriginPt_.y - kScrollStep;
             newOriginX -= kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.tx < mission_->minX() || mpt.ty > mission_->maxY()) {
+            if (mission_->isScrollMinLimitHitOnX(mpt) || mission_->isScrollMaxLimitHitOnY(mpt)) {
                 return false;
             } else {
                 displayOriginPt_.x = newOriginX;
@@ -292,26 +319,26 @@ bool MissionEditorMenu::scrollOnY(Point2D mousePos) {
 
     // Scroll down
     if (scroll_.y > 0) {
-        if (mpt.tx > mission_->maxX()) {
+        if (mission_->isScrollMaxLimitHitOnX(mpt)) {
             // we hit the lower right border of the map
             // so we scroll down until the lower corner
             int newOriginX = displayOriginPt_.x - 2*kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.ty > mission_->maxY() || mpt.tx > mission_->maxX()) {
+            if (mission_->isScrollMaxLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
                 return false;
             } else {
                 displayOriginPt_.x = newOriginX;
                 displayOriginPt_.y = newWorldY;
                 change = true;
             }
-        } else if (mpt.ty > mission_->maxY()) {
+        } else if (mission_->isScrollMaxLimitHitOnY(mpt)) {
             // we hit the lower left border of the map
             // so we scroll down until the lower corner
             int newOriginX = displayOriginPt_.x + 2*kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.ty > mission_->maxY() || mpt.tx > mission_->maxX()) {
+            if (mission_->isScrollMaxLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
                 return false;
             } else {
                 displayOriginPt_.x = newOriginX;
@@ -324,26 +351,26 @@ bool MissionEditorMenu::scrollOnY(Point2D mousePos) {
         }
 
     } else { // Scroll up
-        if (mpt.tx < mission_->minX()) {
+        if (mission_->isScrollMinLimitHitOnX(mpt)) {
             // we hit the upper right border of the map
             // so we scroll up until the upper corner
             int newOriginX = displayOriginPt_.x + 2*kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.ty < mission_->minY() || mpt.tx < mission_->minX()) {
+            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMinLimitHitOnX(mpt)) {
                 return false;
             } else {
                 displayOriginPt_.x = newOriginX;
                 displayOriginPt_.y = newWorldY;
                 change = true;
             }
-        } else if (mpt.ty < mission_->minY()) {
+        } else if (mission_->isScrollMinLimitHitOnY(mpt)) {
             // we hit the upper left border of the map
             // so we scroll up until the upper corner
             int newOriginX = displayOriginPt_.x - 2*kScrollStep;
             mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
 
-            if (mpt.ty < mission_->minY() || mpt.tx < mission_->minX()) {
+            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMinLimitHitOnX(mpt)) {
                 return false;
             } else {
                 displayOriginPt_.x = newOriginX;
@@ -404,6 +431,10 @@ void MissionEditorMenu::handleClickOnMap(Point2D point, [[maybe_unused]] int but
     } else {
         fs_knl::TilePoint mapPt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
                     displayOriginPt_.y + point.y);
+
+        if (mission_->getWalkable(mapPt)) {
+            printf("new Tile position %d, %d, %d, %d, %d, %d\n", mapPt.tx, mapPt.ty, mapPt.tz, mapPt.ox, mapPt.oy, mapPt.oz);
+        }
         selectCurrentTile(mapPt);
     }
 

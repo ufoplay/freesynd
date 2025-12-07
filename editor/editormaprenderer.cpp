@@ -58,6 +58,24 @@ int EditorMapRenderer::decrMaxZtoDraw() {
     return maxZtoDraw_;
 }
 
+/*!
+ * @brief Set maximum z level to draw to zero
+ * @return the new max level
+ */
+int EditorMapRenderer::setMaxZtoDrawToMin() {
+    maxZtoDraw_ = 0;
+    return maxZtoDraw_;
+}
+
+/*!
+ * @brief Set maximum z level to draw to maxZ
+ * @return the new max level
+ */
+int EditorMapRenderer::setMaxZtoDrawToMax() {
+    maxZtoDraw_ = pMap_->maxZ();
+    return maxZtoDraw_;
+}
+
 /**
  * Draw tiles and map objects.
  */
@@ -109,7 +127,7 @@ void EditorMapRenderer::render(const Point2D &viewport) {
                         continue;
 #endif
                     // draw a tile
-                    if (tile_z < maxZtoDraw_) {
+                    if (tile_z <= maxZtoDraw_) {
                         fs_eng::Tile *pTile = pMap_->getTileAt(tile_x, tile_y, tile_z);
                         if (pTile->notTransparent()) {
                             int dx = 0, dy = 0;
