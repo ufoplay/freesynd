@@ -55,11 +55,10 @@ bool MissionEditorMenu::handleBeforeShow() {
 
     initWorldCoords();
 
-    missionPalette_ = mission_->get_map()->getTileManager()->getPalette();
+    missionPalette_ = mission_->map()->getTileManager()->getPalette();
     g_AnimMgr.setPalette(missionPalette_);
 
-    mapRenderer_.init(mission_);
-    maxZDesc_ = std::format("Z = {}/{}", mission_->get_map()->maxZ(), mission_->get_map()->maxZ());
+    maxZDesc_ = std::format("Z = {}/{}", mission_->map()->maxZ(), mission_->map()->maxZ());
 
     menu_manager_->resetSinceMouseDown();
 
@@ -67,7 +66,7 @@ bool MissionEditorMenu::handleBeforeShow() {
 }
 
 void MissionEditorMenu::handleRender() {
-    mapRenderer_.render(displayOriginPt_);
+    mapRenderer_.render();
     g_System.drawFillRect({0,0}, 129, fs_eng::kScreenHeight, menu_manager_->kMenuColorBlack);
     drawCurrentTileSelector();
 }
@@ -95,7 +94,7 @@ void MissionEditorMenu::initWorldCoords() {
     }
     
     Point2D start;
-    mission_->get_map()->tileToScreenPoint(center, &start);
+    mission_->map()->tileToScreenPoint(center, &start);
     start.x -= (fs_eng::kScreenWidth - 129) / 2;
     start.y -= fs_eng::kScreenHeight / 2;
 
@@ -106,7 +105,7 @@ void MissionEditorMenu::initWorldCoords() {
         start.y = 0;
 
     // Check if the position is within map borders
-    fs_knl::TilePoint mpt = mission_->get_map()->screenToTilePoint(start.x, start.y);
+    fs_knl::TilePoint mpt = mission_->map()->screenToTilePoint(start.x, start.y);
 
     mission_->clipWorldOrigin(mpt);
 
@@ -115,15 +114,9 @@ void MissionEditorMenu::initWorldCoords() {
                                 mpt.ty,
                                 mission_->mmax_z_ + 1, 
                                 0, 0);
-    Point2D msp;
-    mission_->get_map()->tileToScreenPoint(newPoint, &msp);
-    displayOriginPt_.x = msp.x;
-    displayOriginPt_.y = msp.y;
+   
 
-    Point2D mspNew;
-    mission_->get_map()->convertTilepointTo2D(newPoint, mspNew);
-
-    printf(" msp XY(%d, %d), mspNew XY(%d, %d)\n", msp.x, msp.y, mspNew.x, mspNew.y);
+    mapRenderer_.init(mission_, newPoint);
 }
 
 bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
@@ -131,7 +124,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
 
     if (key.keyCode == fs_eng::kKeyCode_Left) { // Scroll the map to the left
          if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
-            if (currentTile_ && currentTilePos_.ty < mission_->get_map()->maxY()) { // move selected tile
+            if (currentTile_ && currentTilePos_.ty < mission_->map()->maxY()) { // move selected tile
                 currentTilePos_.ty++;
                 selectCurrentTile(currentTilePos_);
             }
@@ -149,11 +142,11 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
         }
     } else if (key.keyCode == fs_eng::kKeyCode_Up) { 
         if (g_System.isKeyModStatePressed(fs_eng::KMD_CTRL)) {
-            if (currentTile_ && currentTilePos_.tz < mission_->get_map()->maxZ()) { // select tile above current
+            if (currentTile_ && currentTilePos_.tz < mission_->map()->maxZ()) { // select tile above current
                 currentTilePos_.tz++;
                 selectCurrentTile(currentTilePos_);
             }
-        } if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+        } else if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
             if (currentTile_ && currentTilePos_.tx > 0) { // move selected tile
                 currentTilePos_.tx--;
                 selectCurrentTile(currentTilePos_);
@@ -167,8 +160,8 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
                 currentTilePos_.tz--;
                 selectCurrentTile(currentTilePos_);
             }
-        } if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
-            if (currentTile_ && currentTilePos_.tx < mission_->get_map()->maxX()) { // select tile below current
+        } else if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+            if (currentTile_ && currentTilePos_.tx < mission_->map()->maxX()) { // select tile below current
                 currentTilePos_.tx++;
                 selectCurrentTile(currentTilePos_);
             }
@@ -176,13 +169,13 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
             scroll_.y = kScrollStep;
         }
     } else if (key.keyCode == fs_eng::kKeyCode_PageUp) { // Increase max Z for drawing
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.incrMaxZtoDraw(), mission_->get_map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.incrMaxTztoDraw(), mission_->map()->maxZ());
     } else if (key.keyCode == fs_eng::kKeyCode_PageDown) { // Decrease max Z for drawing
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.decrMaxZtoDraw(), mission_->get_map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.decrMaxTztoDraw(), mission_->map()->maxZ());
     } else if (key.keyCode == fs_eng::kKeyCode_Home) { // Decrease max Z to minimum
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxZtoDrawToMin(), mission_->get_map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxTztoDrawToMin(), mission_->map()->maxZ());
     } else if (key.keyCode == fs_eng::kKeyCode_End) { // Decrease max Z to minimum
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxZtoDrawToMax(), mission_->get_map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxTztoDrawToMax(), mission_->map()->maxZ());
     } else {
         consumed = false;
     }
@@ -210,196 +203,18 @@ int MissionEditorMenu::isMousePositionScrollonY(Point2D point) {
     return 0;
 }
 
-/*!
- * Scroll the map horizontally.
- * Each map has a min and max value for the world origin coords and this
- * method moves that point between those limits. If scrolling hits the
- * map border, the scrolling is made along that border.
- * \return True is a scroll is made
- */
-bool MissionEditorMenu::scrollOnX(Point2D mousePos) {
-    bool change = false;
-
-    int newOriginX = displayOriginPt_.x + scroll_.x;
-
-    fs_knl::TilePoint mpt = mission_->get_map()->screenToTilePoint(newOriginX, displayOriginPt_.y);
-
-    // Scroll to the right
-    if (scroll_.x > 0) {
-        if (mission_->isScrollMinLimitHitOnY(mpt)) {
-            // we hit the upper right border of the map
-            // so we scroll down until the far right corner
-            int newWorldY = displayOriginPt_.y + kScrollStep;
-            newOriginX += kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                // We hit the corner so don't scroll
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMaxLimitHitOnX(mpt)) {
-            // we hit the lower right border of the map
-            // so we scroll up until the far right corner
-            int newWorldY = displayOriginPt_.y - kScrollStep;
-            newOriginX += kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            // This is a regular right scroll
-            displayOriginPt_.x = newOriginX;
-            change = true;
-        }
-
-    } else { // Scroll to the left
-        if (mission_->isScrollMinLimitHitOnX(mpt)) {
-            // we hit the upper left border of the map
-            // so we scroll down until the far left corner
-            int newWorldY = displayOriginPt_.y + kScrollStep;
-            newOriginX -= kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnX(mpt) || mission_->isScrollMaxLimitHitOnY(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMaxLimitHitOnY(mpt)) {
-            // we hit the lower left border of the map
-            // so we scroll up until the far left corner
-            int newWorldY = displayOriginPt_.y - kScrollStep;
-            newOriginX -= kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnX(mpt) || mission_->isScrollMaxLimitHitOnY(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            displayOriginPt_.x = newOriginX;
-            change = true;
-        }
-    }
-
-    if (!isMousePositionScrollonX(mousePos)) {
-        scroll_.x = 0;
-    }
-
-    return change;
-}
-
-/*!
- * Scroll the map vertically.
- * Each map has a min and max value for the world origin coords and this
- * method moves that point between those limits. If scrolling hits the
- * map border, the scrolling is made along that border.
- * \return True is a scroll is made
- */
-bool MissionEditorMenu::scrollOnY(Point2D mousePos) {
-    bool change = false;
-
-    int newWorldY = displayOriginPt_.y + scroll_.y;
-
-    fs_knl::TilePoint mpt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x, newWorldY);
-
-    // Scroll down
-    if (scroll_.y > 0) {
-        if (mission_->isScrollMaxLimitHitOnX(mpt)) {
-            // we hit the lower right border of the map
-            // so we scroll down until the lower corner
-            int newOriginX = displayOriginPt_.x - 2*kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMaxLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMaxLimitHitOnY(mpt)) {
-            // we hit the lower left border of the map
-            // so we scroll down until the lower corner
-            int newOriginX = displayOriginPt_.x + 2*kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMaxLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            displayOriginPt_.y = newWorldY;
-            change = true;
-        }
-
-    } else { // Scroll up
-        if (mission_->isScrollMinLimitHitOnX(mpt)) {
-            // we hit the upper right border of the map
-            // so we scroll up until the upper corner
-            int newOriginX = displayOriginPt_.x + 2*kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMinLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMinLimitHitOnY(mpt)) {
-            // we hit the upper left border of the map
-            // so we scroll up until the upper corner
-            int newOriginX = displayOriginPt_.x - 2*kScrollStep;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMinLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            displayOriginPt_.y = newWorldY;
-            change = true;
-        }
-    }
-
-    if (!isMousePositionScrollonY(mousePos)) {
-        scroll_.y = 0;
-    }
-
-    return change;
-}
-
 bool MissionEditorMenu::handleTick([[maybe_unused]] uint32_t elapsed) {
     Point2D mousePos;
     g_System.getMousePos(mousePos);
     // Scroll the map
     if (scroll_.x != 0) {
-        scrollOnX(mousePos);
+        mapRenderer_.scrollOnX(scroll_.x);
+        scroll_.x = isMousePositionScrollonX(mousePos) * kScrollStep;
     }
 
     if (scroll_.y != 0) {
-        scrollOnY(mousePos);
+        mapRenderer_.scrollOnY(scroll_.y);
+        scroll_.y = isMousePositionScrollonY(mousePos) * kScrollStep;
     }
 
     updateCursorFromTarget(mousePos);
@@ -429,8 +244,9 @@ void MissionEditorMenu::handleClickOnMap(Point2D point, [[maybe_unused]] int but
                                     targetHovered_->position().ox, targetHovered_->position().oy, targetHovered_->position().oz);
         selectCurrentTile(targetHovered_->position());
     } else {
-        fs_knl::TilePoint mapPt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
-                    displayOriginPt_.y + point.y);
+        /*fs_knl::TilePoint mapPt = mission_->map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
+                    displayOriginPt_.y + point.y);*/
+        fs_knl::TilePoint mapPt = mapRenderer_.getTilePointFromMouse(point);
 
         if (mission_->getWalkable(mapPt)) {
             printf("new Tile position %d, %d, %d, %d, %d, %d\n", mapPt.tx, mapPt.ty, mapPt.tz, mapPt.ox, mapPt.oy, mapPt.oz);
@@ -442,7 +258,7 @@ void MissionEditorMenu::handleClickOnMap(Point2D point, [[maybe_unused]] int but
 }
 
 void MissionEditorMenu::selectCurrentTile(const fs_knl::TilePoint &tilePt) {
-    currentTile_ = mission_->get_map()->getTileAt(tilePt);
+    currentTile_ = mission_->map()->getTileAt(tilePt);
 
     currentTilePos_.tx = tilePt.tx;
     currentTilePos_.ty = tilePt.ty;
@@ -458,15 +274,11 @@ void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
         for (size_t i = mission_->getSquad()->size(); mission_ && i < mission_->numPeds(); ++i) {
             fs_knl::PedInstance *p = mission_->ped(i);
             if (p->isAlive() && p->isDrawable()) {
-                Point2D scPt;
-                mission_->get_map()->tileToScreenPoint(p->position(), &scPt);
-                int px = scPt.x - 10;
-                int py = scPt.y - (1 + p->tileZ()) * fs_eng::Tile::kTileHeight/3
-                    - (p->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
-
-                if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
-                    point.x - 129 + displayOriginPt_.x < px + 21 && point.y + displayOriginPt_.y < py + 34)
-                {
+                Point2D topLeftPt = { 10,
+                    (1 + p->tileZ()) * fs_eng::Tile::kTileHeight/3 - 
+                    (p->offZ() * fs_eng::Tile::kTileHeight/3) / 128};
+            
+                if (mapRenderer_.isMouseHovering(point, *p, topLeftPt, {21, 34})) {
                     // mouse pointer is on the object, so it's the new target
                     targetHovered_ = p;
                     break;
@@ -479,14 +291,10 @@ void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
                 fs_knl::Vehicle *v = mission_->vehicle(i);
                 // TrainHead cannot be selected to prevent player from putting agents in it
                 if (v->isAlive() && v->getType() != fs_knl::Vehicle::kVehicleTypeTrainHead) {
-                    Point2D scPt;
-                    mission_->get_map()->tileToScreenPoint(v->position(), &scPt);
-                    int px = scPt.x - 20;
-                    int py = scPt.y - 10 - v->tileZ() * fs_eng::Tile::kTileHeight/3;
-
-                    if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
-                        point.x - 129 + displayOriginPt_.x < px + 40 && point.y + displayOriginPt_.y < py + 32)
-                    {
+                    Point2D topLeftPt = { 20, 10 + v->tileZ() * fs_eng::Tile::kTileHeight/3};
+            
+                    if (mapRenderer_.isMouseHovering(point, *v, topLeftPt, {40, 32})) {
+                        // mouse pointer is on the object, so it's the new target
                         targetHovered_ = v;
                         break;
                     }
@@ -499,15 +307,11 @@ void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
                 fs_knl::WeaponInstance *w = mission_->weaponOnGround(i);
 
                 if (w->isDrawable()) {
-                    Point2D scPt;
-                    mission_->get_map()->tileToScreenPoint(w->position(), &scPt);
-                    int px = scPt.x - 10;
-                    int py = scPt.y + 4 - w->tileZ() * fs_eng::Tile::kTileHeight/3
-                        - (w->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
-
-                    if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
-                        point.x - 129 + displayOriginPt_.x < px + 20 && point.y + displayOriginPt_.y < py + 15)
-                    {
+                    Point2D topLeftPt = { 10, -4 + w->tileZ() * fs_eng::Tile::kTileHeight/3
+                        + (w->offZ() * fs_eng::Tile::kTileHeight/3) / 128};
+            
+                    if (mapRenderer_.isMouseHovering(point, *w, topLeftPt, {20, 15})) {
+                        // mouse pointer is on the object, so it's the new target
                         targetHovered_ = w;
                         break;
                     }
@@ -520,15 +324,11 @@ void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
                 fs_knl::Static *s = mission_->statics(i);
 
                 if (s->isDrawable()) {
-                    Point2D scPt;
-                    mission_->get_map()->tileToScreenPoint(s->position(), &scPt);
-                    int px = scPt.x - 10;
-                    int py = scPt.y + 4 - s->tileZ() * fs_eng::Tile::kTileHeight/3
-                        - (s->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
-
-                    if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
-                        point.x - 129 + displayOriginPt_.x < px + 20 && point.y + displayOriginPt_.y < py + 15)
-                    {
+                    Point2D topLeftPt = { 10, -4 + s->tileZ() * fs_eng::Tile::kTileHeight/3
+                        + (s->offZ() * fs_eng::Tile::kTileHeight/3) / 128};
+            
+                    if (mapRenderer_.isMouseHovering(point, *s, topLeftPt, {20, 15})) {
+                        // mouse pointer is on the object, so it's the new target
                         targetHovered_ = s;
                         break;
                     }
@@ -548,24 +348,7 @@ void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
 
 void MissionEditorMenu::drawCurrentTileSelector() {
     if (currentTile_) {
-        Point2D tileTop;
-        mission_->get_map()->tileToScreenPoint(currentTilePos_, &tileTop);
-        // First draw a contour around the tile on the map to clearly see it
-        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y),
-                            tileTop.add(-displayOriginPt_.x + 129 + fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
-                            menu_manager_->kMenuColorYellow);
-
-        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y),
-                            tileTop.add(-displayOriginPt_.x + 129 - fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
-                            menu_manager_->kMenuColorYellow);
-
-        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight *2),
-                            tileTop.add(-displayOriginPt_.x + 129 + fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
-                            menu_manager_->kMenuColorYellow);
-        
-        g_System.drawLine(tileTop.add(-displayOriginPt_.x + 129, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight *2),
-                            tileTop.add(-displayOriginPt_.x + 129 - fs_eng::Tile::kSubTileWidth, -displayOriginPt_.y + fs_eng::Tile::kSubTileHeight),
-                            menu_manager_->kMenuColorYellow);
+        mapRenderer_.drawTileContour(currentTilePos_, menu_manager_->kMenuColorYellow);
 
         // Draw target information
         gameFont()->drawText(10, 140, targetDesc_, menu_manager_->kMenuColorLightGreen);
@@ -573,7 +356,7 @@ void MissionEditorMenu::drawCurrentTileSelector() {
         gameFont()->drawText(10, 170, targetLocDescOXYZ_, menu_manager_->kMenuColorLightGreen);
         
         // Then draw the tile on the left side to better isolate it
-        mission_->get_map()->getTileManager()->drawTile(currentTile_, 33, 300);
+        mission_->map()->getTileManager()->drawTile(currentTile_, 33, 300);
         gameFont()->drawText(10, 350, tileDesc_, menu_manager_->kMenuColorLightGreen);
         gameFont()->drawText(10, 365, locationDesc_, menu_manager_->kMenuColorLightGreen);
     }

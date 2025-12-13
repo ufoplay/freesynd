@@ -137,15 +137,24 @@ class EditorMapRenderer {
 public:
     EditorMapRenderer() : pool_(10) {}
 
-    void init(fs_knl::Mission *pMission);
+    void init(fs_knl::Mission *pMission, const fs_knl::TilePoint &center);
 
-    void render(const Point2D &worldPos);
+    void render();
+    void drawTileContour(const fs_knl::TilePoint &tilePoint, fs_eng::FSColor color);
 
-    int incrMaxZtoDraw();
+    int incrMaxTztoDraw();
 
-    int decrMaxZtoDraw();
-    int setMaxZtoDrawToMin();
-    int setMaxZtoDrawToMax();
+    int decrMaxTztoDraw();
+    int setMaxTztoDrawToMin();
+    int setMaxTztoDrawToMax();
+
+    //! Scroll the map horizontally.
+    void scrollOnX(int scrollAmount);
+    //! Scroll the map vertically.
+    void scrollOnY(int scrollAmount);
+
+    bool isMouseHovering(const Point2D &mousePt, const fs_knl::MapObject &mapObject, const Point2D &padTopLeft, const Point2D &padBotRight);
+    fs_knl::TilePoint getTilePointFromMouse(const Point2D &mousePt);
 
 private:
     //! The width of the left control panel in Gameplaymenu
@@ -177,8 +186,12 @@ private:
     Pool<ObjectToDraw> pool_;
     /*! This map contains for each tile the list of objects to draw.*/
     std::map<int, ObjectToDraw *> objectsByTile_;
-    //! The highest Z level that the editor renderer can draw
-    int maxZtoDraw_;
+    //! The highest Tz level that the editor renderer can draw
+    int maxTztoDraw_;
+
+    /*! This is a projection in 2D of a point on a the map. This point represents the top
+     * left corner of the screen and it moves inside the map's borders.*/
+    Point2D viewportOriginPt_;
 };
 
 #endif  // EDITOR_MAPRENDERER_H_

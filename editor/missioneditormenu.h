@@ -53,10 +53,6 @@ protected:
     //! Handles the user's click on the map
     void handleClickOnMap(Point2D point, int button);
 
-    //! Scroll the map horizontally.
-    bool scrollOnX(Point2D point);
-    //! Scroll the map vertically.
-    bool scrollOnY(Point2D point);
     int isMousePositionScrollonX(Point2D point);
     int isMousePositionScrollonY(Point2D point);
 
@@ -68,9 +64,6 @@ protected:
 
 protected:
     fs_knl::Mission *mission_;
-    /*! This is a projection in 2D of a point on a the map. This point represents the top
-     * left corner of the screen and it moves inside the map's borders.*/
-    Point2D displayOriginPt_;
     Point2D scroll_;
     /*! This renderer is in charge of drawing the map.*/
     EditorMapRenderer mapRenderer_;
