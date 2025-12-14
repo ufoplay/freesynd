@@ -39,6 +39,8 @@ Map::Map(fs_eng::TileManager * tileManager, uint16_t anId) : tileManager_(tileMa
     id_ = anId;
     a_tiles_ = nullptr;
     assert(tileManager != nullptr);
+    minScrollTile_ = {0, 0};
+    maxScrollTile_ = {0, 0};
 }
 
 Map::~Map()
@@ -73,6 +75,30 @@ void Map::setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles) {
     map_height_ = (max_x_ + max_y_ + max_z_) * fs_eng::Tile::kTileHeight / 3;
     LOG(Log::k_FLG_GFX, "Map", "setTiles",
         ("Map size in pixels: width = %d, height = %d.", map_width_, map_height_));
+}
+
+void Map::setScrollLimits(Point2D minScrollTile, Point2D  maxScrollTile) {
+    LOG(Log::k_FLG_GAME, "Map", "setScrollLimits", ("Min Tx Ty(%d, %d), max Tx Ty(%d, %d)\n", minScrollTile.x, minScrollTile.y, maxScrollTile.x, maxScrollTile.y));
+    minScrollTile_ = minScrollTile;
+    maxScrollTile_ = maxScrollTile;
+}
+
+/*!
+ * @brief 
+ * @param point 
+ */
+void Map::clipToScrollLimits(fs_knl::TilePoint &point) {
+    if (point.tx < minScrollTile_.x)
+        point.tx = minScrollTile_.x;
+    else if (point.tx > maxScrollTile_.x) {
+        point.tx = maxScrollTile_.x;
+    }
+
+    if (point.ty < minScrollTile_.y)
+        point.ty = minScrollTile_.y;
+    else if (point.ty > maxScrollTile_.y) {
+        point.ty = maxScrollTile_.y;
+    }
 }
 
 

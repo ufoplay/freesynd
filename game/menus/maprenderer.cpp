@@ -62,7 +62,7 @@ void MapRenderer::init(fs_knl::Mission *pMission, SquadSelection *pSelection, co
     // Check if the position is within map borders
     fs_knl::TilePoint mpt = pMap_->screenToTilePoint(start.x, start.y);
 
-    pMission_->clipWorldOrigin(mpt);
+    pMap_->clipToScrollLimits(mpt);
 
     // recalculating new screen coords
     fs_knl::TilePoint newPoint(mpt.tx,
@@ -360,28 +360,28 @@ void MapRenderer::scrollOnX(int scrollAmount) {
 
     // Scroll to the right
     if (scrollAmount > 0) {
-        if (pMission_->isScrollMinLimitHitOnY(mpt)) {
+        if (pMap_->isScrollMinLimitHitOnTy(mpt)) {
             // we hit the upper right border of the map
             // so we scroll down until the far right corner
             int newWorldY = viewportOriginPt_.y + scrollAmount;
             newOriginX += scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+            if (pMap_->isScrollMinLimitHitOnTy(mpt) || pMap_->isScrollMaxLimitHitOnTx(mpt)) {
                 // We hit the corner so don't scroll
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;
                 viewportOriginPt_.y = newWorldY;
             }
-        } else if (pMission_->isScrollMaxLimitHitOnX(mpt)) {
+        } else if (pMap_->isScrollMaxLimitHitOnTx(mpt)) {
             // we hit the lower right border of the map
             // so we scroll up until the far right corner
             int newWorldY = viewportOriginPt_.y - scrollAmount;
             newOriginX += scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+            if (pMap_->isScrollMinLimitHitOnTy(mpt) || pMap_->isScrollMaxLimitHitOnTx(mpt)) {
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;
@@ -393,27 +393,27 @@ void MapRenderer::scrollOnX(int scrollAmount) {
         }
 
     } else { // Scroll to the left
-        if (pMission_->isScrollMinLimitHitOnX(mpt)) {
+        if (pMap_->isScrollMinLimitHitOnTx(mpt)) {
             // we hit the west border of the map
             // so we scroll toward south border
             int newWorldY = viewportOriginPt_.y - scrollAmount;
             newOriginX += scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMinLimitHitOnX(mpt) || pMission_->isScrollMaxLimitHitOnY(mpt)) {
+            if (pMap_->isScrollMinLimitHitOnTx(mpt) || pMap_->isScrollMaxLimitHitOnTy(mpt)) {
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;
                 viewportOriginPt_.y = newWorldY;
             }
-        } else if (pMission_->isScrollMaxLimitHitOnY(mpt)) {
+        } else if (pMap_->isScrollMaxLimitHitOnTy(mpt)) {
             // we hit the south border of the map
             // so we scroll towards the west border
             int newWorldY = viewportOriginPt_.y + scrollAmount;
             newOriginX += scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMinLimitHitOnX(mpt) || pMission_->isScrollMaxLimitHitOnY(mpt)) {
+            if (pMap_->isScrollMinLimitHitOnTx(mpt) || pMap_->isScrollMaxLimitHitOnTy(mpt)) {
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;
@@ -438,25 +438,25 @@ void MapRenderer::scrollOnY(int scrollAmount) {
 
     // Scroll down
     if (scrollAmount > 0) {
-        if (pMission_->isScrollMaxLimitHitOnX(mpt)) {
+        if (pMap_->isScrollMaxLimitHitOnTx(mpt)) {
             // we hit the lower right border of the map
             // so we scroll down until the lower corner
             int newOriginX = viewportOriginPt_.x - 2*scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMaxLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+            if (pMap_->isScrollMaxLimitHitOnTy(mpt) || pMap_->isScrollMaxLimitHitOnTx(mpt)) {
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;
                 viewportOriginPt_.y = newWorldY;
             }
-        } else if (pMission_->isScrollMaxLimitHitOnY(mpt)) {
+        } else if (pMap_->isScrollMaxLimitHitOnTy(mpt)) {
             // we hit the lower left border of the map
             // so we scroll down until the lower corner
             int newOriginX = viewportOriginPt_.x + 2*scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMaxLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+            if (pMap_->isScrollMaxLimitHitOnTy(mpt) || pMap_->isScrollMaxLimitHitOnTx(mpt)) {
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;
@@ -467,25 +467,25 @@ void MapRenderer::scrollOnY(int scrollAmount) {
         }
 
     } else { // Scroll up
-        if (pMission_->isScrollMinLimitHitOnX(mpt)) {
+        if (pMap_->isScrollMinLimitHitOnTx(mpt)) {
             // we hit the west border of the map
             // so we scroll towards the south border
             int newOriginX = viewportOriginPt_.x - 2*scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMinLimitHitOnX(mpt)) {
+            if (pMap_->isScrollMinLimitHitOnTy(mpt) || pMap_->isScrollMinLimitHitOnTx(mpt)) {
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;
                 viewportOriginPt_.y = newWorldY;
             }
-        } else if (pMission_->isScrollMinLimitHitOnY(mpt)) {
+        } else if (pMap_->isScrollMinLimitHitOnTy(mpt)) {
             // we hit the upper left border of the map
             // so we scroll up until the upper corner
             int newOriginX = viewportOriginPt_.x + 2*scrollAmount;
             mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
 
-            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMinLimitHitOnX(mpt)) {
+            if (pMap_->isScrollMinLimitHitOnTy(mpt) || pMap_->isScrollMinLimitHitOnTx(mpt)) {
                 return;
             } else {
                 viewportOriginPt_.x = newOriginX;

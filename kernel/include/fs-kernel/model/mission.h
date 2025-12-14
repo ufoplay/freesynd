@@ -148,7 +148,7 @@ public:
     virtual ~Mission();
 
     // Initialize the mission with mapInfos and a map
-    bool init(const LevelData::MapInfos & map_infos, Map *pMap);
+    bool init(Map *pMap);
 
     /**
      * @name Mission life cycle and objectives
@@ -184,42 +184,6 @@ public:
      * Returns the map used for the mission.
      */
     Map * map() { return p_map_; }
-
-    /*!
-     * @brief Compare the given point with the minimum origin for this map
-     * @param point 
-     * @return True is X coordinate of the point is less than min origin
-     */
-    bool isScrollMinLimitHitOnX(const fs_knl::TilePoint &point) {
-        return point.tx < minWorldOrigin_.x;
-    }
-    /*!
-     * @brief Compare the given point with the minimum origin for this map
-     * @param point 
-     * @return True is Y coordinate of the point is less than min origin
-     */
-    bool isScrollMinLimitHitOnY(const fs_knl::TilePoint &point) {
-        return point.ty < minWorldOrigin_.y;
-    }
-    /*!
-     * @brief Compare the given point with the maximum origin for this map
-     * @param point 
-     * @return True is X coordinate of the point is greater than max origin
-     */
-    bool isScrollMaxLimitHitOnX(const fs_knl::TilePoint &point) {
-        return point.tx > maxWorldOrigin_.x;
-    }
-    /*!
-     * @brief Compare the given point with the maximum origin for this map
-     * @param point 
-     * @return True is Y coordinate of the point is greater than max origin
-     */
-    bool isScrollMaxLimitHitOnY(const fs_knl::TilePoint &point) {
-        return point.ty > maxWorldOrigin_.y;
-    }
-
-    //! Check that given point is whithin scroll limit and change if necessary
-    void clipWorldOrigin(fs_knl::TilePoint &point);
 
     //*************************************
     // Map objects
@@ -374,18 +338,6 @@ protected:
      */
     Status status_;
 
-    /*!
-     * This is the coordinate of the point that the world origin used to display
-     * the game cannot cross on the top left.
-     * Its value is given in tile on X and Y axis and it comes from the game file in MapInfo.
-     */
-    Point2D minWorldOrigin_;
-    /*!
-     * This is the coordinate of the point that the world origin used to display
-     * the game cannot cross on the bottom right.
-     * Its value is given in tile on X and Y axis and it comes from the game file in MapInfo.
-     */
-    Point2D maxWorldOrigin_;
     /*!
      * A pointer to the map.
      */

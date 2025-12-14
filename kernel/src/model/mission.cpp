@@ -81,8 +81,6 @@ Mission::Mission() :
     mtsurfaces_ = NULL;
     mdpoints_ = NULL;
     mdpoints_cp_ = NULL;
-    minWorldOrigin_ = {0, 0};
-    maxWorldOrigin_ = {0, 0};
 }
 
 Mission::~Mission()
@@ -115,16 +113,7 @@ Mission::~Mission()
  * @param pMap The map to set.
  * @return True if everything is ok
  */
-bool Mission::init(const LevelData::MapInfos & map_infos, Map *pMap) {
-    minWorldOrigin_ = {
-        fs_utl::READ_LE_UINT16(map_infos.min_x) / 2, 
-        fs_utl::READ_LE_UINT16(map_infos.min_y) / 2};
-    maxWorldOrigin_ = {
-        fs_utl::READ_LE_UINT16(map_infos.max_x) / 2,
-        fs_utl::READ_LE_UINT16(map_infos.max_y) / 2};
-
-    LOG(Log::k_FLG_GAME, "Mission", "init", ("Min XY(%d, %d), max XY(%d, %d)\n", minWorldOrigin_.x, minWorldOrigin_.y, maxWorldOrigin_.x, maxWorldOrigin_.y));
-    
+bool Mission::init(Map *pMap) {
     if (!pMap) {
         FSERR(Log::k_FLG_GAME, "Mission", "init", ("Map is null"));
         return false;
@@ -188,24 +177,6 @@ void Mission::objectiveMsg(std::string& msg) {
         msg = objectives_[cur_objective_]->msg;
     } else {
         msg = "";
-    }
-}
-
-/*!
- * @brief 
- * @param point 
- */
-void Mission::clipWorldOrigin(fs_knl::TilePoint &point) {
-    if (point.tx < minWorldOrigin_.x)
-        point.tx = minWorldOrigin_.x;
-    else if (point.tx > maxWorldOrigin_.x) {
-        point.tx = maxWorldOrigin_.x;
-    }
-
-    if (point.ty < minWorldOrigin_.y)
-        point.ty = minWorldOrigin_.y;
-    else if (point.ty > maxWorldOrigin_.y) {
-        point.ty = maxWorldOrigin_.y;
     }
 }
 

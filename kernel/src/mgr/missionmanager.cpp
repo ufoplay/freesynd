@@ -115,8 +115,7 @@ MissionBriefing *MissionManager::loadBriefing(int n) {
     // Loads the mission to get the minimap
     LevelData::LevelDataAll level_data;
     if (load_level_data(n, level_data)) {
-        uint16_t map_id = fs_utl::READ_LE_UINT16(level_data.mapinfos.map);
-        Map *p_map = mapManager_.getMap(map_id);
+        Map *p_map = mapManager_.getMap(level_data.mapinfos);
         if (p_map == NULL) {
             delete p_mb;
             return NULL;
@@ -332,7 +331,7 @@ void MissionManager::exportMissionData(LevelData::LevelDataAll &level_data, Miss
  * Creates a Mission object from the LevelDataAll structure.
  */
 Mission * MissionManager::create_mission(LevelData::LevelDataAll &level_data) {
-    Map *pMap = mapManager_.getMap(fs_utl::READ_LE_UINT16(level_data.mapinfos.map));
+    Map *pMap = mapManager_.getMap(level_data.mapinfos);
     if (pMap == NULL) {
         return NULL;
     }
@@ -347,7 +346,7 @@ Mission * MissionManager::create_mission(LevelData::LevelDataAll &level_data) {
 
 
     try {
-        if (!p_mission->init(level_data.mapinfos, pMap)) {
+        if (!p_mission->init(pMap)) {
             FSERR(Log::k_FLG_GAME, "MissionManager", "loadMission", ("Failed to load mission : init failed\n"));
             return nullptr;
         }

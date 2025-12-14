@@ -40,9 +40,6 @@ public:
     Map(fs_eng::TileManager *tileManager, uint16_t anId);
     ~Map();
 
-    //! Set the array of tiles in the map
-    void setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles);
-
     /**
      * @name Map attibutes
      */
@@ -56,6 +53,16 @@ public:
     fs_eng::TileManager * getTileManager() { return tileManager_; }
     ///@}
 
+    /**
+     * @name Map initialization
+     */
+    ///@{
+    //! Set the array of tiles in the map
+    void setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles);
+    //! Set the limits for scrolling over the map
+    void setScrollLimits(Point2D minScrollTile, Point2D  maxScrollTile);
+    ///@}
+
     void mapDimensions(int *x, int *y, int *z);
     //! Clip x,y,z to map dimensions
     void adjXYZ(int &x, int &y, int &z);
@@ -63,6 +70,42 @@ public:
     void clip(Point2D *point);
     //! Clip x, y and z to map dimensions.
     void clip(TilePoint *point);
+
+    /*!
+     * @brief Compare the given point with the minimum tile for this map
+     * @param point 
+     * @return True is tx coordinate of the point is less than min tx
+     */
+    bool isScrollMinLimitHitOnTx(const fs_knl::TilePoint &point) {
+        return point.tx < minScrollTile_.x;
+    }
+    /*!
+     * @brief Compare the given point with the minimum tile for this map
+     * @param point 
+     * @return True is ty coordinate of the point is less than min ty
+     */
+    bool isScrollMinLimitHitOnTy(const fs_knl::TilePoint &point) {
+        return point.ty < minScrollTile_.y;
+    }
+    /*!
+     * @brief Compare the given point with the maximum tile for this map
+     * @param point 
+     * @return True is tx coordinate of the point is greater than max Tx
+     */
+    bool isScrollMaxLimitHitOnTx(const fs_knl::TilePoint &point) {
+        return point.tx > maxScrollTile_.x;
+    }
+    /*!
+     * @brief Compare the given point with the maximum tile for this map
+     * @param point 
+     * @return True is ty coordinate of the point is greater than max Ty
+     */
+    bool isScrollMaxLimitHitOnTy(const fs_knl::TilePoint &point) {
+        return point.ty > maxScrollTile_.y;
+    }
+
+    //! Check that given point is whithin scroll limit and change if necessary
+    void clipToScrollLimits(fs_knl::TilePoint &point);
 
     //! Converts a Map tile position to a screen position
     void tileToScreenPoint(const TilePoint &tPt, Point2D *pScp);
@@ -87,6 +130,18 @@ protected:
     fs_eng::Tile **a_tiles_;
     fs_eng::TileManager *tileManager_;
     int map_width_, map_height_;
+    /*!
+     * This is the coordinate of the tile that the game viewport cannot cross on the top left
+     * when scrolling.
+     * Its value is given in tile on X and Y axis and it comes from the game file in MapInfo.
+     */
+    Point2D minScrollTile_;
+    /*!
+     * This is the coordinate of the tile that the game viewport cannot cross on the bottom right
+     * when scrolling.
+     * Its value is given in tile on X and Y axis and it comes from the game file in MapInfo.
+     */
+    Point2D maxScrollTile_;
 };
 
 /*!

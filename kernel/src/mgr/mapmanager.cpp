@@ -47,8 +47,9 @@ MapManager::~MapManager()
  * \param mapNum The map id.
  * \return NULL if map could not be loaded
  */
-Map * MapManager::getMap(uint16_t mapNum)
-{
+Map * MapManager::getMap(const LevelData::MapInfos &mapInfo) {
+    uint16_t mapNum = fs_utl::READ_LE_UINT16(mapInfo.map);
+
     LOG(Log::k_FLG_IO, "MapManager", "getMap", ("get map %i", mapNum));
     // First look in cache
     if (maps_.find(mapNum) != maps_.end()) {
@@ -60,12 +61,12 @@ Map * MapManager::getMap(uint16_t mapNum)
     std::string filename = std::format("map{:02}.dat", mapNum);
     LOG(Log::k_FLG_IO, "MapManager", "getMap", ("Load new map from file %s", filename.c_str()));
     size_t size;
-    uint8 *mapData = fs_utl::File::loadOriginalFile(filename, size);
+    uint8_t *mapData = fs_utl::File::loadOriginalFile(filename, size);
     if (mapData == NULL) {
         return NULL;
     }
 
-    maps_[mapNum] = createMap(mapNum, mapData);
+    maps_[mapNum] = createMap(mapNum, mapData, mapInfo);
     patchMap(mapNum);
 
     delete[] mapData;
@@ -81,7 +82,7 @@ Map * MapManager::getMap(uint16_t mapNum)
  * @param mapData 
  * @return 
  */
-Map * MapManager::createMap(uint16_t mapNum, uint8_t * mapData) {
+Map * MapManager::createMap(uint16_t mapNum, uint8_t * mapData, const LevelData::MapInfos &mapInfo) {
     int maxX = fs_utl::READ_LE_UINT32(mapData + 0);
     int maxY = fs_utl::READ_LE_UINT32(mapData + 4);
     int maxZ = fs_utl::READ_LE_UINT32(mapData + 8);
@@ -117,6 +118,15 @@ Map * MapManager::createMap(uint16_t mapNum, uint8_t * mapData) {
 
     Map *pMap = new Map(pTileManager_, mapNum);
     pMap->setTiles(maxX, maxY, maxZ, tiles);
+
+    Point2D minScrollTile = {
+        fs_utl::READ_LE_UINT16(mapInfo.min_x) / 2, 
+        fs_utl::READ_LE_UINT16(mapInfo.min_y) / 2};
+    Point2D maxScrollTile = {
+        fs_utl::READ_LE_UINT16(mapInfo.max_x) / 2,
+        fs_utl::READ_LE_UINT16(mapInfo.max_y) / 2};
+
+    pMap->setScrollLimits(minScrollTile, maxScrollTile);
 
     delete[] tiles;
 

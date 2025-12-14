@@ -28,6 +28,7 @@
 #include <map>
 #include "fs-utils/common.h"
 #include "fs-kernel/model/map.h"
+#include "fs-kernel/model/leveldata.h"
 
 namespace fs_knl {
 /*!
@@ -39,13 +40,13 @@ public:
     ~MapManager();
 
     //! Load the map with the given id if not in cache
-    Map * getMap(uint16_t mapId);
+    Map * getMap(const LevelData::MapInfos &mapInfo);
     //! Sets the palette for the given mission
     bool loadPalette(int paletteId);
 
 protected:
     //! Create a new Map using the game data
-    Map * createMap(uint16_t mapId, uint8_t * mapData);
+    Map * createMap(uint16_t mapId, uint8_t * mapData, const LevelData::MapInfos &mapInfo);
     //! Use to correct some data after loading the map
     void patchMap(uint16_t mapId);
 
