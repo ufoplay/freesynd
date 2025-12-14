@@ -62,6 +62,8 @@ protected:
 
     void drawCurrentTileSelector();
 
+    void setTileTypeName(fs_eng::Tile::EType tileType);
+
 protected:
     fs_knl::Mission *mission_;
     Point2D scroll_;
@@ -76,6 +78,7 @@ protected:
     fs_eng::Tile  *currentTile_;
 
     std::string tileDesc_;
+    std::string tileTypeDesc_;
     std::string locationDesc_;
     std::string targetDesc_;
     std::string targetLocDescXYZ_;

@@ -63,8 +63,10 @@ void Map::setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles) {
     int size = max_x_ * max_y_ * max_z_;
     a_tiles_ = new fs_eng::Tile*[size];
     
-    for (int i=0; i<size; i++) {
-        a_tiles_[i] = tiles[i];
+    if (tiles != nullptr) {
+        for (int i=0; i<size; i++) {
+            a_tiles_[i] = tiles[i];
+        }
     }
 
     map_width_ = (max_x_ + max_y_) * (fs_eng::Tile::kTileWidth / 2);
@@ -136,8 +138,7 @@ float scaleyPy = 256.0f;
 
 
 void Map::tileToScreenPoint(const TilePoint &tPt, Point2D *pScp) {
-    //tileToScreenPoint(tPt.tx, tPt.ty, tPt.tz, tPt.ox, tPt.oy, pScp);
-    float fx = tPt.tx + tPt.ox / scalexPx;
+    float fx = static_cast<float> (tPt.tx) + tPt.ox / scalexPx;
     float fy = tPt.ty + tPt.oy / scalexPy;
 
     pScp->x = (int) ((max_x_ * fs_eng::Tile::kTileWidth / 2) + (fx - fy) * fs_eng::Tile::kTileWidth / 2

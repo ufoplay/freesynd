@@ -536,8 +536,9 @@ bool EditorMapRenderer::isMouseHovering(const Point2D &mousePt, const fs_knl::Ma
  */
 void EditorMapRenderer::drawTileContour(const fs_knl::TilePoint &tilePoint, fs_eng::FSColor color) {
     Point2D tileTop;
+    
     pMap_->tileToScreenPoint(tilePoint, &tileTop);
-    tileTop = tileTop.add(-viewportOriginPt_.x + kGameplayPanelWidth, -viewportOriginPt_.y - fs_eng::Tile::kSubTileHeight);
+    tileTop = tileTop.add(-viewportOriginPt_.x + kGameplayPanelWidth, -viewportOriginPt_.y - tilePoint.tz * fs_eng::Tile::kSubTileHeight);
     
     g_System.drawLine(tileTop,
                         tileTop.add(fs_eng::Tile::kSubTileWidth, fs_eng::Tile::kSubTileHeight ),
@@ -547,6 +548,15 @@ void EditorMapRenderer::drawTileContour(const fs_knl::TilePoint &tilePoint, fs_e
                         tileTop.add(-fs_eng::Tile::kSubTileWidth, fs_eng::Tile::kSubTileHeight),
                         color);
 
+    g_System.drawLine(tileTop.add(0, fs_eng::Tile::kSubTileHeight*2),
+                        tileTop.add(fs_eng::Tile::kSubTileWidth, fs_eng::Tile::kSubTileHeight),
+                        color);
+    
+    g_System.drawLine(tileTop.add(0, fs_eng::Tile::kSubTileHeight*2),
+                        tileTop.add(-fs_eng::Tile::kSubTileWidth, fs_eng::Tile::kSubTileHeight),
+                        color);
+
+    tileTop = tileTop.add(0, fs_eng::Tile::kSubTileHeight);
     g_System.drawLine(tileTop.add(0, fs_eng::Tile::kSubTileHeight*2),
                         tileTop.add(fs_eng::Tile::kSubTileWidth, fs_eng::Tile::kSubTileHeight),
                         color);

@@ -123,7 +123,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
     bool consumed = true;
 
     if (key.keyCode == fs_eng::kKeyCode_Left) { // Scroll the map to the left
-         if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+         if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
             if (currentTile_ && currentTilePos_.ty < mission_->map()->maxY()) { // move selected tile
                 currentTilePos_.ty++;
                 selectCurrentTile(currentTilePos_);
@@ -132,7 +132,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
             scroll_.x = -kScrollStep;
         }
     } else if (key.keyCode == fs_eng::kKeyCode_Right) { // Scroll the map to the right
-        if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+        if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
             if (currentTile_ && currentTilePos_.ty > 0) { // move selected tile
                 currentTilePos_.ty--;
                 selectCurrentTile(currentTilePos_);
@@ -146,7 +146,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
                 currentTilePos_.tz++;
                 selectCurrentTile(currentTilePos_);
             }
-        } else if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+        } else if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
             if (currentTile_ && currentTilePos_.tx > 0) { // move selected tile
                 currentTilePos_.tx--;
                 selectCurrentTile(currentTilePos_);
@@ -160,7 +160,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
                 currentTilePos_.tz--;
                 selectCurrentTile(currentTilePos_);
             }
-        } else if (g_System.isKeyModStatePressed(fs_eng::KMD_SHIFT)) {
+        } else if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
             if (currentTile_ && currentTilePos_.tx < mission_->map()->maxX()) { // select tile below current
                 currentTilePos_.tx++;
                 selectCurrentTile(currentTilePos_);
@@ -257,6 +257,68 @@ void MissionEditorMenu::handleClickOnMap(Point2D point, [[maybe_unused]] int but
     return;
 }
 
+/*!
+ * @brief Set the selected tile type with a readable name
+ * @param tileType 
+ */
+void MissionEditorMenu::setTileTypeName(fs_eng::Tile::EType tileType) {
+    std::string typeAsStr;
+    switch (tileType) {
+    case fs_eng::Tile::kNone:
+        typeAsStr = "None";
+        break;
+    case fs_eng::Tile::kSlopeSN:
+        typeAsStr = "SlopeSN";
+        break;
+    case fs_eng::Tile::kSlopeNS:
+        typeAsStr = "SlopeNS";
+        break;
+    case fs_eng::Tile::kSlopeEW:
+        typeAsStr = "SlopeEW";
+        break;
+    case fs_eng::Tile::kSlopeWE:
+        typeAsStr = "SlopeWE";
+        break;
+    case fs_eng::Tile::kRoadSideEW:
+        typeAsStr = "RoadSideEW";
+        break;
+    case fs_eng::Tile::kRoadSideWE:
+        typeAsStr = "RoadSideWE";
+        break;
+    case fs_eng::Tile::kRoadSideSN:
+        typeAsStr = "RoadSideSN";
+        break;
+    case fs_eng::Tile::kRoadSideNS:
+        typeAsStr = "RoadSideNS";
+        break;
+    case fs_eng::Tile::kWall:
+        typeAsStr = "Wall";
+        break;
+    case fs_eng::Tile::kRoadCurve:
+        typeAsStr = "RoadCurve";
+        break;
+    case fs_eng::Tile::kHandrailLight:
+        typeAsStr = "HandrailLight";
+        break;
+    case fs_eng::Tile::kRoof:
+        typeAsStr = "Roof";
+        break;
+    case fs_eng::Tile::kRoadPedCross:
+        typeAsStr = "RoadPedCross";
+        break;
+    case fs_eng::Tile::kRoadMark:
+        typeAsStr = "RoadMark";
+        break;
+    case fs_eng::Tile::kUnknown:
+        typeAsStr = "Unknown";
+        break;
+    default:
+        typeAsStr = "Undefined";
+        break;
+    }
+    tileTypeDesc_ = std::format("is {}", typeAsStr);
+}
+
 void MissionEditorMenu::selectCurrentTile(const fs_knl::TilePoint &tilePt) {
     currentTile_ = mission_->map()->getTileAt(tilePt);
 
@@ -265,6 +327,7 @@ void MissionEditorMenu::selectCurrentTile(const fs_knl::TilePoint &tilePt) {
     currentTilePos_.tz = tilePt.tz;
 
     tileDesc_ = std::format("Tile {}", currentTile_->id());
+    setTileTypeName(currentTile_->type());
     locationDesc_ = std::format("At {}, {}, {}", currentTilePos_.tx, currentTilePos_.ty, currentTilePos_.tz);
 }
 
@@ -356,8 +419,9 @@ void MissionEditorMenu::drawCurrentTileSelector() {
         gameFont()->drawText(10, 170, targetLocDescOXYZ_, menu_manager_->kMenuColorLightGreen);
         
         // Then draw the tile on the left side to better isolate it
-        mission_->map()->getTileManager()->drawTile(currentTile_, 33, 300);
-        gameFont()->drawText(10, 350, tileDesc_, menu_manager_->kMenuColorLightGreen);
+        mission_->map()->getTileManager()->drawTile(currentTile_, 33, 285);
+        gameFont()->drawText(10, 335, tileDesc_, menu_manager_->kMenuColorLightGreen);
+        gameFont()->drawText(10, 350, tileTypeDesc_, menu_manager_->kMenuColorLightGreen);
         gameFont()->drawText(10, 365, locationDesc_, menu_manager_->kMenuColorLightGreen);
     }
 
