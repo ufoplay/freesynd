@@ -1247,10 +1247,10 @@ int PedInstance::getSpeedOwnerBoost()
 void PedInstance::adjustAimedPtWithRangeAndAccuracy(Weapon *pWeaponClass, WorldPoint *pAimedLocW) {
     // 1- Adjust Range
     WorldPoint originLocW(pos_);
-    if (originLocW.z > (pMap_->maxZ() - 1) * 128)
+    if (originLocW.z > (pMap_->maxTz() - 1) * 128)
         return;
 
-    if (pAimedLocW->z > (pMap_->maxZ() - 1) * 128)
+    if (pAimedLocW->z > (pMap_->maxTz() - 1) * 128)
         return;
 
     double d = distanceToPosition(*pAimedLocW);

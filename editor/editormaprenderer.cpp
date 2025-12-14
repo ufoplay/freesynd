@@ -39,13 +39,13 @@ const int EditorMapRenderer::kGameplayPanelWidth = 129;
 void EditorMapRenderer::init(fs_knl::Mission *pMission, const fs_knl::TilePoint &center) {
     pMission_ = pMission;
     pMap_ = pMission->map();
-    maxTztoDraw_ = pMap_->maxZ();
+    maxTztoDraw_ = pMap_->maxTz();
 
     pMap_->tileToScreenPoint(center, &viewportOriginPt_);
 }
 
 int EditorMapRenderer::incrMaxTztoDraw() {
-    if (maxTztoDraw_ < pMap_->maxZ()) {
+    if (maxTztoDraw_ < pMap_->maxTz()) {
         maxTztoDraw_++;
     }
 
@@ -70,11 +70,11 @@ int EditorMapRenderer::setMaxTztoDrawToMin() {
 }
 
 /*!
- * @brief Set maximum z level to draw to maxZ
+ * @brief Set maximum z level to draw to maxTz
  * @return the new max level
  */
 int EditorMapRenderer::setMaxTztoDrawToMax() {
-    maxTztoDraw_ = pMap_->maxZ();
+    maxTztoDraw_ = pMap_->maxTz();
     return maxTztoDraw_;
 }
 
@@ -87,7 +87,7 @@ void EditorMapRenderer::render() {
     fs_knl::TilePoint mtp = pMap_->screenToTilePoint(viewportOriginPt_.x, viewportOriginPt_.y);
     int sw = mtp.tx;
     int chk = fs_eng::kScreenWidth / (fs_eng::Tile::kTileWidth / 2) + 2
-        + fs_eng::kScreenHeight / (fs_eng::Tile::kTileHeight / 3) + pMap_->maxZ() * 2;
+        + fs_eng::kScreenHeight / (fs_eng::Tile::kTileHeight / 3) + pMap_->maxTz() * 2;
     int sh = mtp.ty - 8;
 
     int shm = sh + chk;
@@ -102,24 +102,24 @@ void EditorMapRenderer::render() {
     int cmx = viewportOriginPt_.x - kGameplayPanelWidth;
      //  z = 0 - is minimap data and mapdata
     int chky = sh < 0 ? 0 : sh;
-    int zr = shm + pMap_->maxZ() + 1;
+    int zr = shm + pMap_->maxTz() + 1;
     for (int inc = 0; inc < zr; ++inc) {
         int ye = sh + inc;
-        int ys = ye - pMap_->maxZ() - 2;
-        int tile_z = pMap_->maxZ() + 1;  // the Z coord of the next tile to draw
+        int ys = ye - pMap_->maxTz() - 2;
+        int tile_z = pMap_->maxTz() + 1;  // the Z coord of the next tile to draw
         for (int yb = ys; yb < ye; ++yb) {
             if (yb < 0 || yb < sh || yb >= shm) {
                 --tile_z;
                 continue;
             }
             int tile_y = yb;  // The Y coord of the tile to draw
-            for (int tile_x = sw; tile_y >= chky && tile_x < pMap_->maxX(); ++tile_x) {
-                if (tile_x < 0 || tile_y >= pMap_->maxY()) {
+            for (int tile_x = sw; tile_y >= chky && tile_x < pMap_->maxTx(); ++tile_x) {
+                if (tile_x < 0 || tile_y >= pMap_->maxTy()) {
                     --tile_y;
                     continue;
                 }
-                int screen_w = (pMap_->maxX() + (tile_x - tile_y)) * (fs_eng::Tile::kTileWidth / 2);
-                int coord_h = ((pMap_->maxZ() + tile_x + tile_y) - (tile_z - 1)) * (fs_eng::Tile::kTileHeight / 3);
+                int screen_w = (pMap_->maxTx() + (tile_x - tile_y)) * (fs_eng::Tile::kTileWidth / 2);
+                int coord_h = ((pMap_->maxTz() + tile_x + tile_y) - (tile_z - 1)) * (fs_eng::Tile::kTileHeight / 3);
                 if (screen_w >= viewportOriginPt_.x - fs_eng::Tile::kTileWidth * 2
                     && screen_w + fs_eng::Tile::kTileWidth * 2 < cmw
                     && coord_h >= viewportOriginPt_.y - fs_eng::Tile::kTileHeight * 2

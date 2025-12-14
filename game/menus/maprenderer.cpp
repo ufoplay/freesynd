@@ -82,7 +82,7 @@ void MapRenderer::render() {
     fs_knl::TilePoint mtp = pMap_->screenToTilePoint(viewportOriginPt_.x, viewportOriginPt_.y);
     int sw = mtp.tx;
     int chk = fs_eng::kScreenWidth / (fs_eng::Tile::kTileWidth / 2) + 2
-        + fs_eng::kScreenHeight / (fs_eng::Tile::kTileHeight / 3) + pMap_->maxZ() * 2;
+        + fs_eng::kScreenHeight / (fs_eng::Tile::kTileHeight / 3) + pMap_->maxTz() * 2;
     int sh = mtp.ty - 8;
 
     int shm = sh + chk;
@@ -97,24 +97,24 @@ void MapRenderer::render() {
     int cmx = viewportOriginPt_.x - kGameplayPanelWidth;
      //  z = 0 - is minimap data and mapdata
     int chky = sh < 0 ? 0 : sh;
-    int zr = shm + pMap_->maxZ() + 1;
+    int zr = shm + pMap_->maxTz() + 1;
     for (int inc = 0; inc < zr; ++inc) {
         int ye = sh + inc;
-        int ys = ye - pMap_->maxZ() - 2;
-        int tile_z = pMap_->maxZ() + 1;  // the Z coord of the next tile to draw
+        int ys = ye - pMap_->maxTz() - 2;
+        int tile_z = pMap_->maxTz() + 1;  // the Z coord of the next tile to draw
         for (int yb = ys; yb < ye; ++yb) {
             if (yb < 0 || yb < sh || yb >= shm) {
                 --tile_z;
                 continue;
             }
             int tile_y = yb;  // The Y coord of the tile to draw
-            for (int tile_x = sw; tile_y >= chky && tile_x < pMap_->maxX(); ++tile_x) {
-                if (tile_x < 0 || tile_y >= pMap_->maxY()) {
+            for (int tile_x = sw; tile_y >= chky && tile_x < pMap_->maxTx(); ++tile_x) {
+                if (tile_x < 0 || tile_y >= pMap_->maxTy()) {
                     --tile_y;
                     continue;
                 }
-                int screen_w = (pMap_->maxX() + (tile_x - tile_y)) * (fs_eng::Tile::kTileWidth / 2);
-                int coord_h = ((pMap_->maxZ() + tile_x + tile_y) - (tile_z - 1)) * (fs_eng::Tile::kTileHeight / 3);
+                int screen_w = (pMap_->maxTx() + (tile_x - tile_y)) * (fs_eng::Tile::kTileWidth / 2);
+                int coord_h = ((pMap_->maxTz() + tile_x + tile_y) - (tile_z - 1)) * (fs_eng::Tile::kTileHeight / 3);
                 if (screen_w >= viewportOriginPt_.x - fs_eng::Tile::kTileWidth * 2
                     && screen_w + fs_eng::Tile::kTileWidth * 2 < cmw
                     && coord_h >= viewportOriginPt_.y - fs_eng::Tile::kTileHeight * 2
@@ -124,7 +124,7 @@ void MapRenderer::render() {
                         continue;
 #endif
                     // draw a tile
-                    if (tile_z < pMap_->maxZ()) {
+                    if (tile_z < pMap_->maxTz()) {
                         fs_eng::Tile *pTile = pMap_->getTileAt(tile_x, tile_y, tile_z);
                         if (pTile->notTransparent()) {
                             int dx = 0, dy = 0;
@@ -179,8 +179,8 @@ void MapRenderer::listObjectsToDraw(const Point2D &viewport) {
         tiley = 0;
     if (maxtilex >= pMap_->maxX())
         maxtilex = pMap_->maxX();
-    if (maxtiley >= pMap_->maxY())
-        maxtiley = pMap_->maxY();*/
+    if (maxtiley >= pMap_->maxTy())
+        maxtiley = pMap_->maxTy();*/
 
 
     // Include peds

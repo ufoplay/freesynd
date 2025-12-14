@@ -216,7 +216,7 @@ void InstantImpactShot::createImpactAnimation(Mission *pMission, ShootableMapObj
         if (impactAnimId != SFXObject::sfxt_Unknown) {
             auto sfx = std::make_unique<SFXObject>(pMission->map(), impactAnimId);
             sfx->setPosition(impactPosW);
-            sfx->correctZ(pMission->map()->maxZ());
+            sfx->correctZ(pMission->map()->maxTz());
             pMission->addSfxObject(std::move(sfx));
         }
 }
@@ -296,7 +296,7 @@ void Explosion::inflictDamage(Mission *pMission) {
         // draw a explosion ball above each object that was hit
         auto sfx = std::make_unique<SFXObject>(pMission->map(), SFXObject::sfxt_ExplosionBall);
         sfx->setPosition(smo->position());
-        sfx->correctZ(pMission->map()->maxZ());
+        sfx->correctZ(pMission->map()->maxTz());
         pMission->addSfxObject(std::move(sfx));
     }
     // create the ring of fire around the origin of explosion

@@ -58,11 +58,11 @@ Map::~Map()
  * in game file for range checking
  */
 void Map::setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles) {
-    max_x_ = maxX;
-    max_y_ = maxY;
-    max_z_ = maxZ;
+    maxTx_ = maxX;
+    maxTy_ = maxY;
+    maxTz_ = maxZ;
 
-    int size = max_x_ * max_y_ * max_z_;
+    int size = maxTx_ * maxTy_ * maxTz_;
     a_tiles_ = new fs_eng::Tile*[size];
     
     if (tiles != nullptr) {
@@ -70,11 +70,6 @@ void Map::setTiles(int maxX, int maxY, int maxZ, fs_eng::Tile **tiles) {
             a_tiles_[i] = tiles[i];
         }
     }
-
-    map_width_ = (max_x_ + max_y_) * (fs_eng::Tile::kTileWidth / 2);
-    map_height_ = (max_x_ + max_y_ + max_z_) * fs_eng::Tile::kTileHeight / 3;
-    LOG(Log::k_FLG_GFX, "Map", "setTiles",
-        ("Map size in pixels: width = %d, height = %d.", map_width_, map_height_));
 }
 
 void Map::setScrollLimits(Point2D minScrollTile, Point2D  maxScrollTile) {
@@ -104,9 +99,9 @@ void Map::clipToScrollLimits(fs_knl::TilePoint &point) {
 
 void Map::mapDimensions(int *x, int *y, int *z)
 {
-    *x = maxX();
-    *y = maxY();
-    *z = maxZ();
+    *x = maxTx();
+    *y = maxTy();
+    *z = maxTz();
 }
 
 /*!
@@ -117,42 +112,42 @@ void Map::adjXYZ(int &x, int &y, int &z) {
         x = 0;
     if (y < 0)
         y = 0;
-    if (z < 0 || z >= maxZ())
+    if (z < 0 || z >= maxTz())
         z = 0;
-    if (x >= maxX())
-        x = maxX() - 1;
-    if (y >= maxY())
-        y = maxY() - 1;
+    if (x >= maxTx())
+        x = maxTx() - 1;
+    if (y >= maxTy())
+        y = maxTy() - 1;
 }
 
 void Map::clip(Point2D *pPoint) {
     if (pPoint->x < 0) {
         pPoint->x = 0;
-    } else if (pPoint->x >= maxX()) {
-        pPoint->x = maxX();
+    } else if (pPoint->x >= maxTx()) {
+        pPoint->x = maxTx();
     }
 
     if (pPoint->y < 0) {
         pPoint->y = 0;
-    } else if (pPoint->y >= maxY()) {
-        pPoint->y = maxY();
+    } else if (pPoint->y >= maxTy()) {
+        pPoint->y = maxTy();
     }
 }
 
 void Map::clip(TilePoint *pPoint) {
     if (pPoint->tx < 0) {
         pPoint->tx = 0;
-    } else if (pPoint->tx >= maxX()) {
-        pPoint->tx = maxX() - 1;
+    } else if (pPoint->tx >= maxTx()) {
+        pPoint->tx = maxTx() - 1;
     }
 
     if (pPoint->ty < 0) {
         pPoint->ty = 0;
-    } else if (pPoint->ty >= maxY()) {
-        pPoint->ty = maxY() - 1;
+    } else if (pPoint->ty >= maxTy()) {
+        pPoint->ty = maxTy() - 1;
     }
 
-    if (pPoint->tz < 0 || pPoint->tz >= maxZ()) {
+    if (pPoint->tz < 0 || pPoint->tz >= maxTz()) {
         pPoint->tz = 0;
     }
 }
@@ -167,10 +162,10 @@ void Map::tileToScreenPoint(const TilePoint &tPt, Point2D *pScp) {
     float fx = static_cast<float> (tPt.tx) + tPt.ox / scalexPx;
     float fy = tPt.ty + tPt.oy / scalexPy;
 
-    pScp->x = (int) ((max_x_ * fs_eng::Tile::kTileWidth / 2) + (fx - fy) * fs_eng::Tile::kTileWidth / 2
+    pScp->x = (int) ((maxTx_ * fs_eng::Tile::kTileWidth / 2) + (fx - fy) * fs_eng::Tile::kTileWidth / 2
                   + fs_eng::Tile::kTileWidth / 2);
 
-    pScp->y = (int) ((max_z_ + 1) * fs_eng::Tile::kTileHeight / 3 + (fx + fy) * fs_eng::Tile::kTileHeight / 3);
+    pScp->y = (int) ((maxTz_ + 1) * fs_eng::Tile::kTileHeight / 3 + (fx + fy) * fs_eng::Tile::kTileHeight / 3);
 }
 
 /*!
@@ -184,10 +179,10 @@ TilePoint Map::screenToTilePoint(int x, int y)
 {
     TilePoint mtp;
 
-    x -= (max_x_ + 1) * (fs_eng::Tile::kTileWidth / 2);
+    x -= (maxTx_ + 1) * (fs_eng::Tile::kTileWidth / 2);
     // x now equals fx * Tile::kTileWidth / 2 - fy * Tile::kTileWidth / 2
     // which equals Tile::kTileWidth/2 * (fx - fy)
-    y -= (max_z_ + 1) * (fs_eng::Tile::kTileHeight / 3);
+    y -= (maxTz_ + 1) * (fs_eng::Tile::kTileHeight / 3);
     // y now equals (fx + fy) * Tile::kTileHeight / 3
     float dx = (float) x / (fs_eng::Tile::kTileWidth / 2);
     float dy = (float) y / (fs_eng::Tile::kTileHeight / 3);
@@ -207,13 +202,13 @@ TilePoint Map::screenToTilePoint(int x, int y)
 
 int Map::maxZAt(int x, int y)
 {
-    assert(x < max_x_);
-    assert(y < max_y_);
+    assert(x < maxTx_);
+    assert(y < maxTy_);
     /*
-    int idx = y * max_x_ + x;
+    int idx = y * maxTx_ + x;
     int mz = 0;
-    for (int z = 0; z < max_z_; z++) {
-        int tile = map_data_[idx * max_z_ + z];
+    for (int z = 0; z < maxTz_; z++) {
+        int tile = map_data_[idx * maxTz_ + z];
         if (tile > 5) {
             mz = z;
         }
@@ -222,20 +217,20 @@ int Map::maxZAt(int x, int y)
     // TODO: disabling this thing, causes a lot of speed drain
     // find a better for such optimization, not all objects are drawn
     // that is why I disabled it
-    return max_z_ - 1;
+    return maxTz_ - 1;
 }
 
 fs_eng::Tile * Map::getTileAt(int x, int y, int z)
 {
-    if (x < 0 || x >= max_x_ || y < 0 || y >= max_y_) {
+    if (x < 0 || x >= maxTx_ || y < 0 || y >= maxTy_) {
         return tileManager_->getTile(z < 2 ? 6 : 0);
     }
 
-    if (z < 0 || z >= max_z_) {
+    if (z < 0 || z >= maxTz_) {
         return tileManager_->getTile(0);
     }
 
-    return a_tiles_[(y * max_x_ + x) * max_z_ + z];
+    return a_tiles_[(y * maxTx_ + x) * maxTz_ + z];
 }
 
 /*!
@@ -249,22 +244,22 @@ fs_eng::Tile * Map::getTileAt(const TilePoint &tilePt) {
 
 int Map::tileAt(int x, int y, int z)
 {
-    if (x < 0 || x >= max_x_)
+    if (x < 0 || x >= maxTx_)
         return z < 2 ? 6 : 0;
-    if (y < 0 || y >= max_y_)
+    if (y < 0 || y >= maxTy_)
         return z < 2 ? 6 : 0;
-    if (z < 0 || z >= max_z_)
+    if (z < 0 || z >= maxTz_)
         return 0;
 
-    return a_tiles_[(y * max_x_ + x) * max_z_ + z]->id();
+    return a_tiles_[(y * maxTx_ + x) * maxTz_ + z]->id();
 }
 
 void Map::patchMap(int x, int y, int z, uint8_t tileNum)
 {
-    assert((x >= 0 && x < max_x_)
-        && (y >= 0 && y < max_y_)
-        && (z >= 0 && z < max_z_));
-    a_tiles_[(y * max_x_ + x) * max_z_ + z] = tileManager_->getTile(tileNum);
+    assert((x >= 0 && x < maxTx_)
+        && (y >= 0 && y < maxTy_)
+        && (z >= 0 && z < maxTz_));
+    a_tiles_[(y * maxTx_ + x) * maxTz_ + z] = tileManager_->getTile(tileNum);
 }
 
 
@@ -349,8 +344,8 @@ bool MiniMap::init(Map *p_map) {
        0,   0,  0,  0,
     };
 
-    mmax_x_ = p_map->maxX();
-    mmax_y_ = p_map->maxY();
+    mmax_x_ = p_map->maxTx();
+    mmax_y_ = p_map->maxTy();
 
     a_minimap_ = (uint8_t *)( malloc(mmax_x_ * mmax_y_) );
     if(a_minimap_ == NULL) {

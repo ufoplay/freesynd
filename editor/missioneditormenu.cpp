@@ -58,7 +58,7 @@ bool MissionEditorMenu::handleBeforeShow() {
     missionPalette_ = mission_->map()->getTileManager()->getPalette();
     g_AnimMgr.setPalette(missionPalette_);
 
-    maxZDesc_ = std::format("Z = {}/{}", mission_->map()->maxZ(), mission_->map()->maxZ());
+    maxZDesc_ = std::format("Z = {}/{}", mission_->map()->maxTz(), mission_->map()->maxTz());
 
     menu_manager_->resetSinceMouseDown();
 
@@ -124,7 +124,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
 
     if (key.keyCode == fs_eng::kKeyCode_Left) { // Scroll the map to the left
          if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
-            if (currentTile_ && currentTilePos_.ty < mission_->map()->maxY()) { // move selected tile
+            if (currentTile_ && currentTilePos_.ty < mission_->map()->maxTy()) { // move selected tile
                 currentTilePos_.ty++;
                 selectCurrentTile(currentTilePos_);
             }
@@ -142,7 +142,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
         }
     } else if (key.keyCode == fs_eng::kKeyCode_Up) { 
         if (g_System.isKeyModStatePressed(fs_eng::KMD_CTRL)) {
-            if (currentTile_ && currentTilePos_.tz < mission_->map()->maxZ()) { // select tile above current
+            if (currentTile_ && currentTilePos_.tz < mission_->map()->maxTz()) { // select tile above current
                 currentTilePos_.tz++;
                 selectCurrentTile(currentTilePos_);
             }
@@ -161,7 +161,7 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
                 selectCurrentTile(currentTilePos_);
             }
         } else if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
-            if (currentTile_ && currentTilePos_.tx < mission_->map()->maxX()) { // select tile below current
+            if (currentTile_ && currentTilePos_.tx < mission_->map()->maxTx()) { // select tile below current
                 currentTilePos_.tx++;
                 selectCurrentTile(currentTilePos_);
             }
@@ -169,13 +169,13 @@ bool MissionEditorMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
             scroll_.y = kScrollStep;
         }
     } else if (key.keyCode == fs_eng::kKeyCode_PageUp) { // Increase max Z for drawing
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.incrMaxTztoDraw(), mission_->map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.incrMaxTztoDraw(), mission_->map()->maxTz());
     } else if (key.keyCode == fs_eng::kKeyCode_PageDown) { // Decrease max Z for drawing
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.decrMaxTztoDraw(), mission_->map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.decrMaxTztoDraw(), mission_->map()->maxTz());
     } else if (key.keyCode == fs_eng::kKeyCode_Home) { // Decrease max Z to minimum
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxTztoDrawToMin(), mission_->map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxTztoDrawToMin(), mission_->map()->maxTz());
     } else if (key.keyCode == fs_eng::kKeyCode_End) { // Decrease max Z to minimum
-        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxTztoDrawToMax(), mission_->map()->maxZ());
+        maxZDesc_ = std::format("Z = {}/{}", mapRenderer_.setMaxTztoDrawToMax(), mission_->map()->maxTz());
     } else {
         consumed = false;
     }

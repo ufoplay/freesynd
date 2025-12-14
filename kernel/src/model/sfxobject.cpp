@@ -97,8 +97,8 @@ void SFXObject::doUpdateState(uint32_t elapsed) {
         // 250 per sec
         z += ((elapsed + elapsed_left_) >> 2);
         elapsed_left_ = elapsed &3;
-        if (z > (pMap_->maxZ() - 1) * 128)
-            z = (pMap_->maxZ() - 1) * 128;
+        if (z > (pMap_->maxTz() - 1) * 128)
+            z = (pMap_->maxTz() - 1) * 128;
         pos_.tz = z / 128;
         pos_.oz = z % 128;
     }

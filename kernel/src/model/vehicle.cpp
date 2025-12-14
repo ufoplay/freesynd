@@ -474,7 +474,7 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
                 neighbours[TilePoint(p.tx - 1, p.ty, p.tz)] = 0x0020;
         }
 
-        if (wrong_dir != 0x0020 && p.tx < pMap_->maxX()) {
+        if (wrong_dir != 0x0020 && p.tx < pMap_->maxTx()) {
             if (dirWalkable(&p, p.tx + 1, p.ty, p.tz)
                 && ((goodDir & 0x00F0) == 0x0020 || goodDir == 0xFFFF))
                 neighbours[TilePoint(p.tx + 1, p.ty, p.tz)] = 0x6000;
@@ -485,7 +485,7 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
                 && ((goodDir & 0x0F00) == 0x0400 || goodDir == 0xFFFF))
                 neighbours[TilePoint(p.tx, p.ty - 1, p.tz)] = 0x0;
 
-        if (wrong_dir != 0x0000 && p.ty < pMap_->maxY())
+        if (wrong_dir != 0x0000 && p.ty < pMap_->maxTy())
             if (dirWalkable(&p, p.tx, p.ty + 1, p.tz)
                 && ((goodDir & 0x000F) == 0x0 || goodDir == 0xFFFF))
                 neighbours[TilePoint(p.tx, p.ty + 1, p.tz)] = 0x0400;
@@ -583,7 +583,7 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *ba
     // we got somewhere we shouldn't, we need to find somewhere that is walkable
     TilePoint pntile = startPt;
     for (int i = 1; i < 16; i++) {
-        if (pos_.tx + i >= pMap_->maxX())
+        if (pos_.tx + i >= pMap_->maxTx())
             break;
         pntile.tx = pos_.tx + i;
         path2wtile.push_back(pntile);
@@ -643,7 +643,7 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *ba
     path2wtile.clear();
     pntile = startPt;
     for (int i = 1; i < 16; i++) {
-        if (pos_.ty + i >= pMap_->maxY())
+        if (pos_.ty + i >= pMap_->maxTy())
             break;
         pntile.ty = pos_.ty + i;
         path2wtile.push_back(pntile);

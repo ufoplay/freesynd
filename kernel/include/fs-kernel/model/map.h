@@ -45,11 +45,11 @@ public:
      */
     ///@{
     uint16_t id() { return id_; }
-    int maxX() { return max_x_; }
-    int maxY() { return max_y_; }
-    int maxZ() { return max_z_; }
-    int width() { return map_width_; }
-    int height() { return map_height_; }
+    //! Return the maximum tiles on Tx dimension
+    int maxTx() { return maxTx_; }
+    int maxTy() { return maxTy_; }
+    int maxTz() { return maxTz_; }
+
     fs_eng::TileManager * getTileManager() { return tileManager_; }
     ///@}
 
@@ -126,10 +126,10 @@ protected:
     /*!  Every map has a unique ID which is used to identify the
     name of the file containing map data.*/
     uint16_t id_;
-    int max_x_, max_y_, max_z_;
+    //! Maximum tiles for each dimension
+    int maxTx_, maxTy_, maxTz_;
     fs_eng::Tile **a_tiles_;
     fs_eng::TileManager *tileManager_;
-    int map_width_, map_height_;
     /*!
      * This is the coordinate of the tile that the game viewport cannot cross on the top left
      * when scrolling.
