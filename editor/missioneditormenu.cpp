@@ -107,7 +107,7 @@ void MissionEditorMenu::initWorldCoords() {
     // Check if the position is within map borders
     fs_knl::TilePoint mpt = mission_->map()->screenToTilePoint(start.x, start.y);
 
-    mission_->clipWorldOrigin(mpt);
+    mission_->map()->clipToScrollLimits(mpt);
 
     // recalculating new screen coords
     fs_knl::TilePoint newPoint(mpt.tx,

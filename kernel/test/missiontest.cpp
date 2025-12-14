@@ -23,7 +23,22 @@
 #include "fs-kernel/model/ped.h"
 #include "fs-kernel/model/vehicle.h"
 
-void configureMission(fs_knl::Mission &mission) {
+class MemoryTileManager : public fs_eng::TileManager {
+public:
+    MemoryTileManager() : fs_eng::TileManager(){}
+
+    void loadTestTiles() {
+        tiles_[0] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
+        tiles_[1] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
+        tiles_[2] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
+        tiles_[3] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
+        tiles_[4] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
+        tiles_[5] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
+    }
+};
+
+void configureMission(const LevelData::MapInfos &mapInfos, fs_knl::Map *map, fs_knl::Mission &mission) {
+    REQUIRE( mission.init(map) );
     // Define a squad of 2 agents
     fs_knl::PedInstance *agent = new fs_knl::PedInstance(1, nullptr, fs_knl::PedInstance::kPedTypeAgent, true, 128);
     mission.addPed(agent);
@@ -116,13 +131,47 @@ void configureMission(fs_knl::Mission &mission) {
     pVehicle->setPosition(12, 45, 2, 0, 5, 0);
     pVehicle->setStartHealth(10);
     mission.addVehicle(pVehicle);
+
+    mission.setSurfaces();
+}
+
+// Helper function to set a tile as walkable
+void configureMapInfo(LevelData::MapInfos *mapInfos) {
+    fs_utl::WRITE_LE_UINT16(mapInfos->min_x, 10);
+    fs_utl::WRITE_LE_UINT16(mapInfos->min_y, 6);
+    fs_utl::WRITE_LE_UINT16(mapInfos->max_x, 30);
+    fs_utl::WRITE_LE_UINT16(mapInfos->max_y, 20);
+}
+
+// Helper function to set a tile as walkable
+void configureMap(fs_eng::TileManager &tileMgr, fs_knl::Map &map) {
+    // TODO : initialiser le tableau de tiles
+    int nbTiles = 10*8 * 5;
+    fs_eng::Tile **tiles = new fs_eng::Tile*[nbTiles];
+    // initialise with transparent tiles
+    for (int i=0; i<nbTiles; i++) {
+        tiles[i] = tileMgr.getTile(fs_eng::TileManager::kIndexTransparentTile);
+    }
+    map.setTiles(10, 8, 5, tiles);
+
+
+    delete[] tiles;
+    /*int index = x + y * mission.mmax_x_ + z * mission.mmax_m_xy;
+    mission.mdpoints_[index].bfNodeDesc = fs_knl::m_fdWalkable;
+    mission.mtsurfaces_[index] = surface;*/
 }
 
 TEST_CASE( "Mission", "[kernel][mission]" ) {
     LevelData::MapInfos mapInfos;
-    fs_knl::Mission cut(mapInfos, nullptr);
+    configureMapInfo(&mapInfos);
+    MemoryTileManager tileMgr;
+    tileMgr.loadTestTiles();
+    fs_knl::Map map(&tileMgr, 1);
+    configureMap(tileMgr, map);
+
+    fs_knl::Mission cut;
     
-    configureMission(cut);
+    configureMission(mapInfos, &map, cut);
 
     SECTION( "Add/Remove Armed peds") {
         REQUIRE( cut.numArmedPeds() == 0 );
@@ -186,5 +235,28 @@ TEST_CASE( "Mission", "[kernel][mission]" ) {
             REQUIRE( nature == fs_knl::MapObject::kNatureVehicle );
             REQUIRE( searchIndex == 2 );
         }
+    }
+
+    SECTION( "GetWalkable") {
+        // Test 1: Basic flat walkable tile at z=0
+        SECTION( "FlatWalkableTileAtGroundLevel") {
+            //setWalkable(cut, 5, 5, 0, 0); // Flat surface (default case)
+            
+            fs_knl::TilePoint mtp;
+            mtp.tx = 5;
+            mtp.ty = 5;
+            mtp.tz = 4; // Start from top
+            mtp.ox = 128;
+            mtp.oy = 128;
+            
+            //bool result = cut.getWalkable(mtp);
+            
+            //REQUIRE(result);
+            REQUIRE(mtp.tx == 5);
+            REQUIRE(mtp.ty == 5);
+            //REQUIRE(mtp.tz == 0);
+            REQUIRE(mtp.ox == 128);
+            REQUIRE(mtp.oy == 128);
+}
     }
 }
