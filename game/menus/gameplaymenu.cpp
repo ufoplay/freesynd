@@ -44,7 +44,7 @@
 #endif
 
 // The number of pixel of a scroll
-const int SCROLL_STEP = 16;
+const int kScrollStep = 16;
 
 const Point2D GameplayMenu::kMiniMapScreenPos = {0, 46 + 44 + 10 + 46 + 44 + 15 + 2 * 32 + 2};
 
@@ -53,196 +53,21 @@ const Point2D GameplayMenu::kMiniMapScreenPos = {0, 46 + 44 + 10 + 46 + 44 + 15 
 GameplayMenu::GameplayMenu(fs_eng::MenuManager *m) :
 Menu(m, fs_game_menus::kMenuIdGameplay, fs_game_menus::kMenuIdDebrief),
 tick_count_(0), last_animate_tick_(0),
-last_motion_x_(320), last_motion_y_(240), drawHintYellowRect_(false),
+drawHintYellowRect_(false),
 hintTimer_(1200, false), hintColorTimer_(200, false), hintSpaceTimer_(500, false),
 mission_(nullptr), selection_(), target_(nullptr),
 mm_renderer_(kMiniMapScreenPos), warningTimer_(20000)
 {
     cursorOnShow_ = kGameplayCursor;
-    displayOriginPt_.x = 0;
-    displayOriginPt_.y = 0;
-    scroll_x_ = 0;
-    scroll_y_ = 0;
+    scroll_ = {0, 0};
     ipa_chng_.ipa_chng = -1;
     canPlayPoliceWarnSound_ = true;
 }
 
 /*!
- * Scroll the map horizontally.
- * Each map has a min and max value for the world origin coords and this
- * method moves that point between those limits. If scrolling hits the
- * map border, the scrolling is made along that border.
- * \return True is a scroll is made
- */
-bool GameplayMenu::scrollOnX() {
-    bool change = false;
-
-    int newOriginX = displayOriginPt_.x + scroll_x_;
-
-    fs_knl::TilePoint mpt = mission_->get_map()->screenToTilePoint(newOriginX, displayOriginPt_.y);
-
-    // Scroll to the right
-    if (scroll_x_ > 0) {
-        if (mission_->isScrollMinLimitHitOnY(mpt)) {
-            // we hit the upper right border of the map
-            // so we scroll down until the far right corner
-            int newWorldY = displayOriginPt_.y + SCROLL_STEP;
-            newOriginX += SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                // We hit the corner so don't scroll
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMaxLimitHitOnX(mpt)) {
-            // we hit the lower right border of the map
-            // so we scroll up until the far right corner
-            int newWorldY = displayOriginPt_.y - SCROLL_STEP;
-            newOriginX += SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            // This is a regular right scroll
-            displayOriginPt_.x = newOriginX;
-            change = true;
-        }
-
-    } else { // Scroll to the left
-        if (mission_->isScrollMinLimitHitOnX(mpt)) {
-            // we hit the upper left border of the map
-            // so we scroll down until the far left corner
-            int newWorldY = displayOriginPt_.y + SCROLL_STEP;
-            newOriginX -= SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnX(mpt) || mission_->isScrollMaxLimitHitOnY(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMaxLimitHitOnY(mpt)) {
-            // we hit the lower left border of the map
-            // so we scroll up until the far left corner
-            int newWorldY = displayOriginPt_.y - SCROLL_STEP;
-            newOriginX -= SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnX(mpt) || mission_->isScrollMaxLimitHitOnY(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            displayOriginPt_.x = newOriginX;
-            change = true;
-        }
-    }
-
-    return change;
-}
-
-/*!
- * Scroll the map vertically.
- * Each map has a min and max value for the world origin coords and this
- * method moves that point between those limits. If scrolling hits the
- * map border, the scrolling is made along that border.
- * \return True is a scroll is made
- */
-bool GameplayMenu::scrollOnY() {
-    bool change = false;
-
-    int newWorldY = displayOriginPt_.y + scroll_y_;
-
-    fs_knl::TilePoint mpt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x, newWorldY);
-
-    // Scroll down
-    if (scroll_y_ > 0) {
-        if (mission_->isScrollMaxLimitHitOnX(mpt)) {
-            // we hit the lower right border of the map
-            // so we scroll down until the lower corner
-            int newOriginX = displayOriginPt_.x - 2*SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMaxLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMaxLimitHitOnY(mpt)) {
-            // we hit the lower left border of the map
-            // so we scroll down until the lower corner
-            int newOriginX = displayOriginPt_.x + 2*SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMaxLimitHitOnY(mpt) || mission_->isScrollMaxLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            displayOriginPt_.y = newWorldY;
-            change = true;
-        }
-
-    } else { // Scroll up
-        if (mission_->isScrollMinLimitHitOnX(mpt)) {
-            // we hit the upper right border of the map
-            // so we scroll up until the upper corner
-            int newOriginX = displayOriginPt_.x + 2*SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMinLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else if (mission_->isScrollMinLimitHitOnY(mpt)) {
-            // we hit the upper left border of the map
-            // so we scroll up until the upper corner
-            int newOriginX = displayOriginPt_.x - 2*SCROLL_STEP;
-            mpt = mission_->get_map()->screenToTilePoint(newOriginX, newWorldY);
-
-            if (mission_->isScrollMinLimitHitOnY(mpt) || mission_->isScrollMinLimitHitOnX(mpt)) {
-                return false;
-            } else {
-                displayOriginPt_.x = newOriginX;
-                displayOriginPt_.y = newWorldY;
-                change = true;
-            }
-        } else {
-            displayOriginPt_.y = newWorldY;
-            change = true;
-        }
-    }
-
-    return change;
-}
-
-/*!
  * Initialize the screen position centered on the squad leader.
  */
-void GameplayMenu::initWorldCoords()
+void GameplayMenu::initRenderers()
 {
     // get the leader position on the map
     fs_knl::PedInstance *p_leader = selection_.leader();
@@ -250,31 +75,11 @@ void GameplayMenu::initWorldCoords()
                                 p_leader->tileY(),
                                 mission_->mmax_z_ + 1,
                                 0, 0);
-    Point2D start;
-    mission_->get_map()->tileToScreenPoint(leaderPos, &start);
-    start.x -= (fs_eng::kScreenWidth - 129) / 2;
-    start.y -= fs_eng::kScreenHeight / 2;
 
-    if (start.x < 0)
-        start.x = 0;
-
-    if (start.y < 0)
-        start.y = 0;
-
-    // Check if the position is within map borders
-    fs_knl::TilePoint mpt = mission_->get_map()->screenToTilePoint(start.x, start.y);
-
-    mission_->clipWorldOrigin(mpt);
-
-    // recalculating new screen coords
-    fs_knl::TilePoint newPoint(mpt.tx,
-                                mpt.ty,
-                                mission_->mmax_z_ + 1, 
-                                0, 0);
-    Point2D msp;
-    mission_->get_map()->tileToScreenPoint(newPoint, &msp);
-    displayOriginPt_.x = msp.x;
-    displayOriginPt_.y = msp.y;
+    // Init renderers
+    map_renderer_.init(mission_, &selection_, leaderPos);
+    mm_renderer_.init(mission_, mission_->getSquad()->hasScanner(), missionPalette_);
+    centerMinimapOnLeader();
 }
 
 /*!
@@ -289,19 +94,16 @@ bool GameplayMenu::handleBeforeShow() {
 
     // init menu internal state
     isButtonSelectAllPressed_ = false;
-    initWorldCoords();
 
     // set graphic palette
-    missionPalette_ = mission_->get_map()->getTileManager()->getPalette();
+    missionPalette_ = mission_->map()->getTileManager()->getPalette();
     g_SpriteMgr.setPalette(missionPalette_);
 
     highlightLeaderMarker();
     updateMarkersPosition();
 
-    // Init renderers
-    map_renderer_.init(mission_, &selection_);
-    mm_renderer_.init(mission_, mission_->getSquad()->hasScanner(), missionPalette_);
-    centerMinimapOnLeader();
+    initRenderers();
+
     isPlayerShooting_ = false;
 
     // Register event handlers
@@ -322,11 +124,106 @@ bool GameplayMenu::handleBeforeShow() {
 int qanim = 1959, qframe = 0;
 #endif
 
+int GameplayMenu::isMousePositionScrollonX(Point2D point) {
+    if (point.x < 5) {
+        return -1;
+    } else if (point.x > fs_eng::kScreenWidth - 5) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int GameplayMenu::isMousePositionScrollonY(Point2D point) {
+    if (point.y < 5) {
+        return -1;
+    } else if (point.y > fs_eng::kScreenHeight - 5) {
+        return 1;
+    }
+
+    return 0;
+}
+
+/*!
+ * @brief 
+ * @param point 
+ */
+void GameplayMenu::updateCursorFromTarget(const Point2D &point) {
+    bool inrange = false;
+    target_ = nullptr;
+
+    if (point.x > 128) {
+        for (size_t i = mission_->getSquad()->size(); mission_ && i < mission_->numPeds(); ++i) {
+            fs_knl::PedInstance *p = mission_->ped(i);
+            if (p->isAlive() && p->isDrawable()) {
+                Point2D topLeftPt = { 10,
+                    (1 + p->tileZ()) * fs_eng::Tile::kTileHeight/3 - 
+                    (p->offZ() * fs_eng::Tile::kTileHeight/3) / 128};
+
+                if (map_renderer_.isMouseHovering(point, *p, topLeftPt, {21, 34})) {
+                    // mouse pointer is on the object, so it's the new target
+                    target_ = p;
+                    inrange = selection_.isTargetInRange(mission_, target_);
+                    break;
+                }
+            }
+        }
+
+        if (target_ == nullptr) {
+            for (size_t i = 0; mission_ && i < mission_->numVehicles(); ++i) {
+                fs_knl::Vehicle *v = mission_->vehicle(i);
+                // TrainHead cannot be selected to prevent player from putting agents in it
+                if (v->isAlive() && v->getType() != fs_knl::Vehicle::kVehicleTypeTrainHead) {
+                    Point2D topLeftPt = { 20, 10 + v->tileZ() * fs_eng::Tile::kTileHeight/3};
+                
+                    if (map_renderer_.isMouseHovering(point, *v, topLeftPt, {40, 32})) {
+                        target_ = v;
+                        inrange = selection_.isTargetInRange(mission_, target_);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (target_ == nullptr) {
+            for (size_t i = 0; mission_ && i < mission_->numWeaponsOnGround(); ++i) {
+                fs_knl::WeaponInstance *w = mission_->weaponOnGround(i);
+
+                if (w->isDrawable()) {
+                    Point2D topLeftPt = { 10, -4 + w->tileZ() * fs_eng::Tile::kTileHeight/3
+                            + (w->offZ() * fs_eng::Tile::kTileHeight/3) / 128};
+                
+                    if (map_renderer_.isMouseHovering(point, *w, topLeftPt, {20, 15})) {
+                        target_ = w;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (target_) {
+        if (target_->is(fs_knl::MapObject::kNaturePed) ||
+            target_->is(fs_knl::MapObject::kNatureVehicle)) {
+            if (inrange)
+                g_System.useTargetRedCursor();
+            else
+                g_System.useTargetCursor();
+        } else if (target_->is(fs_knl::MapObject::kNatureWeapon)) {
+            g_System.usePickupCursor();
+        }
+    } else if (point.x > 128) {
+            g_System.usePointerCursor();
+    } else {
+            g_System.usePointerYellowCursor();
+    }
+}
+
 bool GameplayMenu::handleTick(uint32_t elapsed)
 {
     if (paused_)
         return true;
-    bool change = false;
+
     tick_count_ += elapsed;
 
     if (mission_->isRunning()) {
@@ -340,15 +237,18 @@ bool GameplayMenu::handleTick(uint32_t elapsed)
         canPlayPoliceWarnSound_ = true;
     }
 
+    Point2D mousePos;
+    g_System.getMousePos(mousePos);
+
     // Scroll the map
-    if (scroll_x_ != 0) {
-        change = scrollOnX();
-        scroll_x_ = 0;
+    if (scroll_.x != 0) {
+        map_renderer_.scrollOnX(scroll_.x);
+        scroll_.x = isMousePositionScrollonX(mousePos) * kScrollStep;
     }
 
-    if (scroll_y_ != 0) {
-        change = scrollOnY();
-        scroll_y_ = 0;
+    if (scroll_.y != 0) {
+        map_renderer_.scrollOnY(scroll_.y);
+        scroll_.y = isMousePositionScrollonY(mousePos) * kScrollStep;
     }
 
     if (tick_count_ - last_animate_tick_ > 33) {
@@ -364,10 +264,8 @@ bool GameplayMenu::handleTick(uint32_t elapsed)
 
     updateIPALevelMeters(elapsed);
 
-    if (change) {
-        // force target to update
-        handleMouseMotion({last_motion_x_, last_motion_y_}, 0);
-    }
+    // If scrolling has happen, then update cursor
+    updateCursorFromTarget(mousePos);
 
     updateMissionHint(elapsed);
 
@@ -375,7 +273,7 @@ bool GameplayMenu::handleTick(uint32_t elapsed)
 }
 
 void GameplayMenu::handleRender() {
-    map_renderer_.render(displayOriginPt_);
+    map_renderer_.render();
     g_System.drawRect({0,0}, 129, fs_eng::kScreenHeight, menu_manager_->kMenuColorBlack);
     agt_sel_renderer_.render(selection_, mission_->getSquad(), missionPalette_);
     drawSelectAllButton();
@@ -460,21 +358,14 @@ void GameplayMenu::handleLeave()
 
     tick_count_ = 0;
     last_animate_tick_ = 0;
-    last_motion_x_ = 320;
-    last_motion_y_ = 240;
-    displayOriginPt_.x = 0;
-    displayOriginPt_.y = 0;
     target_ = NULL;
     mission_ = NULL;
-    scroll_x_ = 0;
-    scroll_y_ = 0;
+    scroll_ = {0, 0};
     paused_ = false;
     ipa_chng_.ipa_chng = -1;
 }
 
 void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t state) {
-    last_motion_x_ = point.x;
-    last_motion_y_ = point.y;
     // locking mouse motion on ipa change until mouseup is recieved
     if (ipa_chng_.ipa_chng != -1 && menu_manager_->isMouseDragged()) {
         fs_knl::PedInstance *p = mission_->ped(ipa_chng_.agent_used);
@@ -499,96 +390,10 @@ void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t st
             ipa_chng_.ipa_chng = -1;
     }
 
-    if (last_motion_x_ < 5) {
-        scroll_x_ = - SCROLL_STEP;
-    } else if (last_motion_x_ > fs_eng::kScreenWidth - 5) {
-        scroll_x_ = SCROLL_STEP;
-    }
+    scroll_.x = isMousePositionScrollonX(point) * kScrollStep;
+    scroll_.y = isMousePositionScrollonY(point) * kScrollStep;
 
-    if (last_motion_y_ < 5) {
-        scroll_y_ = - SCROLL_STEP;
-    } else if (last_motion_y_ > fs_eng::kScreenHeight - 5) {
-        scroll_y_ = SCROLL_STEP;
-    }
-
-    bool inrange = false;
-    target_ = NULL;
-
-    if (point.x > 128) {
-        for (size_t i = mission_->getSquad()->size(); mission_ && i < mission_->numPeds(); ++i) {
-            fs_knl::PedInstance *p = mission_->ped(i);
-            if (p->isAlive() && p->isDrawable()) {
-                Point2D scPt;
-                mission_->get_map()->tileToScreenPoint(p->position(), &scPt);
-                int px = scPt.x - 10;
-                int py = scPt.y - (1 + p->tileZ()) * fs_eng::Tile::kTileHeight/3
-                    - (p->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
-
-                if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
-                    point.x - 129 + displayOriginPt_.x < px + 21 && point.y + displayOriginPt_.y < py + 34)
-                {
-                    // mouse pointer is on the object, so it's the new target
-                    target_ = p;
-                    inrange = selection_.isTargetInRange(mission_, target_);
-                    break;
-                }
-            }
-        }
-
-        for (size_t i = 0; mission_ && i < mission_->numVehicles(); ++i) {
-            fs_knl::Vehicle *v = mission_->vehicle(i);
-            // TrainHead cannot be selected to prevent player from putting agents in it
-            if (v->isAlive() && v->getType() != fs_knl::Vehicle::kVehicleTypeTrainHead) {
-                Point2D scPt;
-                mission_->get_map()->tileToScreenPoint(v->position(), &scPt);
-                int px = scPt.x - 20;
-                int py = scPt.y - 10 - v->tileZ() * fs_eng::Tile::kTileHeight/3;
-
-                if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
-                    point.x - 129 + displayOriginPt_.x < px + 40 && point.y + displayOriginPt_.y < py + 32)
-                {
-                    target_ = v;
-                    inrange = selection_.isTargetInRange(mission_, target_);
-                    break;
-                }
-            }
-        }
-
-        for (size_t i = 0; mission_ && i < mission_->numWeaponsOnGround(); ++i) {
-            fs_knl::WeaponInstance *w = mission_->weaponOnGround(i);
-
-            if (w->isDrawable()) {
-                Point2D scPt;
-                mission_->get_map()->tileToScreenPoint(w->position(), &scPt);
-                int px = scPt.x - 10;
-                int py = scPt.y + 4 - w->tileZ() * fs_eng::Tile::kTileHeight/3
-                    - (w->offZ() * fs_eng::Tile::kTileHeight/3) / 128;
-
-                if (point.x - 129 + displayOriginPt_.x >= px && point.y + displayOriginPt_.y >= py &&
-                    point.x - 129 + displayOriginPt_.x < px + 20 && point.y + displayOriginPt_.y < py + 15)
-                {
-                    target_ = w;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (target_) {
-        if (target_->is(fs_knl::MapObject::kNaturePed) ||
-            target_->is(fs_knl::MapObject::kNatureVehicle)) {
-            if (inrange)
-                g_System.useTargetRedCursor();
-            else
-                g_System.useTargetCursor();
-        } else if (target_->is(fs_knl::MapObject::kNatureWeapon)) {
-            g_System.usePickupCursor();
-        }
-    } else if (point.x > 128) {
-            g_System.usePointerCursor();
-    } else {
-            g_System.usePointerYellowCursor();
-    }
+    updateCursorFromTarget(point);
 
     if (point.x < 129 && isPlayerShooting_) {
         stopShootingEvent();
@@ -597,7 +402,7 @@ void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t st
     if (isPlayerShooting_) {
         // update direction for each shooting player
         fs_knl::WorldPoint aimedAtLocW;
-        if (getAimedAt(point.x, point.y, &aimedAtLocW)) {
+        if (getAimedAt(point, &aimedAtLocW)) {
             for (SquadSelection::Iterator it = selection_.begin(); it != selection_.end(); ++it) {
                 fs_knl::PedInstance *pAgent = *it;
                 if (pAgent->isUsingWeapon()) {
@@ -700,8 +505,8 @@ void GameplayMenu::updateIPALevelMeters(uint32_t elapsed) {
  * @param button The mouse button he clicked
  */
 void GameplayMenu::handleClickOnMap(Point2D point, int button) {
-    fs_knl::TilePoint mapPt = mission_->get_map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
-                    displayOriginPt_.y + point.y);
+    fs_knl::TilePoint mapPt = map_renderer_.getTilePointFromMouse(point);
+
 #ifdef _DEBUG
     if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
         printf("Tile x:%d, y:%d, z:%d, ox:%d, oy:%d\n",
@@ -712,7 +517,7 @@ void GameplayMenu::handleClickOnMap(Point2D point, int button) {
                 target_->id(), target_->natureName());
         }
 
-        int tileid = mission_->get_map()->tileAt(mapPt.tx, mapPt.ty, mapPt.tz);
+        int tileid = mission_->map()->tileAt(mapPt.tx, mapPt.ty, mapPt.tz);
         printf("Tile id %d\n", tileid);
         return;
     }
@@ -739,7 +544,7 @@ void GameplayMenu::handleClickOnMap(Point2D point, int button) {
         }
     } else if (button == kMouseRightButton) {
         fs_knl::WorldPoint aimedAtLocW;
-        if (getAimedAt(point.x, point.y, &aimedAtLocW)) {
+        if (getAimedAt(point, &aimedAtLocW)) {
             isPlayerShooting_ = true;
             selection_.shootAt(aimedAtLocW);
         }
@@ -768,12 +573,11 @@ void GameplayMenu::handleClickOnMinimap(Point2D point) {
  * Set the point on the map the player is aiming at.
  * It depends on whether the player has clicked on a shootable target
  * or a point on the ground.
- * \param x mouse X coord on screen
- * \param y mouse Y coord on screen
- * \param pLocWToSet Finale location
- * \return True if location has been set.
+ * @param point mouse coord on screen
+ * @param pLocWToSet Finale location
+ * @return True if location has been set.
  */
-bool GameplayMenu::getAimedAt(int x, int y, fs_knl::WorldPoint *pLocWToSet) {
+bool GameplayMenu::getAimedAt(const Point2D &point, fs_knl::WorldPoint *pLocWToSet) {
     bool locationSet = false;
 
     if (target_) {
@@ -784,8 +588,7 @@ bool GameplayMenu::getAimedAt(int x, int y, fs_knl::WorldPoint *pLocWToSet) {
         locationSet = true;
     } else {
         // Player is shooting on the ground
-        fs_knl::TilePoint mapLocT = mission_->get_map()->screenToTilePoint(displayOriginPt_.x + x - 129,
-                    displayOriginPt_.y + y);
+        fs_knl::TilePoint mapLocT = map_renderer_.getTilePointFromMouse(point);
         mapLocT.tz = 0;
         if (mission_->getShootableTile(&mapLocT)) {
             locationSet = true;
@@ -885,13 +688,13 @@ bool GameplayMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
     else if (key.keyCode == fs_eng::kKeyCode_4) {
         selectAgent(3, ctrl);
     } else if (key.keyCode == fs_eng::kKeyCode_Left) { // Scroll the map to the left
-        scroll_x_ = -SCROLL_STEP;
+        scroll_.x = -kScrollStep;
     } else if (key.keyCode == fs_eng::kKeyCode_Right) { // Scroll the map to the right
-        scroll_x_ = SCROLL_STEP;
+        scroll_.x = kScrollStep;
     } else if (key.keyCode == fs_eng::kKeyCode_Up) { // Scroll the map to the top
-        scroll_y_ = -SCROLL_STEP;
+        scroll_.y = -kScrollStep;
     } else if (key.keyCode == fs_eng::kKeyCode_Down) { // Scroll the map to the bottom
-        scroll_y_ = SCROLL_STEP;
+        scroll_.y = kScrollStep;
     }
 
 #ifdef _DEBUG

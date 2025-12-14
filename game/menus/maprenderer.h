@@ -138,9 +138,20 @@ class MapRenderer {
 public:
     MapRenderer() : pool_(10) {}
 
-    void init(fs_knl::Mission *pMission, SquadSelection *pSelection);
+    //! Initialize the renderer
+    void init(fs_knl::Mission *pMission, SquadSelection *pSelection, const fs_knl::TilePoint &center);
 
-    void render(const Point2D &worldPos);
+    void render();
+
+    //! Scroll the map horizontally.
+    void scrollOnX(int scrollAmount);
+    //! Scroll the map vertically.
+    void scrollOnY(int scrollAmount);
+
+    //! Return true if the mouse is over given object
+    bool isMouseHovering(const Point2D &mousePt, const fs_knl::MapObject &mapObject, const Point2D &padTopLeft, const Point2D &padBotRight);
+    //! Return the tilepoint under mouse
+    fs_knl::TilePoint getTilePointFromMouse(const Point2D &mousePt);
 
 private:
     //! The width of the left control panel in Gameplaymenu
@@ -173,6 +184,11 @@ private:
     Pool<ObjectToDraw> pool_;
     /*! This map contains for each tile the list of objects to draw.*/
     std::map<int, ObjectToDraw *> objectsByTile_;
+
+    /*! This is a projection in 2D of a point on a the map. This point represents the top
+     * left corner of the game viewport and it moves inside the map's borders.
+     */
+    Point2D viewportOriginPt_;
 };
 
 #endif  // MENUS_MAPRENDERER_H_

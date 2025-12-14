@@ -37,19 +37,49 @@
 
 const int MapRenderer::kGameplayPanelWidth = 129;
 
-void MapRenderer::init(fs_knl::Mission *pMission, SquadSelection *pSelection) {
+/*!
+ * Initialize the renderer. 
+ * @param pMission Pointer to current mission
+ * @param pSelection Pointer to selection
+ * @param center Try to center the viewport on this point
+ */
+void MapRenderer::init(fs_knl::Mission *pMission, SquadSelection *pSelection, const fs_knl::TilePoint &center) {
     pMission_ = pMission;
-    pMap_ = pMission->get_map();
+    pMap_ = pMission->map();
     pSelection_ = pSelection;
+
+    Point2D start;
+    pMission_->get_map()->tileToScreenPoint(center, &start);
+    start.x -= (fs_eng::kScreenWidth - kGameplayPanelWidth) / 2;
+    start.y -= fs_eng::kScreenHeight / 2;
+
+    if (start.x < 0)
+        start.x = 0;
+
+    if (start.y < 0)
+        start.y = 0;
+
+    // Check if the position is within map borders
+    fs_knl::TilePoint mpt = pMap_->screenToTilePoint(start.x, start.y);
+
+    pMission_->clipWorldOrigin(mpt);
+
+    // recalculating new screen coords
+    fs_knl::TilePoint newPoint(mpt.tx,
+                                mpt.ty,
+                                pMission_->mmax_z_ + 1, 
+                                0, 0);
+    
+    pMap_->tileToScreenPoint(newPoint, &viewportOriginPt_);
 }
 
 /**
  * Draw tiles and map objects.
  */
-void MapRenderer::render(const Point2D &viewport) {
+void MapRenderer::render() {
     // TODO: list of bugs to fix in rendering
     //  - Some advert panels lack a corner
-    fs_knl::TilePoint mtp = pMap_->screenToTilePoint(viewport.x, viewport.y);
+    fs_knl::TilePoint mtp = pMap_->screenToTilePoint(viewportOriginPt_.x, viewportOriginPt_.y);
     int sw = mtp.tx;
     int chk = fs_eng::kScreenWidth / (fs_eng::Tile::kTileWidth / 2) + 2
         + fs_eng::kScreenHeight / (fs_eng::Tile::kTileHeight / 3) + pMap_->maxZ() * 2;
@@ -59,12 +89,12 @@ void MapRenderer::render(const Point2D &viewport) {
 
     DEBUG_SPEED_INIT
 
-    listObjectsToDraw(viewport);
+    listObjectsToDraw(viewportOriginPt_);
 
-    int cmw = viewport.x + fs_eng::kScreenWidth -
+    int cmw = viewportOriginPt_.x + fs_eng::kScreenWidth -
                 kGameplayPanelWidth + 128;
-    int cmh = viewport.y + fs_eng::kScreenHeight + 128;
-    int cmx = viewport.x - kGameplayPanelWidth;
+    int cmh = viewportOriginPt_.y + fs_eng::kScreenHeight + 128;
+    int cmx = viewportOriginPt_.x - kGameplayPanelWidth;
      //  z = 0 - is minimap data and mapdata
     int chky = sh < 0 ? 0 : sh;
     int zr = shm + pMap_->maxZ() + 1;
@@ -85,9 +115,9 @@ void MapRenderer::render(const Point2D &viewport) {
                 }
                 int screen_w = (pMap_->maxX() + (tile_x - tile_y)) * (fs_eng::Tile::kTileWidth / 2);
                 int coord_h = ((pMap_->maxZ() + tile_x + tile_y) - (tile_z - 1)) * (fs_eng::Tile::kTileHeight / 3);
-                if (screen_w >= viewport.x - fs_eng::Tile::kTileWidth * 2
+                if (screen_w >= viewportOriginPt_.x - fs_eng::Tile::kTileWidth * 2
                     && screen_w + fs_eng::Tile::kTileWidth * 2 < cmw
-                    && coord_h >= viewport.y - fs_eng::Tile::kTileHeight * 2
+                    && coord_h >= viewportOriginPt_.y - fs_eng::Tile::kTileHeight * 2
                     && coord_h + fs_eng::Tile::kTileHeight * 2 < cmh) {
 #if 0
                     if (z > 2)
@@ -98,12 +128,12 @@ void MapRenderer::render(const Point2D &viewport) {
                         fs_eng::Tile *pTile = pMap_->getTileAt(tile_x, tile_y, tile_z);
                         if (pTile->notTransparent()) {
                             int dx = 0, dy = 0;
-                            if (screen_w - viewport.x < 0)
-                                dx = -(screen_w - viewport.x);
-                            if (coord_h - viewport.y < 0)
-                                dy = -(coord_h - viewport.y);
+                            if (screen_w - viewportOriginPt_.x < 0)
+                                dx = -(screen_w - viewportOriginPt_.x);
+                            if (coord_h - viewportOriginPt_.y < 0)
+                                dy = -(coord_h - viewportOriginPt_.y);
                             if (dx < fs_eng::Tile::kTileWidth && dy < fs_eng::Tile::kTileHeight) {
-                                pMap_->getTileManager()->drawTile(pTile, screen_w - cmx, coord_h - viewport.y);
+                                pMap_->getTileManager()->drawTile(pTile, screen_w - cmx, coord_h - viewportOriginPt_.y);
                             }
                         }
                     }
@@ -112,7 +142,7 @@ void MapRenderer::render(const Point2D &viewport) {
                     if (tile_z - 1 >= 0) {
                         fs_knl::TilePoint currentTile(tile_x, tile_y, tile_z - 1);
                         Point2D screenPos = {screen_w - cmx + fs_eng::Tile::kTileWidth / 2,
-                            coord_h - viewport.y + fs_eng::Tile::kTileHeight / 3 * 2};
+                            coord_h - viewportOriginPt_.y + fs_eng::Tile::kTileHeight / 3 * 2};
 
                         drawObjectsOnTile(currentTile, screenPos);
                     }
@@ -130,7 +160,7 @@ void MapRenderer::render(const Point2D &viewport) {
         fs_eng::FSColor yellow {227, 219, 40, 0xFF};
         for (SquadSelection::Iterator it = pSelection_->begin();
             it != pSelection_->end(); ++it) {
-            (*it)->showPath(viewport.x, viewport.y, yellow);
+            (*it)->showPath(viewportOriginPt_.x, viewportOriginPt_.y, yellow);
         }
     }
 #endif
@@ -203,7 +233,7 @@ void MapRenderer::listObjectsToDraw(const Point2D &viewport) {
  */
 bool MapRenderer::isObjectInsideDrawingArea(fs_knl::MapObject *pObject, const Point2D &viewport) {
     Point2D objectViewport;
-    pMission_->get_map()->tileToScreenPoint(pObject->position(), &objectViewport);
+    pMap_->tileToScreenPoint(pObject->position(), &objectViewport);
 
     // Limits are larger than screen size in order to have a smooth display
     // of appearance/disappearance of objects on screen. Otherwise they popup when
@@ -315,4 +345,181 @@ void MapRenderer::freeUnreleasedResources() {
         }
         objectsByTile_.erase(toErase);
     }
+}
+
+/*!
+ * Scroll the map horizontally.
+ * Each map has a min and max value for the world origin coords and this
+ * method moves that point between those limits. If scrolling hits the
+ * map border, the scrolling is made along that border.
+ */
+void MapRenderer::scrollOnX(int scrollAmount) {
+    int newOriginX = viewportOriginPt_.x + scrollAmount;
+
+    fs_knl::TilePoint mpt = pMap_->screenToTilePoint(newOriginX, viewportOriginPt_.y);
+
+    // Scroll to the right
+    if (scrollAmount > 0) {
+        if (pMission_->isScrollMinLimitHitOnY(mpt)) {
+            // we hit the upper right border of the map
+            // so we scroll down until the far right corner
+            int newWorldY = viewportOriginPt_.y + scrollAmount;
+            newOriginX += scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+                // We hit the corner so don't scroll
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else if (pMission_->isScrollMaxLimitHitOnX(mpt)) {
+            // we hit the lower right border of the map
+            // so we scroll up until the far right corner
+            int newWorldY = viewportOriginPt_.y - scrollAmount;
+            newOriginX += scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else {
+            // This is a regular right scroll
+            viewportOriginPt_.x = newOriginX;
+        }
+
+    } else { // Scroll to the left
+        if (pMission_->isScrollMinLimitHitOnX(mpt)) {
+            // we hit the west border of the map
+            // so we scroll toward south border
+            int newWorldY = viewportOriginPt_.y - scrollAmount;
+            newOriginX += scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMinLimitHitOnX(mpt) || pMission_->isScrollMaxLimitHitOnY(mpt)) {
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else if (pMission_->isScrollMaxLimitHitOnY(mpt)) {
+            // we hit the south border of the map
+            // so we scroll towards the west border
+            int newWorldY = viewportOriginPt_.y + scrollAmount;
+            newOriginX += scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMinLimitHitOnX(mpt) || pMission_->isScrollMaxLimitHitOnY(mpt)) {
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else {
+            viewportOriginPt_.x = newOriginX;
+        }
+    }
+}
+
+/*!
+ * Scroll the map vertically.
+ * Each map has a min and max value for the world origin coords and this
+ * method moves that point between those limits. If scrolling hits the
+ * map border, the scrolling is made along that border.
+ */
+void MapRenderer::scrollOnY(int scrollAmount) {
+    int newWorldY = viewportOriginPt_.y + scrollAmount;
+
+    fs_knl::TilePoint mpt = pMap_->screenToTilePoint(viewportOriginPt_.x, newWorldY);
+
+    // Scroll down
+    if (scrollAmount > 0) {
+        if (pMission_->isScrollMaxLimitHitOnX(mpt)) {
+            // we hit the lower right border of the map
+            // so we scroll down until the lower corner
+            int newOriginX = viewportOriginPt_.x - 2*scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMaxLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else if (pMission_->isScrollMaxLimitHitOnY(mpt)) {
+            // we hit the lower left border of the map
+            // so we scroll down until the lower corner
+            int newOriginX = viewportOriginPt_.x + 2*scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMaxLimitHitOnY(mpt) || pMission_->isScrollMaxLimitHitOnX(mpt)) {
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else {
+            viewportOriginPt_.y = newWorldY;
+        }
+
+    } else { // Scroll up
+        if (pMission_->isScrollMinLimitHitOnX(mpt)) {
+            // we hit the west border of the map
+            // so we scroll towards the south border
+            int newOriginX = viewportOriginPt_.x - 2*scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMinLimitHitOnX(mpt)) {
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else if (pMission_->isScrollMinLimitHitOnY(mpt)) {
+            // we hit the upper left border of the map
+            // so we scroll up until the upper corner
+            int newOriginX = viewportOriginPt_.x + 2*scrollAmount;
+            mpt = pMap_->screenToTilePoint(newOriginX, newWorldY);
+
+            if (pMission_->isScrollMinLimitHitOnY(mpt) || pMission_->isScrollMinLimitHitOnX(mpt)) {
+                return;
+            } else {
+                viewportOriginPt_.x = newOriginX;
+                viewportOriginPt_.y = newWorldY;
+            }
+        } else {
+            viewportOriginPt_.y = newWorldY;
+        }
+    }
+}
+
+fs_knl::TilePoint MapRenderer::getTilePointFromMouse(const Point2D &mousePt) {
+    return pMap_->screenToTilePoint(viewportOriginPt_.x + mousePt.x - kGameplayPanelWidth,
+                    viewportOriginPt_.y + mousePt.y);
+}
+
+/*!
+ * @brief 
+ * @param mousePt 
+ * @param mapObject 
+ * @param padTopLeft 
+ * @param padSize 
+ * @return 
+ */
+bool MapRenderer::isMouseHovering(const Point2D &mousePt, const fs_knl::MapObject &mapObject, const Point2D &padTopLeft, const Point2D &padSize) {
+    Point2D scPt;
+    pMap_->tileToScreenPoint(mapObject.position(), &scPt);
+
+    Point2D topLeftPt = scPt.add(
+                                kGameplayPanelWidth - viewportOriginPt_.x - padTopLeft.x,
+                                -viewportOriginPt_.y - padTopLeft.y);
+    
+    return (mousePt.x >= topLeftPt.x && 
+            mousePt.y >= topLeftPt.y &&
+            mousePt.x < (topLeftPt.x + padSize.x) &&
+            mousePt.y < (topLeftPt.y + padSize.y));
 }

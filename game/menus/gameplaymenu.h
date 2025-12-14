@@ -89,6 +89,8 @@ protected:
     void updateMarkersPosition();
     //! Get the current hint and manage animation
     void updateMissionHint(uint32_t elapsed);
+    //! Change cursor based on what the mouse is pointing at
+    void updateCursorFromTarget(const Point2D &point);
     ///@}
 
     /**
@@ -102,12 +104,12 @@ protected:
     void drawPausePanel();
     ///@}
     
-    //! Scroll the map horizontally.
-    bool scrollOnX();
-    //! Scroll the map vertically.
-    bool scrollOnY();
-    //void improveScroll(int &newScrollX, int &newScrollY);
-    void initWorldCoords();
+    //! Return the value to scroll if mouse is close to border
+    int isMousePositionScrollonX(Point2D point);
+    //! Return the value to scroll if mouse is close to border
+    int isMousePositionScrollonY(Point2D point);
+    //! Initialize MapRenderer and MinimapRenderer
+    void initRenderers();
     //! Selects/deselects an agent
     void selectAgent(size_t agentNo, bool addToGroup);
     //! Selects/deselects all agents
@@ -120,7 +122,7 @@ protected:
     //! updates visual markers for our agents
     void highlightLeaderMarker();
     //! Set pLocWToSet param with point on the map where player clicked to shoot
-    bool getAimedAt(int x, int y, fs_knl::WorldPoint *pLocWToSet);
+    bool getAimedAt(const Point2D &point, fs_knl::WorldPoint *pLocWToSet);
     void stopShootingEvent();
     //! Centers the minimap on the selection leader
     void centerMinimapOnLeader();
@@ -132,7 +134,7 @@ protected:
     static const Point2D kMiniMapScreenPos;
 
     uint32_t tick_count_, last_animate_tick_;
-    int last_motion_x_, last_motion_y_;
+  
     //! Text of the hint to display
     std::string hint_;
     //! Color to draw the hint text
@@ -152,13 +154,8 @@ protected:
 
     fs_knl::Mission *mission_;
 
-    /*! This is a projection in 2D of a point on a the map. This point represents the top
-     * left corner of the screen and it moves inside the map's borders.*/
-    Point2D displayOriginPt_;
-    /*! Holds the amount of scroll on the X axis.*/
-    int scroll_x_;
-    /*! Holds the amount of scroll on the Y axis.*/
-    int scroll_y_;
+    /*! Holds the amount of scroll on the X & Y axis.*/
+    Point2D scroll_;
     /*! Agent selection manager.*/
     SquadSelection selection_;
     /*! Object mouse cursor is above*/
