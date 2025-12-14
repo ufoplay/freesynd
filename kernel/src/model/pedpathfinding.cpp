@@ -62,7 +62,7 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
     }
 
     TilePoint clippedDestPt(destinationPt);
-    m->get_map()->clip(&clippedDestPt);
+    m->map()->clip(&clippedDestPt);
 
     // NOTE: this is a "flood" algorithm, it expands until it reaches other's
     // flood point, then it removes unrelated points

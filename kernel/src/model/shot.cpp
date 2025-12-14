@@ -214,9 +214,9 @@ void InstantImpactShot::createImpactAnimation(Mission *pMission, ShootableMapObj
             dmg_.pWeapon->getClass()->impactAnims()->groundHit);
 
         if (impactAnimId != SFXObject::sfxt_Unknown) {
-            auto sfx = std::make_unique<SFXObject>(pMission->get_map(), impactAnimId);
+            auto sfx = std::make_unique<SFXObject>(pMission->map(), impactAnimId);
             sfx->setPosition(impactPosW);
-            sfx->correctZ(pMission->get_map()->maxZ());
+            sfx->correctZ(pMission->map()->maxZ());
             pMission->addSfxObject(std::move(sfx));
         }
 }
@@ -294,9 +294,9 @@ void Explosion::inflictDamage(Mission *pMission) {
             updateStat = false;
         }
         // draw a explosion ball above each object that was hit
-        auto sfx = std::make_unique<SFXObject>(pMission->get_map(), SFXObject::sfxt_ExplosionBall);
+        auto sfx = std::make_unique<SFXObject>(pMission->map(), SFXObject::sfxt_ExplosionBall);
         sfx->setPosition(smo->position());
-        sfx->correctZ(pMission->get_map()->maxZ());
+        sfx->correctZ(pMission->map()->maxZ());
         pMission->addSfxObject(std::move(sfx));
     }
     // create the ring of fire around the origin of explosion
@@ -337,7 +337,7 @@ void Explosion::generateFlameWaves(Mission *pMission, WorldPoint *pOrigin, doubl
 
             uint8 block_mask = pMission->checkBlockedByTile(*pOrigin, &flamePosW, true, dmg_rng);
             if (block_mask != 32) {
-                auto sfx = std::make_unique<SFXObject>(pMission->get_map(),
+                auto sfx = std::make_unique<SFXObject>(pMission->map(),
                                                         rngDmgAnim_, true, 100 * (rand() % 16));
                 sfx->setPosition(flamePosW);
                 pMission->addSfxObject(std::move(sfx));
@@ -596,7 +596,7 @@ void GaussGunShot::drawTrace(Mission *pMission) {
                 if (t.z > (pMission->mmax_z_ - 1) * 128)
                     t.z = (pMission->mmax_z_ - 1) * 128;
 
-                auto sfx = std::make_unique<SFXObject>(pMission->get_map(), 
+                auto sfx = std::make_unique<SFXObject>(pMission->map(), 
                                 dmg_.pWeapon->getClass()->impactAnims()->trace_anim);
                 sfx->setPosition(t);
                 pMission->addSfxObject(std::move(sfx));
@@ -609,7 +609,7 @@ FlamerShot::FlamerShot(Mission *pMission, const DamageToInflict &dmg) :
         ProjectileShot(dmg) {
     // We create a SFXObjet
     auto sfx = std::make_unique<SFXObject>(
-        pMission->get_map(),
+        pMission->map(),
         dmg_.pWeapon->getClass()->impactAnims()->trace_anim
     );
 

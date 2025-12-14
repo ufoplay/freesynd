@@ -362,7 +362,7 @@ Mission * MissionManager::create_mission(LevelData::LevelDataAll &level_data) {
             LevelData::Statics & sref = level_data.statics[i];
             if(sref.desc == 0)
                 continue;
-            auto s = Static::loadInstance((uint8_t *) & sref, i, p_mission->get_map());
+            auto s = Static::loadInstance((uint8_t *) & sref, i, p_mission->map());
             if (s) {
                 p_mission->addStatic(std::unique_ptr<Static>(s));
             }
@@ -394,14 +394,14 @@ Mission * MissionManager::create_mission(LevelData::LevelDataAll &level_data) {
 
         // adding visual markers(arrow + 1,2,3,4) above our agents
         // availiable/selected on screen
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_SelArrow, false));
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_SelArrow, false));
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_SelArrow, false));
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_SelArrow, false));
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_AgentFirst));
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_AgentSecond));
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_AgentThird));
-        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->get_map(), SFXObject::sfxt_AgentFourth));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_SelArrow, false));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_SelArrow, false));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_SelArrow, false));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_SelArrow, false));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_AgentFirst));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_AgentSecond));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_AgentThird));
+        p_mission->addSfxObject(std::make_unique<SFXObject>(p_mission->map(), SFXObject::sfxt_AgentFourth));
 
         LOG(Log::k_FLG_GAME, "MissionManager", "create_mission", ("End of Mission creation"));
         return p_mission;
@@ -420,7 +420,7 @@ void MissionManager::createWeapons(const LevelData::LevelDataAll &level_data, Da
         const LevelData::Weapons & wref = level_data.weapons[i];
         if(wref.desc == 0)
             continue;
-        WeaponInstance *w = create_weapon_instance(wref, pMission->get_map());
+        WeaponInstance *w = create_weapon_instance(wref, pMission->map());
         if (w) {
             if (wref.desc == 0x05) {
                 uint16_t offset_owner = fs_utl::READ_LE_UINT16(wref.offset_owner);
@@ -521,7 +521,7 @@ void MissionManager::createVehicles(const LevelData::LevelDataAll &level_data, D
         if (car.type == 0x0)
             continue;
         Vehicle *v =
-            createVehicleInstance(car, i, pMission->get_map());
+            createVehicleInstance(car, i, pMission->map());
         if (v) {
             di.vindx[i] = pMission->numVehicles();
             pMission->addVehicle(v);
@@ -649,7 +649,7 @@ void MissionManager::createPeds(const LevelData::LevelDataAll &level_data, DataI
         const LevelData::People & pedref = level_data.people[i];
 
         PedInstance *p =
-            peds.loadInstance(pedref, i, pMission->get_map(), PedInstance::kPlayerGroupId);
+            peds.loadInstance(pedref, i, pMission->map(), PedInstance::kPlayerGroupId);
         if (p) {
             di.pindx[i] = pMission->numPeds();
             pMission->addPed(p);

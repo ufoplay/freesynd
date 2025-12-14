@@ -49,7 +49,7 @@ void MapRenderer::init(fs_knl::Mission *pMission, SquadSelection *pSelection, co
     pSelection_ = pSelection;
 
     Point2D start;
-    pMission_->get_map()->tileToScreenPoint(center, &start);
+    pMap_->tileToScreenPoint(center, &start);
     start.x -= (fs_eng::kScreenWidth - kGameplayPanelWidth) / 2;
     start.y -= fs_eng::kScreenHeight / 2;
 

@@ -180,16 +180,10 @@ public:
     //*************************************
     // Map
     //*************************************
-    [[deprecated("Use map() instead")]]
-    Map * get_map() {return p_map_; }
-
     /*!
      * Returns the map used for the mission.
      */
     Map * map() { return p_map_; }
-
-    [[deprecated("Use Map::id() instead")]]
-    uint16_t mapId() { return p_map_->id(); }
 
     /*!
      * @brief Compare the given point with the minimum origin for this map
