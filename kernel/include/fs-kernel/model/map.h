@@ -46,9 +46,9 @@ public:
     ///@{
     uint16_t id() { return id_; }
     //! Return the maximum tiles on Tx dimension
-    int maxTx() { return maxTx_; }
-    int maxTy() { return maxTy_; }
-    int maxTz() { return maxTz_; }
+    int maxTx() const { return maxTx_; }
+    int maxTy() const { return maxTy_; }
+    int maxTz() const { return maxTz_; }
 
     fs_eng::TileManager * getTileManager() { return tileManager_; }
     ///@}
@@ -70,6 +70,10 @@ public:
     void clip(Point2D *point);
     //! Clip x, y and z to map dimensions.
     void clip(TilePoint *point);
+    //!
+    bool isWithinMapBounds(const TilePoint &point) const;
+    //!
+    TilePoint projectToZLevel(const TilePoint &point, int targetZ);
 
     /*!
      * @brief Compare the given point with the minimum tile for this map

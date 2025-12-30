@@ -111,6 +111,18 @@ public:
         return a < b;
     }
 
+    // Returns an invalid tile point (used to indicate failure)
+    static TilePoint invalid() {
+        TilePoint p;
+        p.tx = -1;
+        return p;
+    }
+    
+    // Check if this tile point is valid
+    bool isValid() const {
+        return tx >= 0;
+    }
+
     void toString(std::string *buffer) const {
         std::ostringstream out;
 

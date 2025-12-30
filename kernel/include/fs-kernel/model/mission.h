@@ -147,8 +147,25 @@ public:
     Mission();
     virtual ~Mission();
 
-    // Initialize the mission with mapInfos and a map
+    //! Initialize the mission with mapInfos and a map
     bool init(Map *pMap);
+
+    /**
+     * @name Mission attibutes
+     */
+    ///@{
+    /*!
+     * Returns the map used for the mission.
+     */
+    Map * map() { return p_map_; }
+
+    //! Return the minimap for this mission
+    MiniMap * getMiniMap() { return p_minimap_; }
+    /*!
+     * Returns the current squad.
+     */
+    Squad * getSquad() const { return squad_.get(); }
+    ///@}
 
     /**
      * @name Mission life cycle and objectives
@@ -176,14 +193,6 @@ public:
     void checkObjectives();
     void objectiveMsg(std::string& msg);
     ///@}
-
-    //*************************************
-    // Map
-    //*************************************
-    /*!
-     * Returns the map used for the mission.
-     */
-    Map * map() { return p_map_; }
 
     //*************************************
     // Map objects
@@ -250,7 +259,20 @@ public:
 
     bool setSurfaces();
     void clrSurfaces();
-    bool getWalkable(TilePoint &mtp);
+    bool findWalkableTileFromBase(TilePoint &mtp);
+    TilePoint adjustPositionForSurface(const TilePoint &point, int tileIndex);
+    TilePoint adjustForSlopeSN(const TilePoint &point, int tileIndex);
+    TilePoint adjustForSlopeNS(const TilePoint &point, int tileIndex);
+    TilePoint adjustForSlopeEW(const TilePoint &point, int tileIndex);
+    TilePoint adjustForSlopeWE(const TilePoint &point, int tileIndex);
+    TilePoint tryProjectOntoLowerSlope(const TilePoint &point);
+    TilePoint projectOntoSlopeSN(const TilePoint &point, int lowerZ);
+    TilePoint projectOntoSlopeNS(const TilePoint &point, int lowerZ);
+    TilePoint projectOntoSlopeEW(const TilePoint &point, int lowerZ);
+    TilePoint projectOntoSlopeWE(const TilePoint &point, int lowerZ);
+    TilePoint tryAdjacentTile(const TilePoint &point, int deltaX, int deltaY,
+                             int newOffsetX, int newOffsetY, 
+                             uint8_t expectedSurfaceType);
     bool getWalkableClosestByZ(TilePoint &mtp);
     bool getShootableTile(TilePoint *pLocT);
     bool isTileSolid(int x, int y, int z, int ox, int oy, int oz);
@@ -282,17 +304,13 @@ public:
     // initialized in setSurfaces, used for in-class calculations
     int mmax_m_xy;
 
-    MiniMap * getMiniMap() { return p_minimap_; }
-    /*!
-     * Returns the current squad.
-     */
-    Squad * getSquad() const { return squad_.get(); }
-
 protected:
     SurfaceType surfaceAt(int x, int y, int z) const;
     bool sWalkable(uint8_t thisTile, uint8_t upperTile);
     bool isSurface(uint8_t thisTile);
     bool isStairs(uint8_t thisTile);
+    int getTileIndex(const TilePoint &point) const;
+    bool isTileWalkable(int tileIndex) const;
 
     //! Selects the two best-ranked weapons from a list.
     std::pair<int, int> findTopTwoWeapons(const std::vector<Weapon*>& weapons);

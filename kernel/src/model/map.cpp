@@ -152,6 +152,37 @@ void Map::clip(TilePoint *pPoint) {
     }
 }
 
+/**
+ * Checks if a tile point is within the map boundaries.
+ * @return true if point is within boundaries
+ */
+bool Map::isWithinMapBounds(const TilePoint &point) const {
+    return point.tz >= 0 && point.tz < maxTz() &&
+           point.tx >= 0 && point.tx < maxTx() &&
+           point.ty >= 0 && point.ty < maxTy();
+}
+
+/**
+ * Projects a tile point to a specific Z level using isometric transformation.
+ * Each Z level shifts position by half a tile (128 units) in both X and Y.
+ */
+TilePoint Map::projectToZLevel(const TilePoint &point, int targetZ) {
+    TilePoint result;
+    
+    // Convert to continuous coordinates with isometric Z offset
+    int worldX = point.tx * 256 + point.ox + 128 * (targetZ - 1);
+    int worldY = point.ty * 256 + point.oy + 128 * (targetZ - 1);
+    
+    // Convert back to tile + offset coordinates
+    result.tx = worldX / 256;
+    result.ox = worldX % 256;
+    result.ty = worldY / 256;
+    result.oy = worldY % 256;
+    result.tz = targetZ;
+    
+    return result;
+}
+
 float scalexPx = 256.0f;
 float scalexPy = 256.0f;
 float scaleyPx = 256.0f;

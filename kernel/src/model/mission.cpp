@@ -2313,196 +2313,253 @@ void Mission::clrSurfaces() {
     }
 }
 
-/*!
- * Uses isometric coordinates transformation to find walkable tile,
- * starting from top.
- * \param mtp
- * \return True if walkable tile found
- */
-bool Mission::getWalkable(TilePoint &mtp) {
-    bool gotit = false;
-    int bx, by, box, boy;
-    int bz = mmax_z_;
-    unsigned int cindx;
-    uint8_t walkData;
-    do {
-        bz--;
-        // using lowered Z, at start postion is at top of tile not at bottom
-        bx = mtp.tx * 256 + mtp.ox + 128 * (bz - 1);
-        box = bx % 256;
-        bx = bx / 256;
-        by = mtp.ty * 256 + mtp.oy + 128 * (bz - 1);
-        boy = by % 256;
-        by = by / 256;
-        if (bz >= mmax_z_ || bx >= mmax_x_ || by >= mmax_y_)
-            continue;
-        if (bz < 0 || bx < 0 || by < 0)
-            break;
-        cindx = bx + by * mmax_x_ + bz * mmax_m_xy;
-        if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable) {
-            walkData = mtsurfaces_[cindx];
-            int dx = 0;
-            int dy = 0;
-            switch (walkData) {
-                case fs_eng::Tile::kSlopeSN :
-                    dy = ((boy + 128) * 2) / 3;
-                    dx = box + 128 - dy / 2;
-                    if (dx < 256) {
-                        gotit = true;
-                        box = dx;
-                        boy = dy;
-                    } else {
-                        if ((bx + 1) < mmax_x_) {
-                            cindx = (bx + 1) + by * mmax_x_ + bz * mmax_m_xy;
-                            if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable
-                                && mtsurfaces_[cindx] == 0x01)
-                            {
-                                gotit = true;
-                                bx++;
-                                box = dx - 256;
-                                boy = dy;
-                            }
-                        }
-                    }
-                    break;
-                case fs_eng::Tile::kSlopeNS:
-                    if (boy < 128) {
-                        dy = boy * 2;
-                        dx = box + boy;
-                        if (dx < 256) {
-                            gotit = true;
-                            box = dx;
-                            boy = dy;
-                        } else {
-                            if ((bx + 1) < mmax_x_) {
-                                cindx = (bx + 1) + by * mmax_x_ + bz * mmax_m_xy;
-                                if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable
-                                    && mtsurfaces_[cindx] == 0x02)
-                                {
-                                    gotit = true;
-                                    bx++;
-                                    box = dx - 256;
-                                    boy = dy;
-                                }
-                            }
-                        }
-                    } else {
-                        // TODO : add check 0x01?
-                    }
-                    break;
-                case fs_eng::Tile::kSlopeEW:
-                    if (box < 128) {
-                        dx = box * 2;
-                        dy = box + boy;
-                        if (dy < 256) {
-                            gotit = true;
-                            box = dx;
-                            boy = dy;
-                        } else {
-                            if ((by + 1) < mmax_y_) {
-                                cindx = bx + (by + 1) * mmax_x_ + bz * mmax_m_xy;
-                                if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable
-                                    && mtsurfaces_[cindx] == 0x03)
-                                {
-                                    gotit = true;
-                                    by++;
-                                    box = dx;
-                                    boy = dy - 256;
-                                }
-                            }
-                        }
-                    } else {
-                        // TODO : 0x04?
-                    }
-                    break;
-                case fs_eng::Tile::kSlopeWE:
-                    dx = ((box + 128) * 2) / 3;
-                    dy = boy + 128 - dx / 2;
-                    if (dy < 256) {
-                        gotit = true;
-                        box = dx;
-                        boy = dy;
-                    } else {
-                        if ((by + 1) < mmax_y_) {
-                            cindx = bx + (by + 1) * mmax_x_ + bz * mmax_m_xy;
-                            if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable
-                                && mtsurfaces_[cindx] == 0x04)
-                            {
-                                gotit = true;
-                                by++;
-                                box = dx;
-                                boy = dy - 256;
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    gotit = true;
-                    // TODO: 0x01 0x02 0x03 0x04?
-                break;
+bool Mission::findWalkableTileFromBase(TilePoint &basePt) {
+    for (int z = mmax_z_ - 1; z >= 0; z--) {
+        TilePoint candidate = p_map_->projectToZLevel(basePt, z);
+        
+        if (!p_map_->isWithinMapBounds(candidate)) {
+            if (candidate.tz < 0 || candidate.tx < 0 || candidate.ty < 0) {
+                break; // Out of bounds below/behind, stop searching
             }
-        } else if (bz - 1 >= 0) {
-            cindx = bx + by * mmax_x_ + (bz - 1) * mmax_m_xy;
-            if ((mdpoints_[cindx].bfNodeDesc & m_fdWalkable) == m_fdWalkable) {
-                walkData = mtsurfaces_[cindx];
-                int dx = 0;
-                int dy = 0;
-                switch (walkData) {
-                    case 0x01:
-                        dy = (boy * 2) / 3;
-                        dx = box - dy / 2;
-                        if (dx >= 0) {
-                            gotit = true;
-                            box = dx;
-                            boy = dy;
-                            bz--;
-                        }
-                        break;
-                    case 0x02:
-                        dy = (boy - 128) * 2;
-                        dx = (box + dy / 2) - 128;
-                        if (dy >= 0 && dx >= 0 && dx < 256) {
-                            gotit = true;
-                            box = dx;
-                            boy = dy;
-                            bz--;
-                        }
-                        break;
-                    case 0x03:
-                        dx = (box - 128) * 2;
-                        dy = (boy + dx / 2) - 128;
-                        if (dx >= 0 && dy >= 0 && dy < 256) {
-                            gotit = true;
-                            box = dx;
-                            boy = dy;
-                            bz--;
-                        }
-                        break;
-                    case 0x04:
-                        dx = (box * 2) / 3;
-                        dy = boy - dx / 2;
-                        if (dy >= 0) {
-                            gotit = true;
-                            box = dx;
-                            boy = dy;
-                            bz--;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-
+            continue; // Out of bounds above/ahead, try next Z level
+        }
+        
+        int tileIndex = getTileIndex(candidate);
+        
+        // Try to find walkable position at current Z level
+        if (isTileWalkable(tileIndex)) {
+            TilePoint adjusted = adjustPositionForSurface(candidate, tileIndex);
+            if (adjusted.isValid()) {
+                basePt = adjusted;
+                return true;
             }
         }
-    } while (bz != 0 && !gotit);
-    if (gotit) {
-        mtp.tx = bx;
-        mtp.ty = by;
-        mtp.tz = bz;
-        mtp.ox = box;
-        mtp.oy = boy;
+        
+        // Try to find walkable position on slope at Z-1 level
+        if (z > 0) {
+            TilePoint onLowerSlope = tryProjectOntoLowerSlope(candidate);
+            if (onLowerSlope.isValid()) {
+                basePt = onLowerSlope;
+                return true;
+            }
+        }
     }
-    return gotit;
+    
+    return false;
+}
+
+/**
+ * Adjusts the position within a tile based on its surface type (flat or sloped).
+ * Returns an invalid TilePoint if the position cannot be adjusted to be walkable.
+ */
+TilePoint Mission::adjustPositionForSurface(const TilePoint &point, int tileIndex) {
+    uint8_t surfaceType = mtsurfaces_[tileIndex];
+    
+    switch (surfaceType) {
+        case fs_eng::Tile::kSlopeSN:
+            return adjustForSlopeSN(point, tileIndex);
+        case fs_eng::Tile::kSlopeNS:
+            return adjustForSlopeNS(point, tileIndex);
+        case fs_eng::Tile::kSlopeEW:
+            return adjustForSlopeEW(point, tileIndex);
+        case fs_eng::Tile::kSlopeWE:
+            return adjustForSlopeWE(point, tileIndex);
+        default:
+            // Flat surface or other walkable type - position is valid as-is
+            return point;
+    }
+}
+
+/**
+ * Adjusts position for South-to-North slope (rises northward).
+ */
+TilePoint Mission::adjustForSlopeSN(const TilePoint &point, int tileIndex) {
+    int adjustedY = ((point.oy + 128) * 2) / 3;
+    int adjustedX = point.ox + 128 - adjustedY / 2;
+    
+    if (adjustedX < 256) {
+        // Position fits within current tile
+        return TilePoint(point.tx, point.ty, point.tz, adjustedX, adjustedY);
+    }
+    
+    // Position overflows to adjacent tile in +X direction
+    return tryAdjacentTile(point, +1, 0, adjustedX - 256, adjustedY, 
+                          fs_eng::Tile::kSlopeSN);
+}
+
+/**
+ * Adjusts position for North-to-South slope (rises southward).
+ */
+TilePoint Mission::adjustForSlopeNS(const TilePoint &point, int tileIndex) {
+    if (point.oy >= 128) {
+        // TODO: Southern half not implemented
+        return TilePoint::invalid();
+    }
+    
+    int adjustedY = point.oy * 2;
+    int adjustedX = point.ox + point.oy;
+    
+    if (adjustedX < 256) {
+        // Position fits within current tile
+        return TilePoint(point.tx, point.ty, point.tz, adjustedX, adjustedY);
+    }
+    
+    // Position overflows to adjacent tile in +X direction
+    return tryAdjacentTile(point, +1, 0, adjustedX - 256, adjustedY, 
+                          fs_eng::Tile::kSlopeNS);
+}
+
+/**
+ * Adjusts position for East-to-West slope (rises westward).
+ */
+TilePoint Mission::adjustForSlopeEW(const TilePoint &point, int tileIndex) {
+    if (point.ox >= 128) {
+        // TODO: Eastern half not implemented
+        return TilePoint::invalid();
+    }
+    
+    int adjustedX = point.ox * 2;
+    int adjustedY = point.ox + point.oy;
+    
+    if (adjustedY < 256) {
+        // Position fits within current tile
+        return TilePoint(point.tx, point.ty, point.tz, adjustedX, adjustedY);
+    }
+    
+    // Position overflows to adjacent tile in +Y direction
+    return tryAdjacentTile(point, 0, +1, adjustedX, adjustedY - 256, 
+                          fs_eng::Tile::kSlopeEW);
+}
+
+/**
+ * Adjusts position for West-to-East slope (rises eastward).
+ */
+TilePoint Mission::adjustForSlopeWE(const TilePoint &point, int tileIndex) {
+    int adjustedX = ((point.ox + 128) * 2) / 3;
+    int adjustedY = point.oy + 128 - adjustedX / 2;
+    
+    if (adjustedY < 256) {
+        // Position fits within current tile
+        return TilePoint(point.tx, point.ty, point.tz, adjustedX, adjustedY);
+    }
+    
+    // Position overflows to adjacent tile in +Y direction
+    return tryAdjacentTile(point, 0, +1, adjustedX, adjustedY - 256, 
+                          fs_eng::Tile::kSlopeWE);
+}
+
+/**
+ * Tries to continue slope adjustment onto an adjacent tile.
+ */
+TilePoint Mission::tryAdjacentTile(const TilePoint &point, int deltaX, int deltaY,
+                                   int newOffsetX, int newOffsetY, 
+                                   uint8_t expectedSurfaceType) {
+    int adjacentTx = point.tx + deltaX;
+    int adjacentTy = point.ty + deltaY;
+    
+    // Check if adjacent tile is within bounds
+    if ((deltaX > 0 && adjacentTx >= mmax_x_) || 
+        (deltaY > 0 && adjacentTy >= mmax_y_)) {
+        return TilePoint::invalid();
+    }
+    
+    int adjacentIndex = adjacentTx + adjacentTy * mmax_x_ + point.tz * mmax_m_xy;
+    
+    // Check if adjacent tile is walkable and has the same slope type
+    if (isTileWalkable(adjacentIndex) && 
+        mtsurfaces_[adjacentIndex] == expectedSurfaceType) {
+        return TilePoint(adjacentTx, adjacentTy, point.tz, newOffsetX, newOffsetY);
+    }
+    
+    return TilePoint::invalid();
+}
+
+/**
+ * Attempts to project the point onto a slope at Z-1 level.
+ * This handles cases where the character is "above" a sloped surface.
+ */
+TilePoint Mission::tryProjectOntoLowerSlope(const TilePoint &point) {
+    int lowerZ = point.tz - 1;
+    if (lowerZ < 0) {
+        return TilePoint::invalid();
+    }
+    
+    int lowerIndex = point.tx + point.ty * mmax_x_ + lowerZ * mmax_m_xy;
+    
+    if (!isTileWalkable(lowerIndex)) {
+        return TilePoint::invalid();
+    }
+    
+    uint8_t surfaceType = mtsurfaces_[lowerIndex];
+    
+    switch (surfaceType) {
+        case 0x01: // kSlopeSN
+            return projectOntoSlopeSN(point, lowerZ);
+        case 0x02: // kSlopeNS
+            return projectOntoSlopeNS(point, lowerZ);
+        case 0x03: // kSlopeEW
+            return projectOntoSlopeEW(point, lowerZ);
+        case 0x04: // kSlopeWE
+            return projectOntoSlopeWE(point, lowerZ);
+        default:
+            return TilePoint::invalid();
+    }
+}
+
+/**
+ * Projects point onto South-to-North slope at lower Z level.
+ */
+TilePoint Mission::projectOntoSlopeSN(const TilePoint &point, int lowerZ) {
+    int projectedY = (point.oy * 2) / 3;
+    int projectedX = point.ox - projectedY / 2;
+    
+    if (projectedX >= 0) {
+        return TilePoint(point.tx, point.ty, lowerZ, projectedX, projectedY);
+    }
+    
+    return TilePoint::invalid();
+}
+
+/**
+ * Projects point onto North-to-South slope at lower Z level.
+ */
+TilePoint Mission::projectOntoSlopeNS(const TilePoint &point, int lowerZ) {
+    int projectedY = (point.oy - 128) * 2;
+    int projectedX = (point.ox + projectedY / 2) - 128;
+    
+    if (projectedY >= 0 && projectedX >= 0 && projectedX < 256) {
+        return TilePoint(point.tx, point.ty, lowerZ, projectedX, projectedY);
+    }
+    
+    return TilePoint::invalid();
+}
+
+/**
+ * Projects point onto East-to-West slope at lower Z level.
+ */
+TilePoint Mission::projectOntoSlopeEW(const TilePoint &point, int lowerZ) {
+    int projectedX = (point.ox - 128) * 2;
+    int projectedY = (point.oy + projectedX / 2) - 128;
+    
+    if (projectedX >= 0 && projectedY >= 0 && projectedY < 256) {
+        return TilePoint(point.tx, point.ty, lowerZ, projectedX, projectedY);
+    }
+    
+    return TilePoint::invalid();
+}
+
+/**
+ * Projects point onto West-to-East slope at lower Z level.
+ */
+TilePoint Mission::projectOntoSlopeWE(const TilePoint &point, int lowerZ) {
+    int projectedX = (point.ox * 2) / 3;
+    int projectedY = point.oy - projectedX / 2;
+    
+    if (projectedY >= 0) {
+        return TilePoint(point.tx, point.ty, lowerZ, projectedX, projectedY);
+    }
+    
+    return TilePoint::invalid();
 }
 
 bool Mission::getWalkableClosestByZ(TilePoint &mtp) {
@@ -3095,6 +3152,20 @@ bool Mission::isTileSolid(int x, int y, int z, int ox, int oy, int oz) {
     }
 
     return solid;
+}
+
+/**
+ * Gets the linear index for a tile in the map arrays.
+ */
+int Mission::getTileIndex(const TilePoint &point) const {
+    return point.tx + point.ty * mmax_x_ + point.tz * mmax_m_xy;
+}
+
+/**
+ * Checks if a tile at the given index is marked as walkable.
+ */
+bool Mission::isTileWalkable(int tileIndex) const {
+    return (mdpoints_[tileIndex].bfNodeDesc & m_fdWalkable) == m_fdWalkable;
 }
 
 }
