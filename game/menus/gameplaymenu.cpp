@@ -539,7 +539,7 @@ void GameplayMenu::handleClickOnMap(Point2D point, int button) {
             default:
                 break;
             }
-        } else if (mission_->getWalkable(mapPt)) {
+        } else if (mission_->findWalkableTileFromBase(mapPt)) {
             selection_.moveTo(mapPt, ctrl);
         }
     } else if (button == kMouseRightButton) {
