@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <string>
 #include <random>
+#include <algorithm>
 
 #include "fs-utils/log/log.h"
 #include "fs-engine/events/event.h"
@@ -278,6 +279,8 @@ void Mission::start(WeaponManager& weaponMgr) {
  * @param diff 
  */
 void Mission::handleTick(uint32_t elapsed, uint32_t diff) {
+    buildDynamicSpatialGrid();
+
     for (auto it = sfx_objects_.begin(); it != sfx_objects_.end(); ) {
         auto& sfx = *it;
 
@@ -2294,6 +2297,14 @@ bool Mission::setSurfaces() {
 
     printf("flood walkables %i\n", cw);
 #endif
+
+    // Build static spatial grid (statics never move so this is done only once).
+    int gridSize = mmax_x_ * mmax_y_ * mmax_z_;
+    staticSpatialGrid_.assign(gridSize, {});
+    for (const auto& s : statics_) {
+        insertIntoSpatialGrid(staticSpatialGrid_, s.get());
+    }
+
     return true;
 }
 
@@ -2311,6 +2322,8 @@ void Mission::clrSurfaces() {
         free(mdpoints_cp_);
         mdpoints_cp_ = NULL;
     }
+    staticSpatialGrid_.clear();
+    dynamicSpatialGrid_.clear();
 }
 
 bool Mission::findWalkableTileFromBase(TilePoint &basePt) {
@@ -2595,11 +2608,82 @@ bool Mission::getWalkableClosestByZ(TilePoint &mtp) {
 }
 
 /*!
-* This function looks for blockers - statics, vehicles, peds, weapons
-*/
+ * Inserts obj into every cell of grid whose tile overlaps the object's bounding box.
+ * Each object is in exactly the cells it occupies (1 cell for small objects, up to a
+ * few cells for large vehicles/statics).
+ */
+void Mission::insertIntoSpatialGrid(std::vector<std::vector<MapObject*>>& grid, MapObject* obj) {
+    int wx = obj->tileX() * 256 + obj->offX();
+    int wy = obj->tileY() * 256 + obj->offY();
+    int wz = obj->tileZ() * 128 + obj->offZ();
+
+    int tx_min = std::max(0, (wx - obj->sizeX()) / 256);
+    int tx_max = std::min(mmax_x_ - 1, (wx + obj->sizeX()) / 256);
+    int ty_min = std::max(0, (wy - obj->sizeY()) / 256);
+    int ty_max = std::min(mmax_y_ - 1, (wy + obj->sizeY()) / 256);
+    int tz_min = std::max(0, wz / 128);
+    int tz_max = std::min(mmax_z_ - 1, (wz + obj->sizeZ()) / 128);
+
+    for (int tz = tz_min; tz <= tz_max; ++tz) {
+        for (int ty = ty_min; ty <= ty_max; ++ty) {
+            for (int tx = tx_min; tx <= tx_max; ++tx) {
+                grid[tx + ty * mmax_x_ + tz * mmax_m_xy].push_back(obj);
+            }
+        }
+    }
+}
+
+/*!
+ * Rebuilds the dynamic spatial grid from the current positions of all mobile entities.
+ * Called once per tick, before any entity animation, so the grid reflects positions
+ * from the end of the previous tick (positional error < 1 tick, negligible).
+ */
+void Mission::buildDynamicSpatialGrid() {
+    dynamicSpatialGrid_.assign(mmax_x_ * mmax_y_ * mmax_z_, {});
+
+    for (PedInstance* pPed : peds_) {
+        if (pPed->isAlive() && !pPed->isInVehicle()) {
+            insertIntoSpatialGrid(dynamicSpatialGrid_, pPed);
+        }
+    }
+    for (Vehicle* pVehicle : vehicles_) {
+        insertIntoSpatialGrid(dynamicSpatialGrid_, pVehicle);
+    }
+    for (WeaponInstance* pWeapon : weaponsOnGround_) {
+        if (!pWeapon->hasOwner()) {
+            insertIntoSpatialGrid(dynamicSpatialGrid_, pWeapon);
+        }
+    }
+}
+
+/*!
+ * @brief Searches for the closest object blocking the ray between two world points.
+ *
+ * Uses a spatial grid to test only objects present in the tiles the ray traverses,
+ * rather than scanning all entities linearly. The stepping method mirrors
+ * checkBlockedByTile() (8 world-unit steps).
+ *
+ * Excluded from the search:
+ * - \p pOrigin itself (the shooter)
+ * - the vehicle \p pOrigin is currently riding, if any
+ * - Static objects whose isExcludedFromBlockers() returns true (e.g. open doors)
+ * - Dead peds
+ *
+ * If a blocker is found, \p pStartPt and \p pEndPt are updated to the intersection
+ * points with the blocker's bounding box, and \p dist is set to the distance from
+ * the original \p pStartPt to that intersection.
+ *
+ * @param pStartPt  Origin of the ray (world coordinates). Updated to the blocker
+ *                  entry point if a blocker is found.
+ * @param pEndPt    End of the ray (world coordinates). Updated to the blocker
+ *                  exit point if a blocker is found.
+ * @param dist      Distance from \p pStartPt to \p pEndPt. Updated to the distance
+ *                  to the closest blocker if one is found.
+ * @param pOrigin   The entity that initiated the ray (shooter). May be nullptr.
+ * @return Pointer to the closest blocking MapObject, or nullptr if none was found.
+ */
 MapObject * Mission::checkBlockedByObject(WorldPoint * pStartPt, WorldPoint * pEndPt,
         double *dist, const ShootableMapObject *pOrigin) {
-    // TODO: calculating closest blocker first? (start point can be closer though)
     double inc_xyz[3];
     inc_xyz[0] = (pEndPt->x - pStartPt->x) / (*dist);
     inc_xyz[1] = (pEndPt->y - pStartPt->y) / (*dist);
@@ -2611,89 +2695,82 @@ MapObject * Mission::checkBlockedByObject(WorldPoint * pStartPt, WorldPoint * pE
     double closest = *dist;
     MapObject *pBlocker = NULL;
 
-    for (const auto & s_blocker : statics_) {
-        if (s_blocker->isExcludedFromBlockers())
-            continue;
-        if (s_blocker->isBlocker(&copyStartPt, &copyEndPt, inc_xyz)) {
+    // if shooter is a Ped shooting from a vehicle, skip that vehicle
+    Vehicle *pShooterVehicle = NULL;
+    if (pOrigin && pOrigin->is(MapObject::kNaturePed)) {
+        const PedInstance *pPed = static_cast<const PedInstance *>(pOrigin);
+        pShooterVehicle = pPed->inVehicle(); // can be null
+    }
+
+    // Test one object against the ray and update the closest blocker if hit.
+    auto testObject = [&](MapObject* obj) {
+        if (static_cast<const MapObject*>(obj) == static_cast<const MapObject*>(pOrigin)) return;
+        if (obj == pShooterVehicle) return;
+        // Statics can change exclusion state at runtime (e.g. open doors)
+        if (obj->is(MapObject::kNatureStatic) &&
+                static_cast<Static*>(obj)->isExcludedFromBlockers()) return;
+        // Peds may have died since the grid was built this tick
+        if (obj->is(MapObject::kNaturePed) &&
+                static_cast<ShootableMapObject*>(obj)->isDead()) return;
+        if (obj->isBlocker(&copyStartPt, &copyEndPt, inc_xyz)) {
             int cx = pStartPt->x - copyStartPt.x;
             int cy = pStartPt->y - copyStartPt.y;
             int cz = pStartPt->z - copyStartPt.z;
-            double dist_blocker = sqrt((double) (cx * cx + cy * cy + cz * cz));
+            double dist_blocker = sqrt((double)(cx * cx + cy * cy + cz * cz));
             if (closest == -1 || dist_blocker < closest) {
                 closest = dist_blocker;
-                pBlocker = s_blocker.get();
+                pBlocker = obj;
                 blockStartPt = copyStartPt;
                 blockEndPt = copyEndPt;
             }
             copyStartPt = *pStartPt;
             copyEndPt = *pEndPt;
         }
-    }
-    // if shooter is a Ped and is shooting from a vehicle,
-    // then skip that vehicle in the search
-    Vehicle *pShooterVehicle = NULL;
-    if (pOrigin && pOrigin->is(MapObject::kNaturePed)) {
-        const PedInstance *pPed = static_cast<const PedInstance *>(pOrigin);
-        pShooterVehicle = pPed->inVehicle(); // can be null
-    }
-    for (unsigned int i = 0; i < vehicles_.size(); ++i) {
-        Vehicle * pVehicle = vehicles_[i];
-        if (pVehicle != pShooterVehicle) {
-            if (pVehicle->isBlocker(&copyStartPt, &copyEndPt, inc_xyz)) {
-                int cx = pStartPt->x - copyStartPt.x;
-                int cy = pStartPt->y - copyStartPt.y;
-                int cz = pStartPt->z - copyStartPt.z;
-                double dist_blocker = sqrt((double) (cx * cx + cy * cy + cz * cz));
-                if (closest == -1 || dist_blocker < closest) {
-                    closest = dist_blocker;
-                    pBlocker = pVehicle;
-                    blockStartPt = copyStartPt;
-                    blockEndPt = copyEndPt;
-                }
-                copyStartPt = *pStartPt;
-                copyEndPt = *pEndPt;
+    };
+
+    // Test all objects present in a single grid cell.
+    auto testCell = [&](int idx) {
+        for (MapObject* obj : staticSpatialGrid_[idx]) testObject(obj);
+        for (MapObject* obj : dynamicSpatialGrid_[idx]) testObject(obj);
+    };
+
+    // Step along the ray (same stepping method as checkBlockedByTile) and visit
+    // each tile the ray crosses, testing only the objects present in that tile.
+    double sx = (double)pStartPt->x;
+    double sy = (double)pStartPt->y;
+    double sz = (double)pStartPt->z;
+    const double incrX = inc_xyz[0] * 8.0;
+    const double incrY = inc_xyz[1] * 8.0;
+    const double incrZ = inc_xyz[2] * 8.0;
+    const double dist_dec = 8.0;
+    double dist_close = *dist;
+    int oldtx = -1, oldty = -1, oldtz = -1;
+
+    while (dist_close > dist_dec) {
+        int ntx = (int)sx / 256;
+        int nty = (int)sy / 256;
+        int ntz = (int)sz / 128;
+        if (ntx != oldtx || nty != oldty || ntz != oldtz) {
+            if (ntx >= 0 && ntx < mmax_x_ && nty >= 0 && nty < mmax_y_
+                    && ntz >= 0 && ntz < mmax_z_) {
+                testCell(ntx + nty * mmax_x_ + ntz * mmax_m_xy);
             }
+            oldtx = ntx; oldty = nty; oldtz = ntz;
+        }
+        sx += incrX;
+        sy += incrY;
+        sz += incrZ;
+        dist_close -= dist_dec;
+    }
+    // Also test the end tile (may be missed by the stepping loop)
+    {
+        int ntx = pEndPt->x / 256, nty = pEndPt->y / 256, ntz = pEndPt->z / 128;
+        if (ntx >= 0 && ntx < mmax_x_ && nty >= 0 && nty < mmax_y_ && ntz >= 0 && ntz < mmax_z_
+                && (ntx != oldtx || nty != oldty || ntz != oldtz)) {
+            testCell(ntx + nty * mmax_x_ + ntz * mmax_m_xy);
         }
     }
 
-    for (PedInstance *pPed : peds_) {
-        if (pPed->isAlive() && pPed != pOrigin && !pPed->isInVehicle()) {
-            if (pPed->isBlocker(&copyStartPt, &copyEndPt, inc_xyz)) {
-                int cx = pStartPt->x - copyStartPt.x;
-                int cy = pStartPt->y - copyStartPt.y;
-                int cz = pStartPt->z - copyStartPt.z;
-                double dist_blocker = sqrt((double) (cx * cx + cy * cy + cz * cz));
-                if (closest == -1 || dist_blocker < closest) {
-                    closest = dist_blocker;
-                    pBlocker = pPed;
-                    blockStartPt = copyStartPt;
-                    blockEndPt = copyEndPt;
-                }
-                copyStartPt = *pStartPt;
-                copyEndPt = *pEndPt;
-            }
-        }
-    }
-
-    for (unsigned int i = 0; i < weaponsOnGround_.size(); ++i) {
-        WeaponInstance *pWeapon = weaponsOnGround_[i];
-        if (!pWeapon->hasOwner()) {
-            if (pWeapon->isBlocker(&copyStartPt, &copyEndPt, inc_xyz)) {
-                int cx = pStartPt->x - copyStartPt.x;
-                int cy = pStartPt->y - copyStartPt.y;
-                int cz = pStartPt->z - copyStartPt.z;
-                double dist_blocker = sqrt((double) (cx * cx + cy * cy + cz * cz));
-                if (closest == -1 || dist_blocker < closest) {
-                    closest = dist_blocker;
-                    pBlocker = pWeapon;
-                    blockStartPt = copyStartPt;
-                    blockEndPt = copyEndPt;
-                }
-                copyStartPt = *pStartPt;
-                copyEndPt = *pEndPt;
-            }
-        }
-    }
     if (pBlocker != NULL) {
         *pStartPt = blockStartPt;
         *pEndPt = blockEndPt;

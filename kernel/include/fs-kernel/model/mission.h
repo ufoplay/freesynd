@@ -312,6 +312,11 @@ protected:
     int getTileIndex(const TilePoint &point) const;
     bool isTileWalkable(int tileIndex) const;
 
+    //! Build the spatial grid for dynamic objects (called at the start of each tick)
+    void buildDynamicSpatialGrid();
+    //! Insert an object into all cells of a spatial grid that its bounding box overlaps
+    void insertIntoSpatialGrid(std::vector<std::vector<MapObject*>>& grid, MapObject* obj);
+
     //! Selects the two best-ranked weapons from a list.
     std::pair<int, int> findTopTwoWeapons(const std::vector<Weapon*>& weapons);
     //! Assigns the best available weapons (and optionally a bomb) to enemy agents without weapons.
@@ -344,6 +349,15 @@ protected:
      * It's used for performance reasons.
      */
     std::vector<PedInstance *> armedPedsVec_;
+
+    /*!
+     * Spatial grids for checkBlockedByObject() optimisation.
+     * Index: tx + ty * mmax_x_ + tz * mmax_m_xy (same as mtsurfaces_).
+     * staticSpatialGrid_ is built once in setSurfaces(); statics never move.
+     * dynamicSpatialGrid_ is rebuilt each tick in handleTick().
+     */
+    std::vector<std::vector<MapObject*>> staticSpatialGrid_;
+    std::vector<std::vector<MapObject*>> dynamicSpatialGrid_;
 
     std::vector <ObjectiveDesc *> objectives_;
     //std::vector <ObjectiveDesc> sub_objectives_;
