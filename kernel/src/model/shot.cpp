@@ -371,7 +371,7 @@ void Explosion::getAllShootablesWithinRange(Mission *pMission,
 
     for (size_t i = 0; i < pMission->numStatics(); ++i) {
         Static *st = pMission->statics(i);
-        if (!st->isExcludedFromBlockers() && st->isAlive() && st->isCloseTo(originLocW, dmg_.range)) {
+        if (st->canBlock() && st->isAlive() && st->isCloseTo(originLocW, dmg_.range)) {
             WorldPoint staticPosW(st->position());
             if (pMission->checkBlockedByTile(originLocW, &staticPosW, false, dmg_.range) == 1) {
                 objInRangeVec.push_back(st);

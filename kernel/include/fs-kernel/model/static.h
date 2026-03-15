@@ -75,17 +75,11 @@ public:
     //! Return the type of statics
     int orientation() { return orientation_; }
 
-    //! Return true if static should not be included in the search for blockers
-    bool isExcludedFromBlockers() { return excludedFromBlockers_; }
-    //! Set whether to include static in search for blockers
-    void setExcludedFromBlockers(bool exclude) { excludedFromBlockers_ = exclude; }
-
 protected:
     Static(uint16_t anId, Map *pMap, StaticType aType) :
             ShootableMapObject(anId, pMap, MapObject::kNatureStatic) {
         type_ = aType;
         orientation_ = kStaticOrientation1;
-        excludedFromBlockers_ = false;
     }
 
 protected:
@@ -93,10 +87,6 @@ protected:
     StaticType type_;
     /*! Some statics can be displayed in 1 of 2 orientations : SW or SE.*/
     int orientation_;
-    /*! This flag is used to exclude this object from the list of statics
-     * that can block a shoot.
-     */
-     bool excludedFromBlockers_;
 };
 
 /*!
@@ -108,8 +98,6 @@ public:
     virtual ~Door() {}
 
     void draw(const Point2D &screenPos) override;
-
-    bool isPathBlocker() override;
 
 protected:
     void doUpdateState(uint32_t elapsed) override;
@@ -137,7 +125,6 @@ public:
     virtual ~LargeDoor() {}
 
     void draw(const Point2D &screenPos) override;
-    bool isPathBlocker() override;
 
 protected:
     void doUpdateState(uint32_t elapsed) override;

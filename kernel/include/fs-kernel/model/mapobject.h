@@ -244,13 +244,16 @@ public:
         MapObject * pathBlocker;
     };
 
-    virtual bool isPathBlocker() {
-        return false;
-    }
-    ///@}
+    //! Return true if static should not be included in the search for blockers
+    void deactivateBlocking() { isBlocking_ = false; }
+    //! Set whether to include static in search for blockers
+    void activateBlocking() { isBlocking_ = true; }
+    bool canBlock() { return isBlocking_; }
 
+    //! Return true if the object is blocking the ray between start and end points.
     bool isBlocker(WorldPoint * pStartPt, WorldPoint * pEndPt,
         double * inc_xyz);
+    ///@}
 
     /**
      * @name Animation
@@ -341,6 +344,10 @@ protected:
 private:
     //! Object should be drawn only if visible
     bool isDrawable_;
+    /*! This flag is used to activate/deactivate the ability for the Object
+     * to block or not.
+     */
+     bool isBlocking_;
 };
 
 /*!

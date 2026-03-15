@@ -34,10 +34,10 @@ MapObject::MapObject(uint16_t anId, Map *pMap, ObjectNature aNature):
     id_(anId), pMap_(pMap), nature_(aNature),
     size_x_(1), size_y_(1), size_z_(2),
     dir_(0),
+    isDrawable_(true),
+    isBlocking_(true),
     animationPlayer_(createAnimationPlayer())
-{
-    isDrawable_ = true;
-}
+{}
 
 const char* MapObject::natureName() {
     switch (nature_) {
@@ -222,10 +222,14 @@ uint8_t MapObject::getDiscreteDirection(int numDirections) {
     return directionIndex;
 }
 
-/*
-* NOTE: inc_xyz should point to array of three elements of type
-* double for x,y,z
-*/
+/*!
+ * NOTE: inc_xyz should point to array of three elements of type
+ * double for x,y,z
+ * @param pStartPt 
+ * @param pEndPt 
+ * @param inc_xyz 
+ * @return 
+ */
 bool MapObject::isBlocker(WorldPoint * pStartPt, WorldPoint * pEndPt,
                double * inc_xyz)
 {
@@ -239,6 +243,11 @@ bool MapObject::isBlocker(WorldPoint * pStartPt, WorldPoint * pEndPt,
      * to their respective pStartPt, choose shortest, then longest between
      * them and recalculate position of entering of shot and exit point
      */
+
+    if (!isBlocking_) {
+        // Object blocking can be deactivate. By example, a door can be opened or closed
+        return false;
+    }
 
     // range_x check
     int range_x_h = pos_.tx * 256 + pos_.ox;

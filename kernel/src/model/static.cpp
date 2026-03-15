@@ -160,7 +160,7 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
             break;
         case 0x15: // damaged window
             s = new WindowObj(id, pMap, WindowObj::kStateWindowDamaged, curanim - 6);
-            s->setExcludedFromBlockers(true);
+            s->deactivateBlocking();
             s->setHealth(0);
             s->setStartHealth(1);
             break;
@@ -185,7 +185,7 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
             break;
         case 0x1F: // advertisement on wall
             s = new EtcObj(id, pMap, curanim, smt_Advertisement);
-            s->setExcludedFromBlockers(true);
+            s->deactivateBlocking();
             break;
 
         case 0x20: // window without light
@@ -341,12 +341,12 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                         y + rel_inc, z, aNature, &si));
                     if (!pPed && state_ == Static::kStateDoorOpen && (!found)) {
                         state_ = Static::kStateDoorClosing;
-                        setExcludedFromBlockers(false);
+                        activateBlocking();
                         playAnimation(closingAnim_);
                     } else if (pPed && pPed->isAlive()){
                         state_ = Static::kStateDoorOpen;
                         playAnimation(openedAnim_);
-                        setExcludedFromBlockers(true);
+                        deactivateBlocking();
                         found = true;
                         pPed->hold_on_.wayFree = 0;
                     }
@@ -370,7 +370,7 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 if (pPed && pPed->isAlive()) {
                     if (!found) {
                         state_ = Static::kStateDoorOpening;
-                        setExcludedFromBlockers(false);
+                        activateBlocking();
                         found = true;
                         playAnimation(openingAnim_);
                     }
@@ -391,7 +391,7 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 if (pPed && pPed->isAlive()) {
                     if (!found) {
                         state_ = Static::kStateDoorOpening;
-                        setExcludedFromBlockers(false);
+                        activateBlocking();
                         found = true;
                         playAnimation(openingAnim_);
                     }
@@ -414,22 +414,13 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
 void Door::handleAnimationEnded() {
     if (animationPlayer_->isCurrentAnimation(closingAnim_)) {
         state_ = Static::kStateDoorClosed;
-        setExcludedFromBlockers(false);
+        activateBlocking();
         playAnimation(closedAnim_);
     } else if (animationPlayer_->isCurrentAnimation(openingAnim_)) {
         state_ = Static::kStateDoorOpen;
-        setExcludedFromBlockers(true);
+        deactivateBlocking();
         playAnimation(openedAnim_);
     }
-}
-
-
-/*!
- * Return true if door should be counted as a blocker
- * @return False if door is opened
- */
-bool Door::isPathBlocker() {
-    return state_ != Static::kStateDoorOpen;
 }
 
 
@@ -496,13 +487,13 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 if (!pVehicle && !found) {
                     state_ = Static::kStateDoorClosing;
                     playAnimation(closingAnim_);
-                    setExcludedFromBlockers(false);
+                    activateBlocking();
                 } else if (pVehicle){
                     state_ = Static::kStateDoorOpen;
                     // I set the closedAnim just to have an animation set as no frame
                     // is drawn when the state is Open
                     playAnimation(closedAnim_);
-                    setExcludedFromBlockers(true);
+                    deactivateBlocking();
                     found = true;
                     pVehicle->hold_on_.wayFree = 0;
                 }
@@ -516,12 +507,12 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 if (!pVehicle && !found) {
                     state_ = Static::kStateDoorClosing;
                     playAnimation(closingAnim_);
-                    setExcludedFromBlockers(false);
+                    activateBlocking();
                 } else if (pVehicle){
                     state_ = Static::kStateDoorOpen;
                     // see comment above
                     playAnimation(closedAnim_);
-                    setExcludedFromBlockers(true);
+                    deactivateBlocking();
                     found = true;
                     pVehicle->hold_on_.wayFree = 0;
                 }
@@ -538,7 +529,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                             state_ = Static::kStateDoorOpen;
                             // see comment above
                             playAnimation(closedAnim_);
-                            setExcludedFromBlockers(true);
+                            deactivateBlocking();
                             found = true;
                         }
                     }
@@ -556,7 +547,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                             state_ = Static::kStateDoorOpen;
                             // see comment above
                             playAnimation(closedAnim_);
-                            setExcludedFromBlockers(true);
+                            deactivateBlocking();
                             found = true;
                         }
                     }
@@ -574,7 +565,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                             state_ = Static::kStateDoorOpen;
                             // see comment above
                             playAnimation(closedAnim_);
-                            setExcludedFromBlockers(true);
+                            deactivateBlocking();
                             found = true;
                         }
                     }
@@ -633,7 +624,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 if (!found) {
                     state_ = Static::kStateDoorOpening;
                     playAnimation(openingAnim_);
-                    setExcludedFromBlockers(false);
+                    activateBlocking();
                     found = true;
                 }
                 pVehicle->hold_on_.wayFree = 1;
@@ -649,7 +640,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 if (!found) {
                     state_ = Static::kStateDoorOpening;
                     playAnimation(openingAnim_);
-                    setExcludedFromBlockers(false);
+                    activateBlocking();
                     found = true;
                 }
                 pVehicle->hold_on_.wayFree = 1;
@@ -666,7 +657,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                         if (!found && pPed->hasAccessCard()) {
                             state_ = Static::kStateDoorOpening;
                             playAnimation(openingAnim_);
-                            setExcludedFromBlockers(false);
+                            activateBlocking();
                             found = true;
                         }
                     }
@@ -683,7 +674,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                         if (!found && pPed->hasAccessCard()) {
                             state_ = Static::kStateDoorOpening;
                             playAnimation(openingAnim_);
-                            setExcludedFromBlockers(false);
+                            activateBlocking();
                             found = true;
                         }
                     }
@@ -781,16 +772,11 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
 void LargeDoor::handleAnimationEnded() {
     if (animationPlayer_->isCurrentAnimation(closingAnim_)) {
         state_ = Static::kStateDoorClosed;
-        setExcludedFromBlockers(false);
+        activateBlocking();
     } else if (animationPlayer_->isCurrentAnimation(openingAnim_)) {
         state_ = Static::kStateDoorOpen;
-        setExcludedFromBlockers(true);
+        deactivateBlocking();
     }
-}
-
-
-bool LargeDoor::isPathBlocker() {
-    return state_ != Static::kStateDoorOpen;
 }
 
 
@@ -829,7 +815,7 @@ void Tree::handleHit(DamageToInflict &d) {
         decreaseHealth(d.dvalue);
         if (isDead()) {
             animationPlayer_->play(burningAnim_);
-            setExcludedFromBlockers(true);
+            deactivateBlocking();
         }
     }
 }
@@ -877,7 +863,7 @@ void WindowObj::handleHit(DamageToInflict &d) {
         (d.dtype == kDmgTypeBullet || d.dtype == kDmgTypeExplosion)) {
         decreaseHealth(d.dvalue);
         if (isDead()) {
-            setExcludedFromBlockers(true);
+            deactivateBlocking();
             playAnimation(breakingAnim_);
         }
     }
@@ -912,7 +898,7 @@ NeonSign::NeonSign(uint16_t anId, Map *pMap, uint16_t anim, uint16_t currentFram
         Static(anId, pMap, Static::smt_NeonSign) {
     uint16_t animation = animationPlayer_->addAnimation(anim, fs_eng::kAnimationModeLoop);
     animationPlayer_->play(animation, g_SpriteMgr.getFrameFromFrameIndx(currentFrame));
-    setExcludedFromBlockers(true);
+    deactivateBlocking();
     setSize(32, 1, 48);
 }
 
@@ -996,7 +982,7 @@ void Semaphore::handleHit(DamageToInflict &d) {
                     break;
                 }
             }
-            setExcludedFromBlockers(true);
+            deactivateBlocking();
         }
     }
 }
@@ -1006,7 +992,7 @@ void Semaphore::draw(const Point2D &screenPos) {
 }
 
 AnimWindow::AnimWindow(uint16_t anId, Map *pMap, uint16_t anim) : Static(anId, pMap, smt_AnimatedWindow) {
-    setExcludedFromBlockers(true);
+    deactivateBlocking();
     //setFramesPerSec(4);
     animLigthOff_ = animationPlayer_->addAnimation(anim);
     animLigthSwitching_ = animationPlayer_->addAnimation(anim + 2);

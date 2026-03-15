@@ -2706,9 +2706,6 @@ MapObject * Mission::checkBlockedByObject(WorldPoint * pStartPt, WorldPoint * pE
     auto testObject = [&](MapObject* obj) {
         if (static_cast<const MapObject*>(obj) == static_cast<const MapObject*>(pOrigin)) return;
         if (obj == pShooterVehicle) return;
-        // Statics can change exclusion state at runtime (e.g. open doors)
-        if (obj->is(MapObject::kNatureStatic) &&
-                static_cast<Static*>(obj)->isExcludedFromBlockers()) return;
         // Peds may have died since the grid was built this tick
         if (obj->is(MapObject::kNaturePed) &&
                 static_cast<ShootableMapObject*>(obj)->isDead()) return;

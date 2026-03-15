@@ -2332,7 +2332,7 @@ bool PedInstance::doMove(uint32_t elapsed, Mission *pMission)
         int nxtTileX = dest_path_.front().tx;
         int nxtTileY = dest_path_.front().ty;
         int nxtTileZ = dest_path_.front().tz;
-        if (hold_on_.wayFree != 0 && hold_on_.pathBlocker->isPathBlocker()) {
+        if (hold_on_.wayFree != 0 && hold_on_.pathBlocker->canBlock()) {
             if (hold_on_.xadj || hold_on_.yadj) {
                 if(abs(hold_on_.tilex - nxtTileX) <= hold_on_.xadj
                     && abs(hold_on_.tiley - nxtTileY) <= hold_on_.yadj
