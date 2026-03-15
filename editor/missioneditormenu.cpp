@@ -248,7 +248,7 @@ void MissionEditorMenu::handleClickOnMap(Point2D point, [[maybe_unused]] int but
                     displayOriginPt_.y + point.y);*/
         fs_knl::TilePoint mapPt = mapRenderer_.getTilePointFromMouse(point);
 
-        if (mission_->getWalkable(mapPt)) {
+        if (mission_->findWalkableTileFromBase(mapPt)) {
             printf("new Tile position %d, %d, %d, %d, %d, %d\n", mapPt.tx, mapPt.ty, mapPt.tz, mapPt.ox, mapPt.oy, mapPt.oz);
         }
         selectCurrentTile(mapPt);
