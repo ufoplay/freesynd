@@ -273,16 +273,16 @@ fs_eng::Tile * Map::getTileAt(const TilePoint &tilePt) {
     return getTileAt(tilePt.tx, tilePt.ty, tilePt.tz);
 }
 
-int Map::tileAt(int x, int y, int z)
+int Map::getTileIdAt(int tx, int ty, int tz)
 {
-    if (x < 0 || x >= maxTx_)
-        return z < 2 ? 6 : 0;
-    if (y < 0 || y >= maxTy_)
-        return z < 2 ? 6 : 0;
-    if (z < 0 || z >= maxTz_)
+    if (tx < 0 || tx >= maxTx_)
+        return tz < 2 ? 6 : 0;
+    if (ty < 0 || ty >= maxTy_)
+        return tz < 2 ? 6 : 0;
+    if (tz < 0 || tz >= maxTz_)
         return 0;
 
-    return a_tiles_[(y * maxTx_ + x) * maxTz_ + z]->id();
+    return a_tiles_[(ty * maxTx_ + tx) * maxTz_ + tz]->id();
 }
 
 void Map::patchMap(int x, int y, int z, uint8_t tileNum)
@@ -344,6 +344,192 @@ bool Map::isTileWalkableByCar(int x, int y, int z)
         return false;
     }
     return  pTile->isRoad();
+}
+
+/*!
+ * Returns a 16-bit bitmask encoding the valid exit directions for the road tile at (x, y, z).
+ *
+ * The bitmask is divided into four nibbles (4 bits each), one per cardinal direction:
+ * \code
+ *   bits 15-12  kDirMaskWest  : West  (tx-1)
+ *   bits 11-8   kDirMaskNorth : North (ty-1)
+ *   bits  7-4   kDirMaskEast  : East  (tx+1)
+ *   bits  3-0   kDirMaskSouth : South (ty+1)
+ * \endcode
+ * A nibble equal to 0xF means the direction is \b blocked; any other value means it is \b allowed
+ * (the value encodes the kForbidDir* constant for that direction).
+ *
+ * Special return values:
+ * - kTileDirNone (0x0000) : tile is not a road — no movement allowed
+ * - kTileDirAll  (0xFFFF) : intersection — all directions are open
+ *
+ * \param x Tile X coordinate
+ * \param y Tile Y coordinate
+ * \param z Tile Z coordinate (road level, i.e. pos_.tz - 1)
+ * \return Direction bitmask for the tile.
+ */
+uint16_t Map::getPossibleDirectionsFromRoadTile(int x, int y, int z) {
+    uint16_t dir = kTileDirNone;
+    int near_tile;
+
+    switch(getTileIdAt(x, y, z)){
+        case fs_eng::Tile::kTileRoadEW:
+            if(getTileIdAt(x + 1, y, z) == fs_eng::Tile::kTileRoadEW)
+                dir = (0)|(0xFFF0);
+            if(getTileIdAt(x - 1, y, z) == fs_eng::Tile::kTileRoadEW)
+                dir = (4<<8)|(0xF0FF);
+            break;
+        case fs_eng::Tile::kTileRoadNS:
+            if(getTileIdAt(x, y - 1, z) == fs_eng::Tile::kTileRoadNS)
+                dir = (2<<4)|(0xFF0F);
+            if(getTileIdAt(x, y + 1, z) == fs_eng::Tile::kTileRoadNS)
+                dir = (6<<12)|(0x0FFF);
+            break;
+        case fs_eng::Tile::kTileRoadNtoS:
+            dir = (0)|(2<<4)|(6<<12)|(0x0F00);
+
+            if(getTileIdAt(x + 1, y - 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0x0FF0;
+            if(getTileIdAt(x + 1, y + 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0xFF00;
+            near_tile = getTileIdAt(x + 1, y, z);
+            if (near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadEtoW)
+                dir = (dir & kDirClearWest) | kForbidDirWest;
+
+            break;
+        case fs_eng::Tile::kTileRoadStoN:
+            dir = (2<<4)|(4<<8)|(6<<12)|(0x000F);
+
+            if(getTileIdAt(x - 1, y - 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0x00FF;
+            if(getTileIdAt(x - 1, y + 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0xF00F;
+            near_tile = getTileIdAt(x - 1, y, z);
+            if (near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadEtoW)
+                dir = (dir & kDirClearEast) | kForbidDirEast;
+
+            break;
+        case fs_eng::Tile::kTileRoadWtoE:
+            dir = (0)|(2<<4)|(4<<8)|(0xF000);
+
+            if(getTileIdAt(x + 1, y - 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0xF00F;
+            if(getTileIdAt(x - 1, y - 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0xFF00;
+            near_tile = getTileIdAt(x, y - 1, z);
+            if (near_tile == fs_eng::Tile::kTileRoadNtoS || near_tile == fs_eng::Tile::kTileRoadStoN)
+                dir = dir & kDirClearSouth;
+
+            break;
+        case fs_eng::Tile::kTileRoadEtoW:
+            dir = (0)|(4<<8)|(6<<12)|(0x00F0);
+
+            if(getTileIdAt(x + 1, y + 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0x00FF;
+            if(getTileIdAt(x - 1, y + 1, z) != fs_eng::Tile::kTileRoundAbout)
+                dir |= 0x0FF0;
+            near_tile = getTileIdAt(x, y + 1, z);
+            if (near_tile == fs_eng::Tile::kTileRoadNtoS || near_tile == fs_eng::Tile::kTileRoadStoN)
+                dir = (dir & kDirClearNorth) | kForbidDirNorth;
+
+            break;
+        case fs_eng::Tile::kTileCurveWtoS:
+            dir = (0) | (2<<4)|(0xFF00);
+            break;
+        case fs_eng::Tile::kTileCurveNtoW:
+            dir = (0) | (6<<12)|(0x0FF0);
+            break;
+        case fs_eng::Tile::kTileCurveStoE:
+            dir = (2<<4)|(4<<8)|(0xF00F);
+            break;
+        case fs_eng::Tile::kTileCurveEtoN:
+            dir = (4<<8)|(6<<12)|(0x00FF);
+            break;
+        /*case 119:
+            // TODO: Greenland map needs fixing
+            dir = kTileDirAll;
+            near_tile = pMap_->tileAt(x, y + 1, z);
+            if (near_tile == kTileJunctionSW || near_tile == kTilePedCrossEW || near_tile == kTilePedCrossNS)
+                dir = (dir & kDirClearNorth) | kForbidDirNorth;
+            near_tile = pMap_->tileAt(x, y + 1, z);
+            if (near_tile == kTileJunctionSE || near_tile == kTilePedCrossEW || near_tile == kTilePedCrossNS)
+               dir &= kDirClearSouth;
+            near_tile = pMap_->tileAt(x + 1, y, z);
+            if (near_tile == kTileJunctionNW || near_tile == kTilePedCrossEW || near_tile == kTilePedCrossNS)
+                dir = (dir & kDirClearEast) | kForbidDirEast;
+            near_tile = pMap_->tileAt(x - 1, y, z);
+            if (near_tile == kTileJunctionNE || near_tile == kTilePedCrossEW || near_tile == kTilePedCrossNS)
+                dir = (dir & kDirClearWest) | kForbidDirWest;
+            if (dir == kTileDirAll)
+                dir = kTileDirNone;
+            break;*/
+        case fs_eng::Tile::kTileCurveNtoE:
+            dir = (0)|(2<<4)|(0xFF00);
+            break;
+        case fs_eng::Tile::kTileCurveEtoS:
+            dir = (0)|(6<<12)|(0x0FF0);
+            break;
+        case fs_eng::Tile::kTileExtCurveStoW:
+            dir = (4<<8)|(6<<12)|(0x00FF);
+            break;
+        case fs_eng::Tile::kTileExtCurveWtoN:
+            dir = (2<<4)|(4<<8)|(0xF00F);
+            break;
+        case fs_eng::Tile::kTilePedCrossNS:/*
+            if(pMap_->getTileAt(x + 1, y, z)->type() == Tile::kRoadPedCross)
+                dir = (0)|(0xFFF0);
+            else if(pMap_->getTileAt(x - 1, y, z)->type() == Tile::kRoadPedCross)
+                dir = (4<<8)|(0xF0FF);
+            else {*/
+                dir = kTileDirAll;
+                near_tile = getTileIdAt(x, y + 1, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadNtoS
+                    || near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileRoadEW || near_tile == fs_eng::Tile::kTilePedCrossNS)
+                    dir = (dir & kDirClearNorth) | kForbidDirNorth;
+                near_tile = getTileIdAt(x, y - 1, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadNtoS
+                    || near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileRoadEW || near_tile == fs_eng::Tile::kTilePedCrossNS)
+                    dir &= kDirClearSouth;
+                near_tile = getTileIdAt(x + 1, y, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadNS)
+                    dir = (dir & kDirClearEast) | kForbidDirEast;
+                near_tile = getTileIdAt(x - 1, y, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadEtoW || near_tile == fs_eng::Tile::kTileRoadNS)
+                    dir = (dir & kDirClearWest) | kForbidDirWest;
+                if (dir == kTileDirAll)
+                    dir = kTileDirNone;
+            //}
+            break;
+        case fs_eng::Tile::kTilePedCrossEW:/*
+            if(pMap_->getTileAt(x, y - 1, z)->type() == Tile::kRoadPedCross)
+                dir = (2<<4)|(0xFF0F);
+            else if(pMap_->getTileAt(x, y + 1, z)->type() == Tile::kRoadPedCross)
+                dir = (6<<12)|(0x0FFF);
+            else {*/
+                dir = kTileDirAll;
+                near_tile = getTileIdAt(x, y + 1, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadNtoS || near_tile == fs_eng::Tile::kTileRoadEW)
+                    dir = (dir & kDirClearNorth) | kForbidDirNorth;
+                near_tile = getTileIdAt(x, y - 1, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileRoadEW)
+                    dir &= kDirClearSouth;
+                near_tile = getTileIdAt(x + 1, y, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadEtoW
+                    || near_tile == fs_eng::Tile::kTileRoadNS || near_tile == fs_eng::Tile::kTilePedCrossEW)
+                    dir = (dir & kDirClearEast) | kForbidDirEast;
+                near_tile = getTileIdAt(x - 1, y, z);
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadEtoW
+                    || near_tile == fs_eng::Tile::kTileRoadNS || near_tile == fs_eng::Tile::kTilePedCrossEW)
+                    dir = (dir & kDirClearWest) | kForbidDirWest;
+                if (dir == kTileDirAll)
+                    dir = kTileDirNone;
+            //}
+            break;
+        default:
+            dir = kTileDirAll;
+    }
+
+    return dir;
 }
 
 const uint8_t MiniMap::kOverlayNone = 0;

@@ -46,6 +46,8 @@ const uint8_t Vehicle::kVehicleTypeSmallArmored = 0x1C;
 const uint8_t Vehicle::kVehicleTypePolice = 0x24;
 const uint8_t Vehicle::kVehicleTypeMedics = 0x28;
 
+const float GenericCar::kInfiniteDistance = 100000.0f;
+
 void Vehicle::draw(const Point2D &screenPos)
 {
     Point2D posWithOffs = screenPos;
@@ -160,338 +162,211 @@ GenericCar::GenericCar(uint16_t anId, uint8_t aType, Map *pMap, int maxSpeed):
     hold_on_.wayFree = 0;
 }
 
-uint16_t GenericCar::tileDir(int x, int y, int z) {
-    uint16_t dir = 0x0;
-    int near_tile;
-
-    switch(pMap_->tileAt(x, y, z)){
-        case 80:
-            if(pMap_->tileAt(x + 1, y, z) == 80)
-                dir = (0)|(0xFFF0);
-            if(pMap_->tileAt(x - 1, y, z) == 80)
-                dir = (4<<8)|(0xF0FF);
-            break;
-        case 81:
-            if(pMap_->tileAt(x, y - 1, z) == 81)
-                dir = (2<<4)|(0xFF0F);
-            if(pMap_->tileAt(x, y + 1, z) == 81)
-                dir = (6<<12)|(0x0FFF);
-            break;
-        case 106:
-            dir = (0)|(2<<4)|(6<<12)|(0x0F00);
-
-            if(pMap_->tileAt(x + 1, y - 1, z) != 118)
-                dir |= 0x0FF0;
-            if(pMap_->tileAt(x + 1, y + 1, z) != 118)
-                dir |= 0xFF00;
-            near_tile = pMap_->tileAt(x + 1, y, z);
-            if (near_tile == 108 || near_tile == 109)
-                dir = (dir & 0x0FFF) | 0x6000;
-
-            break;
-        case 107:
-            dir = (2<<4)|(4<<8)|(6<<12)|(0x000F);
-
-            if(pMap_->tileAt(x - 1, y - 1, z) != 118)
-                dir |= 0x00FF;
-            if(pMap_->tileAt(x - 1, y + 1, z) != 118)
-                dir |= 0xF00F;
-            near_tile = pMap_->tileAt(x - 1, y, z);
-            if (near_tile == 108 || near_tile == 109)
-                dir = (dir & 0xFF0F) | 0x0020;
-
-            break;
-        case 108:
-            dir = (0)|(2<<4)|(4<<8)|(0xF000);
-
-            if(pMap_->tileAt(x + 1, y - 1, z) != 118)
-                dir |= 0xF00F;
-            if(pMap_->tileAt(x - 1, y - 1, z) != 118)
-                dir |= 0xFF00;
-            near_tile = pMap_->tileAt(x, y - 1, z);
-            if (near_tile == 106 || near_tile == 107)
-                dir = dir & 0xFFF0;
-
-            break;
-        case 109:
-            dir = (0)|(4<<8)|(6<<12)|(0x00F0);
-
-            if(pMap_->tileAt(x + 1, y + 1, z) != 118)
-                dir |= 0x00FF;
-            if(pMap_->tileAt(x - 1, y + 1, z) != 118)
-                dir |= 0x0FF0;
-            near_tile = pMap_->tileAt(x, y + 1, z);
-            if (near_tile == 106 || near_tile == 107)
-                dir = (dir & 0xF0FF) | 0x0400;
-
-            break;
-        case 110:
-            dir = (0) | (2<<4)|(0xFF00);
-            break;
-        case 111:
-            dir = (0) | (6<<12)|(0x0FF0);
-            break;
-        case 112:
-            dir = (2<<4)|(4<<8)|(0xF00F);
-            break;
-        case 113:
-            dir = (4<<8)|(6<<12)|(0x00FF);
-            break;
-        /*case 119:
-            // TODO: Greenland map needs fixing
-            dir = 0xFFFF;
-            near_tile = pMap_->tileAt(x, y + 1, z);
-            if (near_tile == 107 || near_tile == 225 || near_tile == 226)
-                dir = (dir & 0xF0FF) | 0x0400;
-            near_tile = pMap_->tileAt(x, y + 1, z);
-            if (near_tile == 106 || near_tile == 225 || near_tile == 226)
-               dir &= 0xFFF0;
-            near_tile = pMap_->tileAt(x + 1, y, z);
-            if (near_tile == 109 || near_tile == 225 || near_tile == 226)
-                dir = (dir & 0xFF0F) | 0x0020;
-            near_tile = pMap_->tileAt(x - 1, y, z);
-            if (near_tile == 108 || near_tile == 225 || near_tile == 226)
-                dir = (dir & 0x0FFF) | 0x6000;
-            if (dir ==0xFFFF)
-                dir = 0x0;
-            break;*/
-        case 120:
-            dir = (0)|(2<<4)|(0xFF00);
-            break;
-        case 121:
-            dir = (0)|(6<<12)|(0x0FF0);
-            break;
-        case 122:
-            dir = (4<<8)|(6<<12)|(0x00FF);
-            break;
-        case 123:
-            dir = (2<<4)|(4<<8)|(0xF00F);
-            break;
-        case 225:/*
-            if(pMap_->getTileAt(x + 1, y, z)->type() == Tile::kRoadPedCross)
-                dir = (0)|(0xFFF0);
-            else if(pMap_->getTileAt(x - 1, y, z)->type() == Tile::kRoadPedCross)
-                dir = (4<<8)|(0xF0FF);
-            else {*/
-                dir = 0xFFFF;
-                near_tile = pMap_->tileAt(x, y + 1, z);
-                if (/*near_tile == 119 || */near_tile == 106
-                    || near_tile == 107 || near_tile == 80 || near_tile == 225)
-                    dir = (dir & 0xF0FF) | 0x0400;
-                near_tile = pMap_->tileAt(x, y - 1, z);
-                if (/*near_tile == 119 || */near_tile == 106
-                    || near_tile == 107 || near_tile == 80 || near_tile == 225)
-                    dir &= 0xFFF0;
-                near_tile = pMap_->tileAt(x + 1, y, z);
-                if (/*near_tile == 119 || */near_tile == 108 || near_tile == 81)
-                    dir = (dir & 0xFF0F) | 0x0020;
-                near_tile = pMap_->tileAt(x - 1, y, z);
-                if (/*near_tile == 119 || */near_tile == 109 || near_tile == 81)
-                    dir = (dir & 0x0FFF) | 0x6000;
-                if (dir == 0xFFFF)
-                    dir = 0x0;
-            //}
-            break;
-        case 226:/*
-            if(pMap_->getTileAt(x, y - 1, z)->type() == Tile::kRoadPedCross)
-                dir = (2<<4)|(0xFF0F);
-            else if(pMap_->getTileAt(x, y + 1, z)->type() == Tile::kRoadPedCross)
-                dir = (6<<12)|(0x0FFF);
-            else {*/
-                dir = 0xFFFF;
-                near_tile = pMap_->tileAt(x, y + 1, z);
-                if (/*near_tile == 119 || */near_tile == 106 || near_tile == 80)
-                    dir = (dir & 0xF0FF) | 0x0400;
-                near_tile = pMap_->tileAt(x, y - 1, z);
-                if (/*near_tile == 119 || */near_tile == 107 || near_tile == 80)
-                    dir &= 0xFFF0;
-                near_tile = pMap_->tileAt(x + 1, y, z);
-                if (/*near_tile == 119 || */near_tile == 108 || near_tile == 109
-                    || near_tile == 81 || near_tile == 226)
-                    dir = (dir & 0xFF0F) | 0x0020;
-                near_tile = pMap_->tileAt(x - 1, y, z);
-                if (/*near_tile == 119 || */near_tile == 108 || near_tile == 109
-                    || near_tile == 81 || near_tile == 226)
-                    dir = (dir & 0x0FFF) | 0x6000;
-                if (dir == 0xFFFF)
-                    dir = 0;
-            //}
-            break;
-        default:
-            dir = 0xFFFF;
-    }
-
-    return dir;
-}
-
 bool GenericCar::dirWalkable(TilePoint *p, int x, int y, int z) {
     if(!(pMap_->isTileWalkableByCar(x,y,z)))
         return false;
 
-    uint16_t dirStart = tileDir(p->tx,p->ty,p->tz);
-    uint16_t dirEnd = tileDir(x,y,z);
-    if (dirStart == 0x0 || dirEnd == 0x0)
+    uint16_t dirStart = pMap_->getPossibleDirectionsFromRoadTile(p->tx,p->ty,p->tz);
+    uint16_t dirEnd = pMap_->getPossibleDirectionsFromRoadTile(x,y,z);
+    if (dirStart == Map::kTileDirNone || dirEnd == Map::kTileDirNone)
         return false;
-    if (dirStart == 0xFFFF || dirEnd == 0xFFFF)
+    if (dirStart == Map::kTileDirAll || dirEnd == Map::kTileDirAll)
         return true;
 
-    if (((dirStart & 0xF000) != 0xF000)
-        || ((dirEnd & 0xF000) != 0xF000))
-        if ((dirStart & 0xF000) == (dirEnd & 0xF000))
+    // A transition is valid if both tiles share a matching non-blocked nibble
+    // (i.e. the road exits align in at least one cardinal direction).
+    if (((dirStart & Map::kDirMaskWest) != Map::kDirMaskWest)
+        || ((dirEnd & Map::kDirMaskWest) != Map::kDirMaskWest))
+        if ((dirStart & Map::kDirMaskWest) == (dirEnd & Map::kDirMaskWest))
                 return true;
-    if (((dirStart & 0x0F00) != 0x0F00)
-        || ((dirEnd & 0x0F00) != 0x0F00))
-        if ((dirStart & 0x0F00) == (dirEnd & 0x0F00))
+    if (((dirStart & Map::kDirMaskNorth) != Map::kDirMaskNorth)
+        || ((dirEnd & Map::kDirMaskNorth) != Map::kDirMaskNorth))
+        if ((dirStart & Map::kDirMaskNorth) == (dirEnd & Map::kDirMaskNorth))
                 return true;
-    if (((dirStart & 0x00F0) != 0x00F0)
-        || ((dirEnd & 0x00F0) != 0x00F0))
-        if ((dirStart & 0x00F0) == (dirEnd & 0x00F0))
+    if (((dirStart & Map::kDirMaskEast) != Map::kDirMaskEast)
+        || ((dirEnd & Map::kDirMaskEast) != Map::kDirMaskEast))
+        if ((dirStart & Map::kDirMaskEast) == (dirEnd & Map::kDirMaskEast))
                 return true;
-    if (((dirStart & 0x000F) != 0x000F)
-        || ((dirEnd & 0x000F) != 0x000F))
-        if ((dirStart & 0x000F) == (dirEnd & 0x000F))
+    if (((dirStart & Map::kDirMaskSouth) != Map::kDirMaskSouth)
+        || ((dirEnd & Map::kDirMaskSouth) != Map::kDirMaskSouth))
+        if ((dirStart & Map::kDirMaskSouth) == (dirEnd & Map::kDirMaskSouth))
                 return true;
 
     return false;
 }
 
+uint16_t GenericCar::forbiddenDirFromCurrentHeading() {
+    // Converts the car's current discrete heading (returned by getDiscreteDirection(4))
+    // into the forbiddenDir mask that blocks the pathfinder from U-turning on the first step.
+    // Heading values: 0=South, 1=West, 2=North, 3=East
+    switch ((uint16_t)getDiscreteDirection(4)) {
+        case 0: return Map::kForbidDirNorth;  // heading South → forbid going back North
+        case 1: return Map::kForbidDirEast;   // heading West  → forbid going back East
+        case 2: return Map::kForbidDirSouth;  // heading North → forbid going back South
+        case 3: return Map::kForbidDirWest;   // heading East  → forbid going back West
+        default: return Map::kForbidDirNorth;
+    }
+}
+
 /*!
- * Sets a destination point for the vehicle to reach at given speed.
- * \param pMission
- * \param destinationPt destination point
- * \return true if destination has been set correctly.
+ * Computes a path on the road network from the car's current position to \p destinationPt
+ * and stores it in dest_path_.
+ *
+ * \par Algorithm
+ * Implements a \b greedy \b best-first search (not A*): at each iteration the open node with
+ * the smallest Euclidean distance to the destination is expanded, without accumulating a path
+ * cost. This can produce sub-optimal paths on complex road layouts but is fast in practice.
+ *
+ * \par Road constraints
+ * Expansion is limited to tiles that are both walkable by cars (isTileWalkableByCar()) and
+ * connected by compatible road exits as determined by tileDir() and dirWalkable().
+ * U-turns are prevented by forbiddenDirFromCurrentHeading() and the forbiddenDir field stored
+ * per open node.
+ *
+ * \par Off-road recovery
+ * If the car's current tile is not drivable (e.g. after a collision), findPathToNearestWalkableTile()
+ * is called first to build a short recovery path; this recovery path is prepended to the main path.
+ *
+ * \par Watchdog
+ * If the search exceeds kPathfindingWatchdog iterations without reaching the goal, the closest
+ * node reached so far is used as a fallback destination.
+ *
+ * \param pMission Current mission (unused in the body — kept for interface compatibility).
+ * \param destinationPt Target tile point (tx, ty, tz, ox, oy).
+ * \return true if a non-empty path was computed; false if the destination is unreachable.
  */
 bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &destinationPt) {
-    std::map < TilePoint, uint16_t > open;
+    // Greedy best-first search on the road network.
+    // At each step, expand the open node with the smallest Euclidean distance
+    // to the destination (no cumulative cost — not A*).
+    std::map < TilePoint, uint16_t > open;   // node → forbiddenDir of that node
     std::set < TilePoint > closed;
-    std::map < TilePoint, TilePoint > parent;
-    int basex = pos_.tx, basey = pos_.ty;
-    std::vector < TilePoint > path2add;
-    path2add.reserve(16);
-    int x = destinationPt.tx;
-    int y = destinationPt.ty;
-    int z = destinationPt.tz;
-    int ox = destinationPt.ox;
-    int oy = destinationPt.oy;
+    std::map < TilePoint, TilePoint > parent; // child → parent, for path reconstruction
 
-    pMap_->adjXYZ(x, y, z);
-    // NOTE: we will be using lower tiles, later will restore Z coord
-    z = pos_.tz - 1;
+    // Effective start tile (may be updated if the car is currently off-road)
+    int startTx = pos_.tx, startTy = pos_.ty;
+    // Recovery path prepended when the car starts on a non-drivable tile
+    std::vector < TilePoint > recoveryPath;
+    recoveryPath.reserve(kMaxWalkableSearchRadius);
+
+    int destTx = destinationPt.tx;
+    int destTy = destinationPt.ty;
+    int destTz = destinationPt.tz;
+    int destOx = destinationPt.ox;
+    int destOy = destinationPt.oy;
+
+    pMap_->adjXYZ(destTx, destTy, destTz);
+    // Road tiles sit one level below the vehicle's visual Z coordinate.
+    // All pathfinding is done at (pos_.tz - 1); the real tz is restored at the end.
+    destTz = pos_.tz - 1;
 
     clearDestination();
 
-    if (!isDrawable() || isDead() || !(pMap_->isTileWalkableByCar(x, y, z))) {
-#if 0
-#if _DEBUG
-        if (!(map_ == -1 || health_ <= 0)) {
-            printf("non-walking tile is target to drive\n");
-            printf("tileAt %i\n",
-                (unsigned int)pMap_->tileAt(x, y, z));
-            printf("tile x = %i, y = %i, z = %i\n", x, y, z);
-        }
-#endif
-#endif
+    if (!isDrawable() || isDead() || !(pMap_->isTileWalkableByCar(destTx, destTy, destTz))) {
         return false;
     }
 
     // If vehicle is on a non drivable place, first set a path to a drivable tile
-    if (!pMap_->isTileWalkableByCar(pos_.tx, pos_.ty, z)) {
-        TilePoint currentPos(pos_.tx , pos_.ty, z, pos_.ox, pos_.oy);
+    if (!pMap_->isTileWalkableByCar(pos_.tx, pos_.ty, destTz)) {
+        TilePoint currentPos(pos_.tx , pos_.ty, destTz, pos_.ox, pos_.oy);
 
-        if(!findPathToNearestWalkableTile(currentPos, &basex, &basey, &path2add)) {
+        if(!findPathToNearestWalkableTile(currentPos, &startTx, &startTy, &recoveryPath)) {
             return false;
         }
     }
 
-    TilePoint closest;
-    float closest_dist = 100000;
+    // Fallback node: the closest tile reached if the watchdog fires before we hit the goal
+    TilePoint closestReached;
+    float closestDist = kInfiniteDistance;
 
-    uint16_t wrong_dir = (uint16_t)getDiscreteDirection(4);
-    if (wrong_dir == 0x0)
-        wrong_dir = 0x0400;
-    else if(wrong_dir == 0x1)
-        wrong_dir = 0x6000;
-    else if(wrong_dir == 0x2)
-        wrong_dir = 0x0;
-    else if(wrong_dir == 0x3)
-        wrong_dir = 0x0020;
-    open.insert(std::pair< TilePoint, uint16_t >(TilePoint(basex, basey, z, pos_.ox, pos_.oy),
-        wrong_dir));
-    int watchDog = 1000;
+    // Seed the open set with the start tile.
+    // forbiddenDir is derived from the car's current heading so we don't immediately U-turn.
+    uint16_t forbiddenDir = forbiddenDirFromCurrentHeading();
+    open.insert(std::pair< TilePoint, uint16_t >(TilePoint(startTx, startTy, destTz, pos_.ox, pos_.oy),
+        forbiddenDir));
+    int watchDog = kPathfindingWatchdog;
 
     while (!open.empty()) {
         watchDog--;
-        float dist = 100000;
+
+        // --- Select the open node closest to the destination (greedy criterion) ---
+        float bestDistToGoal = kInfiniteDistance;
         TilePoint p;
-        std::map < TilePoint, uint16_t >::iterator pit;
+        std::map < TilePoint, uint16_t >::iterator bestIt;
         for (std::map < TilePoint, uint16_t >::iterator it = open.begin();
              it != open.end(); it++)
         {
-            float d =
-                sqrt((float) (x - it->first.tx) * (x - it->first.tx) +
-                     (y - it->first.ty) * (y - it->first.ty));
-            if (d < dist) {
-                dist = d;
+            float distToGoal =
+                sqrt((float) (destTx - it->first.tx) * (destTx - it->first.tx) +
+                     (float) (destTy - it->first.ty) * (destTy - it->first.ty));
+            if (distToGoal < bestDistToGoal) {
+                bestDistToGoal = distToGoal;
                 p = it->first;
-                pit = it;       // it cannot be const_iterator because of this assign
-                wrong_dir = it->second;
+                bestIt = it;        // it cannot be const_iterator because of this assign
+                forbiddenDir = it->second;
             }
         }
-        if (dist < closest_dist) {
-            closest = p;
-            closest_dist = dist;
+        if (bestDistToGoal < closestDist) {
+            closestReached = p;
+            closestDist = bestDistToGoal;
         }
-        //printf("found best dist %f in %i nodes\n", dist, open.size());
-        open.erase(pit);
+        open.erase(bestIt);
         closed.insert(p);
 
-        if ((p.tx == x && p.ty == y && p.tz == z)
+        // --- Goal test (or watchdog expiry → use best node reached so far) ---
+        if ((p.tx == destTx && p.ty == destTy && p.tz == destTz)
             || watchDog < 0)
         {
             if (watchDog < 0) {
-                p = closest;
-                dest_path_.
-                    push_front(TilePoint
-                               (p.tx, p.ty, p.tz, ox, oy));
+                p = closestReached;
+                dest_path_.push_front(TilePoint(p.tx, p.ty, p.tz, destOx, destOy));
             } else
-                dest_path_.push_front(TilePoint(x, y, z, ox, oy));
+                dest_path_.push_front(TilePoint(destTx, destTy, destTz, destOx, destOy));
+
+            // Reconstruct path by following parent links back to the start tile
             while (parent.find(p) != parent.end()) {
                 p = parent[p];
-                if (p.tx == pos_.tx && p.ty == pos_.ty
-                    && p.tz == z)
+                if (p.tx == pos_.tx && p.ty == pos_.ty && p.tz == destTz)
                     break;
                 dest_path_.push_front(p);
             }
             break;
         }
 
-        std::map <TilePoint, uint16_t> neighbours;
-        uint16_t goodDir = tileDir(p.tx, p.ty, p.tz);
+        // --- Expand neighbours: only road-adjacent tiles that respect driving direction ---
+        // tileDir() encodes which exits a tile has (4 nibbles, one per cardinal direction).
+        // forbiddenDir is the direction back to the parent — we skip it to prevent U-turns.
+        std::map <TilePoint, uint16_t> candidateNeighbors;
+        uint16_t currentTileDir = pMap_->getPossibleDirectionsFromRoadTile(p.tx, p.ty, p.tz);
 
-        if (wrong_dir != 0x6000 && p.tx > 0) {
+        // Try going West (tx-1): allowed if current tile has a West exit and we didn't come from West
+        if (forbiddenDir != Map::kForbidDirWest && p.tx > 0) {
             if (dirWalkable(&p, p.tx - 1, p.ty, p.tz)
-                && ((goodDir & 0xF000) == 0x6000 || goodDir == 0xFFFF))
-                neighbours[TilePoint(p.tx - 1, p.ty, p.tz)] = 0x0020;
+                && ((currentTileDir & Map::kDirMaskWest) == Map::kForbidDirWest || currentTileDir == Map::kTileDirAll))
+                candidateNeighbors[TilePoint(p.tx - 1, p.ty, p.tz)] = Map::kForbidDirEast;
         }
 
-        if (wrong_dir != 0x0020 && p.tx < pMap_->maxTx()) {
+        // Try going East (tx+1): allowed if current tile has an East exit and we didn't come from East
+        if (forbiddenDir != Map::kForbidDirEast && p.tx < pMap_->maxTx()) {
             if (dirWalkable(&p, p.tx + 1, p.ty, p.tz)
-                && ((goodDir & 0x00F0) == 0x0020 || goodDir == 0xFFFF))
-                neighbours[TilePoint(p.tx + 1, p.ty, p.tz)] = 0x6000;
+                && ((currentTileDir & Map::kDirMaskEast) == Map::kForbidDirEast || currentTileDir == Map::kTileDirAll))
+                candidateNeighbors[TilePoint(p.tx + 1, p.ty, p.tz)] = Map::kForbidDirWest;
         }
 
-        if (wrong_dir != 0x0400 && p.ty > 0)
+        // Try going North (ty-1): allowed if current tile has a North exit and we didn't come from North
+        if (forbiddenDir != Map::kForbidDirNorth && p.ty > 0)
             if (dirWalkable(&p, p.tx, p.ty - 1, p.tz)
-                && ((goodDir & 0x0F00) == 0x0400 || goodDir == 0xFFFF))
-                neighbours[TilePoint(p.tx, p.ty - 1, p.tz)] = 0x0;
+                && ((currentTileDir & Map::kDirMaskNorth) == Map::kForbidDirNorth || currentTileDir == Map::kTileDirAll))
+                candidateNeighbors[TilePoint(p.tx, p.ty - 1, p.tz)] = Map::kForbidDirSouth;
 
-        if (wrong_dir != 0x0000 && p.ty < pMap_->maxTy())
+        // Try going South (ty+1): allowed if current tile has a South exit and we didn't come from South
+        if (forbiddenDir != Map::kForbidDirSouth && p.ty < pMap_->maxTy())
             if (dirWalkable(&p, p.tx, p.ty + 1, p.tz)
-                && ((goodDir & 0x000F) == 0x0 || goodDir == 0xFFFF))
-                neighbours[TilePoint(p.tx, p.ty + 1, p.tz)] = 0x0400;
+                && ((currentTileDir & Map::kDirMaskSouth) == Map::kForbidDirSouth || currentTileDir == Map::kTileDirAll))
+                candidateNeighbors[TilePoint(p.tx, p.ty + 1, p.tz)] = Map::kForbidDirNorth;
 
-        for (std::map <TilePoint, uint16_t>::iterator it = neighbours.begin();
-            it != neighbours.end(); it++)
+        for (std::map <TilePoint, uint16_t>::iterator it = candidateNeighbors.begin();
+            it != candidateNeighbors.end(); it++)
             if (dirWalkable(&p, it->first.tx, it->first.ty,
                 it->first.tz)
                 && open.find(it->first) == open.end()
@@ -503,7 +378,9 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
     }
 
     if(!dest_path_.empty()) {
-        // Adjusting offsets for correct positioning
+        // Adjust intra-tile offsets (ox, oy) so the car stays centered in the correct lane.
+        // Each case matches a tileDir() pattern; kLaneOffsetLow/High position the car
+        // on the appropriate side of the road based on driving direction.
         setSpeedToMax();
         int curox = pos_.ox;
         int curoy = pos_.oy;
@@ -512,39 +389,39 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
         {
             // TODO : adjust offsets respecting direction relative to
             // close next tiles
-            switch(tileDir(it->tx, it->ty, it->tz)) {
+            switch(pMap_->getPossibleDirectionsFromRoadTile(it->tx, it->ty, it->tz)) {
                 case 0xFFF0:
                 case 0xFF20:
-                    it->ox = 200;
-                    it->oy = 32;
-                    curox = 200;
-                    curoy = 32;
+                    it->ox = kLaneOffsetHigh;
+                    it->oy = kLaneOffsetLow;
+                    curox = kLaneOffsetHigh;
+                    curoy = kLaneOffsetLow;
                     break;
                 case 0xF4FF:
-                    it->ox = 32;
-                    it->oy = 200;
-                    curox = 32;
-                    curoy = 200;
+                    it->ox = kLaneOffsetLow;
+                    it->oy = kLaneOffsetHigh;
+                    curox = kLaneOffsetLow;
+                    curoy = kLaneOffsetHigh;
                     break;
                 case 0xFF2F:
                 case 0xF42F:
-                    it->ox = 32;
-                    it->oy = 32;
-                    curox = 32;
-                    curoy = 32;
+                    it->ox = kLaneOffsetLow;
+                    it->oy = kLaneOffsetLow;
+                    curox = kLaneOffsetLow;
+                    curoy = kLaneOffsetLow;
                     break;
                 case 0x6FFF:
                 case 0x64FF:
-                    it->ox = 32;
-                    it->oy = 200;
-                    curox = 32;
-                    curoy = 200;
+                    it->ox = kLaneOffsetLow;
+                    it->oy = kLaneOffsetHigh;
+                    curox = kLaneOffsetLow;
+                    curoy = kLaneOffsetHigh;
                     break;
                 case 0x6FF0:
-                    it->ox = 200;
-                    it->oy = 200;
-                    curox = 200;
-                    curoy = 200;
+                    it->ox = kLaneOffsetHigh;
+                    it->oy = kLaneOffsetHigh;
+                    curox = kLaneOffsetHigh;
+                    curoy = kLaneOffsetHigh;
                     break;
                 default:
 #if 0
@@ -561,12 +438,14 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
                     it->oy = curoy;
                     break;
             }
+            // Restore real vehicle Z coordinate (road tiles are at pos_.tz - 1)
             it->tz = pos_.tz;
         }
     }
-    if((!path2add.empty()) && (!dest_path_.empty())) {
-        for (std::vector < TilePoint >::reverse_iterator it = path2add.rbegin();
-            it != path2add.rend(); it++)
+    // Prepend recovery path (computed if the car started off a drivable tile)
+    if((!recoveryPath.empty()) && (!dest_path_.empty())) {
+        for (std::vector < TilePoint >::reverse_iterator it = recoveryPath.rbegin();
+            it != recoveryPath.rend(); it++)
         {
             it->tz = pos_.tz;
             dest_path_.push_front(*it);
@@ -576,90 +455,104 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
     return !dest_path_.empty();
 }
 
-bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *basex, int *basey, std::vector < TilePoint > *path2add) {
-    int dBest = 100000, dCur;
-    std::vector < TilePoint > path2wtile;
-    path2wtile.reserve(16);
+/*!
+ * Finds the nearest drivable road tile to the car's current position and builds a
+ * straight-line recovery path to reach it.
+ *
+ * Called when the car is on a non-drivable tile. Scans up to kMaxWalkableSearchRadius tiles
+ * in each of the four cardinal directions (+X, -X, -Y, +Y) and keeps the candidate with the
+ * smallest squared distance (to avoid sqrt). The winning path is stored in \p recoveryPath
+ * and the tile coordinates of its end point are written into \p startTx / \p startTy so that
+ * the main pathfinder can continue from there.
+ *
+ * \param startPt     The car's current position (off-road).
+ * \param startTx     [out] X tile coordinate of the nearest walkable tile found.
+ * \param startTy     [out] Y tile coordinate of the nearest walkable tile found.
+ * \param recoveryPath [out] Sequence of tile points leading to the nearest walkable tile.
+ * \return true if a walkable tile was found within the search radius; false otherwise.
+ */
+bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *startTx, int *startTy, std::vector < TilePoint > *recoveryPath) {
+    // Scan up to kMaxWalkableSearchRadius tiles in each of the 4 cardinal directions
+    // to find the closest drivable tile. Uses squared distance to avoid sqrt.
+    int bestDist = (int)kInfiniteDistance, curDist;
+    std::vector < TilePoint > candidatePath;
+    candidatePath.reserve(kMaxWalkableSearchRadius);
     // we got somewhere we shouldn't, we need to find somewhere that is walkable
-    TilePoint pntile = startPt;
-    for (int i = 1; i < 16; i++) {
+    TilePoint probePoint = startPt;
+    for (int i = 1; i < kMaxWalkableSearchRadius; i++) {
         if (pos_.tx + i >= pMap_->maxTx())
             break;
-        pntile.tx = pos_.tx + i;
-        path2wtile.push_back(pntile);
+        probePoint.tx = pos_.tx + i;
+        candidatePath.push_back(probePoint);
         if (pMap_->isTileWalkableByCar(pos_.tx + i, pos_.ty, startPt.tz)) {
-            dCur = i * i;
-            if(dCur < dBest) {
-                dBest = dCur;
-                //path2add = path2wtile;
-                path2add->assign(path2wtile.begin(), path2wtile.end());
-                *basex = pos_.tx + i;
-                *basey = pos_.ty;
+            curDist = i * i;
+            if(curDist < bestDist) {
+                bestDist = curDist;
+                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
+                *startTx = pos_.tx + i;
+                *startTy = pos_.ty;
                 break;
             }
         }
     }
 
-    path2wtile.clear();
-    pntile = startPt;
-    for (int i = -1; i > -16; --i) {
+    candidatePath.clear();
+    probePoint = startPt;
+    for (int i = -1; i > -kMaxWalkableSearchRadius; --i) {
         if (pos_.tx + i < 0)
             break;
-        pntile.tx = (pos_.tx + i);
-        path2wtile.push_back(pntile);
+        probePoint.tx = (pos_.tx + i);
+        candidatePath.push_back(probePoint);
         if (pMap_->isTileWalkableByCar(pos_.tx + i, pos_.ty, startPt.tz)) {
-            dCur = i * i;
-            if(dCur < dBest) {
-                dBest = dCur;
-                //path2add = path2wtile;
-                path2add->assign(path2wtile.begin(), path2wtile.end());
-                *basex = pos_.tx + i;
-                *basey = pos_.ty;
+            curDist = i * i;
+            if(curDist < bestDist) {
+                bestDist = curDist;
+                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
+                *startTx = pos_.tx + i;
+                *startTy = pos_.ty;
                 break;
             }
         }
     }
 
-    path2wtile.clear();
-    pntile = startPt;
-    for (int i = -1; i > -16; --i) {
+    candidatePath.clear();
+    probePoint = startPt;
+    for (int i = -1; i > -kMaxWalkableSearchRadius; --i) {
         if (pos_.ty + i < 0)
             break;
-        pntile.ty = (pos_.ty + i);
-        path2wtile.push_back(pntile);
+        probePoint.ty = (pos_.ty + i);
+        candidatePath.push_back(probePoint);
         if (pMap_->isTileWalkableByCar(pos_.tx, pos_.ty + i, startPt.tz)) {
-            dCur = i * i;
-            if(dCur < dBest) {
-                dBest = dCur;
-                //path2add = path2wtile;
-                path2add->assign(path2wtile.begin(), path2wtile.end());
-                *basex = pos_.tx;
-                *basey = pos_.ty + i;
+            curDist = i * i;
+            if(curDist < bestDist) {
+                bestDist = curDist;
+                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
+                *startTx = pos_.tx;
+                *startTy = pos_.ty + i;
                 break;
             }
         }
     }
 
-    path2wtile.clear();
-    pntile = startPt;
-    for (int i = 1; i < 16; i++) {
+    candidatePath.clear();
+    probePoint = startPt;
+    for (int i = 1; i < kMaxWalkableSearchRadius; i++) {
         if (pos_.ty + i >= pMap_->maxTy())
             break;
-        pntile.ty = pos_.ty + i;
-        path2wtile.push_back(pntile);
+        probePoint.ty = pos_.ty + i;
+        candidatePath.push_back(probePoint);
         if (pMap_->isTileWalkableByCar(pos_.tx, pos_.ty + i, startPt.tz)) {
-            dCur = i * i;
-            if(dCur < dBest) {
-                dBest = dCur;
-                //path2add = path2wtile;
-                path2add->assign(path2wtile.begin(), path2wtile.end());
-                *basex = pos_.tx;
-                *basey = pos_.ty + i;
+            curDist = i * i;
+            if(curDist < bestDist) {
+                bestDist = curDist;
+                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
+                *startTx = pos_.tx;
+                *startTy = pos_.ty + i;
                 break;
             }
         }
     }
-    return (dBest != 100000);
+    return (bestDist != (int)kInfiniteDistance);
 }
 
 /*!

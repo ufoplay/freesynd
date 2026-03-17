@@ -43,6 +43,25 @@ public:
     //! Height of a component of a tile
     static const int kSubTileHeight;
 
+    // Road tile type IDs used by GenericCar::tileDir() to determine allowed driving directions.
+    static constexpr int kTileRoadEW      = 80;  ///< Straight road, East-West axis
+    static constexpr int kTileRoadNS      = 81;  ///< Straight road, North-South axis
+    static constexpr int kTileRoadNtoS    = 106; ///< Straight road, North to South axis
+    static constexpr int kTileRoadStoN    = 107; ///< Straight road, South to North axis
+    static constexpr int kTileRoadWtoE    = 108; ///< Straight road, West to East axis
+    static constexpr int kTileRoadEtoW    = 109; ///< Straight road, East to West axis
+    static constexpr int kTileCurveWtoS   = 110; ///< Corner junction South-East
+    static constexpr int kTileCurveNtoW   = 111; ///< Corner junction North-West
+    static constexpr int kTileCurveStoE   = 112; ///< Corner junction South-East
+    static constexpr int kTileCurveEtoN   = 113; ///< Corner junction East-North
+    static constexpr int kTileRoundAbout  = 118; ///< Non-drivable tile center of intersections
+    static constexpr int kTileCurveNtoE   = 120; ///< Corner junction North-East
+    static constexpr int kTileCurveEtoS   = 121; ///< Corner junction East-South
+    static constexpr int kTileExtCurveStoW = 122; ///< Exterior corner junction South-West
+    static constexpr int kTileExtCurveWtoN = 123; ///< Exterior corner junction West-North
+    static constexpr int kTilePedCrossNS   = 225; ///< Pedestrian crossing on NS road
+    static constexpr int kTilePedCrossEW   = 226; ///< Pedestrian crossing on EW road
+
     /*!
      * A tile type.
      */

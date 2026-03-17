@@ -517,7 +517,7 @@ void GameplayMenu::handleClickOnMap(Point2D point, int button) {
                 target_->id(), target_->natureName());
         }
 
-        int tileid = mission_->map()->tileAt(mapPt.tx, mapPt.ty, mapPt.tz);
+        int tileid = mission_->map()->getTileIdAt(mapPt.tx, mapPt.ty, mapPt.tz);
         printf("Tile id %d\n", tileid);
         return;
     }

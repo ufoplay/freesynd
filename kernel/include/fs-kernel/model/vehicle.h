@@ -150,10 +150,19 @@ public:
 
     void handleHit(DamageToInflict &d);
 
+    // Intra-tile lane offsets (ox/oy range 0-255)
+    static const int kLaneOffsetLow  = 32;  ///< Position on the low side of the lane
+    static const int kLaneOffsetHigh = 200; ///< Position on the high side of the lane
+
+    // Pathfinding limits
+    static const int   kMaxWalkableSearchRadius = 16;       ///< Max tile search radius in findPathToNearestWalkableTile()
+    static const int   kPathfindingWatchdog     = 1000;     ///< Max greedy-search iterations before giving up
+    static const float kInfiniteDistance;                   ///< Sentinel "infinity" for distance comparisons
+
 protected:
-    bool findPathToNearestWalkableTile(const TilePoint &startPt, int *basex, int *basey, std::vector < TilePoint > *path2add);
-    uint16_t tileDir(int x, int y, int z);
+    bool findPathToNearestWalkableTile(const TilePoint &startPt, int *startTx, int *startTy, std::vector < TilePoint > *recoveryPath);
     bool dirWalkable(TilePoint *p, int x, int y, int z);
+    uint16_t forbiddenDirFromCurrentHeading();
 
 protected:
     //! Vehicle driver

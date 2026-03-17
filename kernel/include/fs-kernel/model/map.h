@@ -37,6 +37,35 @@ namespace fs_knl {
  */
 class Map {
 public:
+    // -----------------------------------------------------------------------
+    // Pathfinding constants — direction bitmask encoding used by tileDir()
+    // -----------------------------------------------------------------------
+    // tileDir() returns a uint16_t with 4 nibbles (4 bits each):
+    //   bits 15-12 : West  (tx-1)
+    //   bits 11-8  : North (ty-1)
+    //   bits  7-4  : East  (tx+1)
+    //   bits  3-0  : South (ty+1)
+    // A nibble = 0xF means the direction is blocked; any other value = allowed.
+    static const uint16_t kDirMaskWest  = 0xF000; ///< Nibble mask for West direction
+    static const uint16_t kDirMaskNorth = 0x0F00; ///< Nibble mask for North direction
+    static const uint16_t kDirMaskEast  = 0x00F0; ///< Nibble mask for East direction
+    static const uint16_t kDirMaskSouth = 0x000F; ///< Nibble mask for South direction
+    // Complement masks (used to clear a single nibble without triggering sign-conversion warnings)
+    static const uint16_t kDirClearWest  = 0x0FFF; ///< Clears the West nibble (bits 15-12)
+    static const uint16_t kDirClearNorth = 0xF0FF; ///< Clears the North nibble (bits 11-8)
+    static const uint16_t kDirClearEast  = 0xFF0F; ///< Clears the East nibble (bits 7-4)
+    static const uint16_t kDirClearSouth = 0xFFF0; ///< Clears the South nibble (bits 3-0)
+
+    // forbiddenDir values: encode "from which direction we came" to prevent U-turns.
+    static const uint16_t kForbidDirSouth = 0x0000; ///< Came from South — no going back South
+    static const uint16_t kForbidDirEast  = 0x0020; ///< Came from East  — no going back East
+    static const uint16_t kForbidDirNorth = 0x0400; ///< Came from North — no going back North
+    static const uint16_t kForbidDirWest  = 0x6000; ///< Came from West  — no going back West
+
+    static const uint16_t kTileDirNone = 0x0000; ///< tileDir() result: not a road tile
+    static const uint16_t kTileDirAll  = 0xFFFF; ///< tileDir() result: intersection, all directions open
+    
+public:
     Map(fs_eng::TileManager *tileManager, uint16_t anId);
     ~Map();
 
@@ -121,10 +150,14 @@ public:
     fs_eng::Tile * getTileAt(int x, int y, int z);
     //! Return the tile at given position. Only uses tx, ty and tz
     fs_eng::Tile * getTileAt(const TilePoint &tilePt);
-    int tileAt(int x, int y, int z);
+    //! Return the id of the tile at given position
+    int getTileIdAt(int tx, int ty, int tz);
+
     void patchMap(int x, int y, int z, uint8_t tileNum);
+
     //! Return true if tile at given position is traversable by car
     bool isTileWalkableByCar(int x, int y, int z);
+    uint16_t getPossibleDirectionsFromRoadTile(int x, int y, int z);
 
 protected:
     /*!  Every map has a unique ID which is used to identify the
