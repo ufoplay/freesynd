@@ -1,0 +1,49 @@
+sequenceDiagram
+    autonumber
+
+    participant GT as GameLoop
+    participant M as Mission
+    participant P as PedInstance
+    participant PS as ProjectileShot
+    participant W as WeaponInstance
+    participant IIS as InstantImpactShot
+    participant B as Behaviour
+
+    GT->>M: handleTick(elapsed, diff)
+
+    rect rgb(220, 235, 255)
+        note over M,IIS: Chemin 1 — Tir à impact immédiat (pistolet, fusil...)
+        M->>P: animate(diff)
+        P->>P: doUpdateState(diff)
+        P->>P: executeUseWeaponAction(elapsed, mission)
+        P->>W: shoot(pMission, ...)
+        W->>IIS: inflictDamage(pMission)
+        IIS->>M: checkIfBlockersInShootingLine(origin, &target, ...)
+        M->>M: checkBlockedByTile(...)
+        M->>M: checkBlockedByObject(start, end, dist, origin)
+        M-->>IIS: MapObject* blocker
+        M-->>IIS: uint8_t blockMask
+    end
+
+    rect rgb(220, 255, 220)
+        note over M,PS: Chemin 2 — Projectile en vol (rocket, gauss gun...)
+        M->>PS: animate(diff, pMission)
+        PS->>PS: moveProjectile(elapsed, pMission)
+        PS->>M: checkIfBlockersInShootingLine(curPos, &hit, nextPos, ...)
+        M->>M: checkBlockedByTile(...)
+        M->>M: checkBlockedByObject(start, end, dist, origin)
+        M-->>PS: uint8_t blockMask
+        PS->>PS: inflictDamage(pMission)
+    end
+
+    rect rgb(255, 240, 210)
+        note over M,B: Chemin 3 — IA cherche une arme au sol
+        M->>P: animate(diff)
+        P->>P: doUpdateState(diff)
+        P->>B: execute(pMission, pPed, ...)
+        B->>M: getPathLengthBetween(pPed, weapon, maxLen, &len)
+        M->>M: checkIfBlockersInShootingLine(pedPos, &weapon, ..., checkTileOnly=true)
+        M->>M: checkBlockedByTile(...)
+        note right of M: checkTileOnly=true :<br/>checkBlockedByObject<br/>n'est PAS appelé
+        M-->>B: uint8_t result
+    end
