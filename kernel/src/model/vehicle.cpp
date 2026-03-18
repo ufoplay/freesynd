@@ -236,7 +236,7 @@ uint16_t GenericCar::forbiddenDirFromCurrentHeading() {
  * \param destinationPt Target tile point (tx, ty, tz, ox, oy).
  * \return true if a non-empty path was computed; false if the destination is unreachable.
  */
-bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &destinationPt) {
+bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, const TilePoint &destinationPt) {
     // Greedy best-first search on the road network.
     // At each step, expand the open node with the smallest Euclidean distance
     // to the destination (no cumulative cost — not A*).
@@ -304,8 +304,8 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
              it != open.end(); it++)
         {
             float distToGoal =
-                sqrt((float) (destTx - it->first.tx) * (destTx - it->first.tx) +
-                     (float) (destTy - it->first.ty) * (destTy - it->first.ty));
+                sqrt(static_cast<float> ((destTx - it->first.tx) * (destTx - it->first.tx) +
+                     (destTy - it->first.ty) * (destTy - it->first.ty)));
             if (distToGoal < bestDistToGoal) {
                 bestDistToGoal = distToGoal;
                 p = it->first;
@@ -566,7 +566,7 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
  * Moves a vehicle on the map.
  * \param elapsed Elapsed time sine last frame.
  */
-bool GenericCar::doMove(uint32_t elapsed, Mission *m)
+bool GenericCar::doMove(uint32_t elapsed, [[maybe_unused]] Mission *m)
 {
     bool updated = false;
     int used_time = elapsed;
