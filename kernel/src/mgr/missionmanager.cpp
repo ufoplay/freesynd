@@ -206,7 +206,25 @@ bool MissionManager::load_level_data(int n, LevelData::LevelDataAll &level_data)
  *
  */
 void MissionManager::hackMissions(int missionId, uint8_t *data) {
-    if (missionId == 10) { // Western Europe
+    if (missionId == 2) { // Far east
+        // Change the second destination of the car for ped #40
+        // because in original it is not walkable
+        uint8_t *scen_start = data + kScenarioOffset + 8 * 57;
+        scen_start[5] = 86; // change only the ty coord
+        // Same for ped #42
+        scen_start = data + kScenarioOffset + 8 * 55;
+        scen_start[5] = 86; // change only the ty coord
+        // Same for ped #44
+        scen_start = data + kScenarioOffset + 8 * 45;
+        scen_start[5] = 96; // change only the ty coord
+        // Same for ped #45
+        scen_start = data + kScenarioOffset + 8 * 59;
+        scen_start[4] = 114; // change only the tx coord
+        // Same for ped #46
+        scen_start = data + kScenarioOffset + 8 * 63;
+        scen_start[4] = 110; // change only the tx coord
+        
+    } else if (missionId == 10) { // Western Europe
         // Change the second destination of the car for ped #168
         // as in original scenario that destination seems non walkable
         uint8_t *scen_start = data + kScenarioOffset + 8 * 8;

@@ -29,6 +29,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "fs-utils/log/log.h"
 #include "fs-engine/gfx/animationmanager.h"
 #include "fs-kernel/model/mission.h"
 #include "fs-kernel/model/shot.h"
@@ -199,11 +200,11 @@ uint16_t GenericCar::forbiddenDirFromCurrentHeading() {
     // Converts the car's current discrete heading (returned by getDiscreteDirection(4))
     // into the forbiddenDir mask that blocks the pathfinder from U-turning on the first step.
     // Heading values: 0=South, 1=West, 2=North, 3=East
-    switch ((uint16_t)getDiscreteDirection(4)) {
+    switch (getDiscreteDirection(4)) {
         case 0: return Map::kForbidDirNorth;  // heading South → forbid going back North
-        case 1: return Map::kForbidDirEast;   // heading West  → forbid going back East
+        case 1: return Map::kForbidDirWest;   // heading East  → forbid going back West
         case 2: return Map::kForbidDirSouth;  // heading North → forbid going back South
-        case 3: return Map::kForbidDirWest;   // heading East  → forbid going back West
+        case 3: return Map::kForbidDirEast;   // heading West  → forbid going back East
         default: return Map::kForbidDirNorth;
     }
 }
@@ -262,7 +263,13 @@ bool GenericCar::initMovementToDestination(Mission *pMission, const TilePoint &d
 
     clearDestination();
 
-    if (!isDrawable() || isDead() || !(pMap_->isTileWalkableByCar(destTx, destTy, destTz))) {
+    if (!isDrawable() || isDead()) {
+        LOG(Log::k_FLG_GFX, "GenericCar", "initMovementToDestination", ("Car is invisible or dead"))
+        return false;
+    }
+
+    if (!(pMap_->isTileWalkableByCar(destTx, destTy, destTz))) {
+        LOG(Log::k_FLG_GFX, "GenericCar", "initMovementToDestination", ("Destination point is not walkable by car %d : %d, %d, %d", id(), destTx, destTy, destTz))
         return false;
     }
 
