@@ -2332,33 +2332,34 @@ bool PedInstance::doMove(uint32_t elapsed, Mission *pMission)
         int nxtTileX = dest_path_.front().tx;
         int nxtTileY = dest_path_.front().ty;
         int nxtTileZ = dest_path_.front().tz;
-        if (hold_on_.wayFree != 0 && hold_on_.pathBlocker->canBlock()) {
+        if (hold_on_.pathBlocker != nullptr && hold_on_.pathBlocker->canBlock()) {
             if (hold_on_.xadj || hold_on_.yadj) {
                 if(abs(hold_on_.tilex - nxtTileX) <= hold_on_.xadj
                     && abs(hold_on_.tiley - nxtTileY) <= hold_on_.yadj
                     && hold_on_.tilez == nxtTileZ)
                 {
-                    if (hold_on_.wayFree == 1)
-                        return updated;
-                    // hold_on_.wayFree == 2
-                    dest_path_.clear();
                     stop();
+                    if (hold_on_.terminatePath) {
+                        dest_path_.clear();
+                    }
+                    
                     return updated;
                 }
             } else {
                 if (hold_on_.tilex == nxtTileX && hold_on_.tiley == nxtTileY
                     && hold_on_.tilez == nxtTileZ)
                 {
-                    if (hold_on_.wayFree == 1)
-                        return updated;
-                    // hold_on_.wayFree == 2
-                    dest_path_.clear();
                     stop();
+                    if (hold_on_.terminatePath) {
+                        dest_path_.clear();
+                    }
                     return updated;
                 }
             }
-        } else
-            hold_on_.wayFree = 0;
+        } else {
+            unblockPath();
+            setSpeedToMax();
+        }
         // TODO: not ignore Z, if tile is stairs diffz is wrong
         int adx =
              nxtTileX * 256 + dest_path_.front().ox;

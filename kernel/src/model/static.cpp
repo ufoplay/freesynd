@@ -374,7 +374,7 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                         found = true;
                         playAnimation(openingAnim_);
                     }
-                    pPed->blockPath(this, 1, x, y, z);
+                    pPed->blockPathWith(this, false, x, y, z);
                 }
             } while (pPed);
             *i = 0;
@@ -389,7 +389,7 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                         found = true;
                         playAnimation(openingAnim_);
                     }
-                    pPed->blockPath(this, 1, x, y, z);
+                    pPed->blockPathWith(this, false, x, y, z);
                 }
             } while (pPed);
             break;
@@ -454,7 +454,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
     std::vector<PedInstance *> found_peds_mid;
     found_peds_mid.reserve(256);
     char sign;
-    int set_wayFree = 0;
+    bool terminatePath = false;
 
     switch(state_) {
         case Static::kStateDoorOpen:
@@ -570,17 +570,17 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 {
                     int xadj = (orientation_ == kStaticOrientation1) ? 1 : 0;
                     int yadj = (orientation_ == kStaticOrientation2) ? 1 : 0;
-                    for (PedInstance *pPed : found_peds) {
-                        pPed->blockPath(this, 2, x, y, z, xadj, yadj);
+                    for (PedInstance *pFoundPed : found_peds) {
+                        pFoundPed->blockPathWith(this, true, x, y, z, xadj, yadj);
                     }
                 }
-                for (PedInstance *pPed : found_peds_mid) {
+                for (PedInstance *pFoundPedMid : found_peds_mid) {
                     DamageToInflict d;
                     d.dtype = kDmgTypeCollision;
                     d.d_owner = NULL;
                     d.dvalue = 1024;
                     d.ddir = -1;
-                    pPed->handleHit(d);
+                    pFoundPedMid->handleHit(d);
                 }
             }
             break;
@@ -608,7 +608,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     activateBlocking();
                     found = true;
                 }
-                pVehicle->blockPath(this, 1);
+                pVehicle->blockPathWith(this);
             }
             *j = 1 * sign;
             *i = 2;
@@ -623,7 +623,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     activateBlocking();
                     found = true;
                 }
-                pVehicle->blockPath(this, 1);
+                pVehicle->blockPathWith(this);
             }
             *j = -1;
             for (*i = -1; *i <= 1; (*i)++ ) {
@@ -659,12 +659,12 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     }
                 } while (pPed);
             }
-            set_wayFree = state_ == Static::kStateDoorOpening ? 1 : 2;
+            terminatePath = (state_ != Static::kStateDoorOpening);
             {
                 int xadj = (orientation_ == kStaticOrientation1) ? 1 : 0;
                 int yadj = (orientation_ == kStaticOrientation2) ? 1 : 0;
                 for (PedInstance *pPed : found_peds) {
-                    pPed->blockPath(this, set_wayFree, x, y, z, xadj, yadj);
+                    pPed->blockPathWith(this, terminatePath, x, y, z, xadj, yadj);
                 }
             }
             break;
@@ -682,13 +682,13 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
             assert(i != 0 && j != 0);
             *j = -1 * sign;
             *i = -2;
-            set_wayFree = state_ == Static::kStateDoorOpening ? 1 : 2;
+            terminatePath = (state_ != Static::kStateDoorOpening);
             aNature = MapObject::kNatureVehicle; si = 0;
             pVehicle = dynamic_cast<ShootableMovableMapObject *>
                     (pMission->findObjectWithNatureAtPos(x + inc_rel,
                 y + rel_inc,z, aNature, &si));
             if (pVehicle) {
-                pVehicle->blockPath(this, 1);
+                pVehicle->blockPathWith(this);
             }
             *j = 1 * sign;
             *i = 2;
@@ -697,7 +697,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     (pMission->findObjectWithNatureAtPos(x + inc_rel,
                 y + rel_inc,z, aNature, &si));
             if (pVehicle) {
-                pVehicle->blockPath(this, 1);
+                pVehicle->blockPathWith(this);
             }
             *j = -1;
             for (*i = -1; *i <= 1; (*i)++ ) {
@@ -724,8 +724,8 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
             {
                 int xadj = (orientation_ == kStaticOrientation1) ? 1 : 0;
                 int yadj = (orientation_ == kStaticOrientation2) ? 1 : 0;
-                for (PedInstance *pPed : found_peds) {
-                    pPed->blockPath(this, set_wayFree, x, y, z, xadj, yadj);
+                for (PedInstance *pFoundPed : found_peds) {
+                    pFoundPed->blockPathWith(this, terminatePath, x, y, z, xadj, yadj);
                 }
             }
             break;

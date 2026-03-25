@@ -476,11 +476,11 @@ ShootableMovableMapObject::ShootableMovableMapObject(uint16_t anId, Map *pMap, O
     dist_to_pos_ = 0;
 }
 
-void ShootableMovableMapObject::blockPath(MapObject *blocker, char wayFree,
+void ShootableMovableMapObject::blockPathWith(MapObject *blocker, bool terminatePath,
                                           int tilex, int tiley, int tilez,
                                           int xadj, int yadj) {
     hold_on_.pathBlocker = blocker;
-    hold_on_.wayFree = wayFree;
+    hold_on_.terminatePath = terminatePath;
     hold_on_.tilex = tilex;
     hold_on_.tiley = tiley;
     hold_on_.tilez = tilez;
@@ -489,7 +489,8 @@ void ShootableMovableMapObject::blockPath(MapObject *blocker, char wayFree,
 }
 //! Unblock the object
 void ShootableMovableMapObject::unblockPath() {
-    hold_on_.wayFree = 0;
+    hold_on_.pathBlocker = nullptr;
+    hold_on_.terminatePath = false;
 }
 
 /*!

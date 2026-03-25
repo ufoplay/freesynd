@@ -484,15 +484,28 @@ public:
     //! Return true if object is moving
     bool isMoving() { return speed_ != 0; }
     //! Blocks temporaly this object by a blocker
-    void blockPath(MapObject *blocker, char wayFree = 1,
+    void blockPathWith(MapObject *blocker, bool terminatePath = false,
                    int tilex = 0, int tiley = 0, int tilez = 0,
                    int xadj = 0, int yadj = 0);
     //! Unblock the object
     void unblockPath();
 
-    struct FreeWay {
-        // 0 - can go; 1 - wait; 2 - stop
-        char wayFree;
+protected:
+    
+    /*!
+     * A structure that hold the object that is blocking
+     * the path of the object.
+     * If pathBlocker is not null then object is blocked.
+     * 
+     */
+    struct Blocker {
+        //! Non null when object is blocking
+        MapObject * pathBlocker;
+        /*!
+         * When true and pathBlocker is non null, then object is blocked forever
+         * and his destination path can be canceled
+         */
+        bool terminatePath;
         int tilex;
         int tiley;
         int tilez;
@@ -500,11 +513,10 @@ public:
         int xadj;
         //! create range by y, should be 0 if not used
         int yadj;
-        MapObject * pathBlocker;
     };
 
-protected:
-    FreeWay hold_on_;
+    //! This attribute stores whatever is blocking the object on his path
+    Blocker hold_on_;
     bool addOffsetToPosition(int nOffX, int nOffY);
 
     /*!

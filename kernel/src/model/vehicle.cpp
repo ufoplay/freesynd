@@ -572,11 +572,11 @@ bool GenericCar::doMove(uint32_t elapsed, [[maybe_unused]] Mission *m)
     int used_time = elapsed;
 
     while ((!dest_path_.empty()) && used_time != 0) {
-        if (hold_on_.wayFree == 1) { // Must wait
-            return updated;
-        } else if (hold_on_.wayFree == 2){
-            // Must stop : clear destination and stop
-            clearDestination();
+        if (hold_on_.pathBlocker != nullptr) { // blocked by something
+            if (hold_on_.terminatePath) {
+                // Must stop : clear destination and stop
+                clearDestination();
+            }
             return updated;
         }
 
