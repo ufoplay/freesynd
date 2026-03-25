@@ -993,7 +993,7 @@ void ShootAction::setAimedAt(const WorldPoint &aimedAt) {
 bool ShootAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) {
     if (status_ == kActStatusNotStarted) {
         // TODO : stop moving only if shooting in different direction of movement
-        if (pPed->isMoving()) {
+        if (pPed->hasDestination()) {
             pPed->currentAction()->suspend(pPed);
         }
         // Turn to target
@@ -1097,7 +1097,7 @@ bool AutomaticShootAction::execute(uint32_t elapsed, Mission *pMission, PedInsta
         pPed->goToState(PedInstance::pa_smFiring);
         // If ped was moving, stop during shooting
         // TODO : stop moving only if shooting in different direction of movement
-        if (pPed->isMoving()) {
+        if (pPed->hasDestination()) {
             pPed->currentAction()->suspend(pPed);
         }
         pWeapon_->setDirection(0);

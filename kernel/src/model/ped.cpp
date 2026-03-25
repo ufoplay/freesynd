@@ -59,7 +59,7 @@ PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, 
     perception_(IPAStim::Perception),
     intelligence_(IPAStim::Intelligence)
 {
-    hold_on_.wayFree = 0;
+    unblockPath();
     state_ = PedInstance::pa_smNone;
     is_our_ = isOur;
 

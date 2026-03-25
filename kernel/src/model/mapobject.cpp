@@ -34,9 +34,9 @@ MapObject::MapObject(uint16_t anId, Map *pMap, ObjectNature aNature):
     id_(anId), pMap_(pMap), nature_(aNature),
     size_x_(1), size_y_(1), size_z_(2),
     dir_(0),
+    animationPlayer_(createAnimationPlayer()),
     isDrawable_(true),
-    isBlocking_(true),
-    animationPlayer_(createAnimationPlayer())
+    isBlocking_(true)
 {}
 
 const char* MapObject::natureName() {
@@ -474,6 +474,22 @@ ShootableMovableMapObject::ShootableMovableMapObject(uint16_t anId, Map *pMap, O
     speed_ = 0;
     maxSpeed_ = maxSpeed;
     dist_to_pos_ = 0;
+}
+
+void ShootableMovableMapObject::blockPath(MapObject *blocker, char wayFree,
+                                          int tilex, int tiley, int tilez,
+                                          int xadj, int yadj) {
+    hold_on_.pathBlocker = blocker;
+    hold_on_.wayFree = wayFree;
+    hold_on_.tilex = tilex;
+    hold_on_.tiley = tiley;
+    hold_on_.tilez = tilez;
+    hold_on_.xadj = xadj;
+    hold_on_.yadj = yadj;
+}
+//! Unblock the object
+void ShootableMovableMapObject::unblockPath() {
+    hold_on_.wayFree = 0;
 }
 
 /*!

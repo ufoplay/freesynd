@@ -2461,7 +2461,7 @@ bool PedInstance::doMove(uint32_t elapsed, Mission *pMission)
     }
 #ifdef _DEBUG
     if (dest_path_.empty() && isMoving()) {
-        printf("Was running at speed %i, destination unknown\n", speed());
+        FSERR(Log::k_FLG_GAME, "PedInstance", "doMove", ("Ped has no destination but has speed : %i", speed()));
         stop();
     }
 #endif

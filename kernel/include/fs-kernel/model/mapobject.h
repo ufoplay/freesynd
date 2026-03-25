@@ -231,28 +231,14 @@ public:
      * @name Path management
      */
     ///@{
-    struct FreeWay {
-        // 0 - can go; 1 - wait; 2 - stop
-        char wayFree;
-        int tilex;
-        int tiley;
-        int tilez;
-        //! create range by x, should be 0 if not used
-        int xadj;
-        //! create range by y, should be 0 if not used
-        int yadj;
-        MapObject * pathBlocker;
-    };
-
     //! Return true if static should not be included in the search for blockers
     void deactivateBlocking() { isBlocking_ = false; }
     //! Set whether to include static in search for blockers
     void activateBlocking() { isBlocking_ = true; }
+    //! Return true if this object can be considered as a blocker
     bool canBlock() { return isBlocking_; }
-
     //! Return true if the object is blocking the ray between start and end points.
-    bool isBlocker(WorldPoint * pStartPt, WorldPoint * pEndPt,
-        double * inc_xyz);
+    bool isBlocker(WorldPoint * pStartPt, WorldPoint * pEndPt, double * inc_xyz);
     ///@}
 
     /**
@@ -472,6 +458,9 @@ public:
         speed_ = 0;
     }
 
+    //! Returns true if object currently has a destination point (ie it's arrived)
+    bool hasDestination() { return !dest_path_.empty(); }
+
 
     /**
      * Compute a path from the object current position to given destination using given speed.
@@ -492,14 +481,30 @@ public:
      */
     virtual bool doMove(uint32_t elapsed, Mission *m) = 0;
 
-    //! Return true if the ped is moving
+    //! Return true if object is moving
     bool isMoving() { return speed_ != 0; }
-    //! Returns true if object currently has a destination point (ie it's arrived)
-    bool hasDestination() { return !dest_path_.empty(); }
+    //! Blocks temporaly this object by a blocker
+    void blockPath(MapObject *blocker, char wayFree = 1,
+                   int tilex = 0, int tiley = 0, int tilez = 0,
+                   int xadj = 0, int yadj = 0);
+    //! Unblock the object
+    void unblockPath();
 
-    FreeWay hold_on_;
+    struct FreeWay {
+        // 0 - can go; 1 - wait; 2 - stop
+        char wayFree;
+        int tilex;
+        int tiley;
+        int tilez;
+        //! create range by x, should be 0 if not used
+        int xadj;
+        //! create range by y, should be 0 if not used
+        int yadj;
+        MapObject * pathBlocker;
+    };
 
 protected:
+    FreeWay hold_on_;
     bool addOffsetToPosition(int nOffX, int nOffY);
 
     /*!

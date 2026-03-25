@@ -160,7 +160,7 @@ void Vehicle::handleAnimationEnded() {
 GenericCar::GenericCar(uint16_t anId, uint8_t aType, Map *pMap, int maxSpeed):
     Vehicle(anId, aType, pMap, maxSpeed) {
     pDriver_ = NULL;
-    hold_on_.wayFree = 0;
+    unblockPath();
 }
 
 bool GenericCar::dirWalkable(TilePoint *p, int x, int y, int z) {
@@ -657,8 +657,7 @@ bool GenericCar::doMove(uint32_t elapsed, [[maybe_unused]] Mission *m)
     }
 
     if (dest_path_.empty() && isMoving()) {
-        printf("Destination Unknown, full speed driving = %i ... doing full stop\n",
-               speed());
+        FSERR(Log::k_FLG_GAME, "GenericCar", "doMove", ("Car has no destination but has speed : %i", speed()));
         stop();
     }
     if (!passengers_.empty()) {
