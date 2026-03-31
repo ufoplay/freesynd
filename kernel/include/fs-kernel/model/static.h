@@ -103,6 +103,8 @@ protected:
     void doUpdateState(uint32_t elapsed) override;
     void handleAnimationEnded() override;
 
+    void setStateTo(StateDoors newState);
+
 protected:
     //! Id of the closed door animation
     uint16_t closedAnim_;
@@ -129,6 +131,8 @@ public:
 protected:
     void doUpdateState(uint32_t elapsed) override;
     void handleAnimationEnded() override;
+
+    void setStateTo(StateDoors newState);
 
 protected:
     //! Id of the closed door animation (default animation)

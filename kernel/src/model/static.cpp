@@ -300,11 +300,27 @@ Door::Door(uint16_t anId, Map *pMap, uint16_t baseAnim, Static::StateDoors initi
     openedAnim_ = animationPlayer_->addAnimation(baseAnim + 4);
     closingAnim_ = animationPlayer_->addAnimation(baseAnim + 6);
 
-    state_ = initialState;
-    if (state_ == Static::kStateDoorClosed) {
-        playAnimation(closedAnim_);
-    } else if (state_ == Static::kStateDoorOpening) {
+    setStateTo(initialState);
+}
+
+/*!
+ * Set the state of the static and react to the new state
+ * @param newState The new state
+ */
+void Door::setStateTo(StateDoors newState) {
+    state_ = newState;
+    if (newState == Static::kStateDoorOpen) {
+        deactivateBlocking();
+        playAnimation(openedAnim_);
+    } else if (newState == Static::kStateDoorClosing) {
+        activateBlocking();
+        playAnimation(closingAnim_);
+    } else if (newState == Static::kStateDoorOpening) {
+        activateBlocking();
         playAnimation(openingAnim_);
+    } else if (newState == Static::kStateDoorClosed) {
+        activateBlocking();
+        playAnimation(closedAnim_);
     }
 }
 
@@ -340,13 +356,9 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     pPed = dynamic_cast<ShootableMovableMapObject *>(pMission->findObjectWithNatureAtPos(x + inc_rel,
                         y + rel_inc, z, aNature, &si));
                     if (!pPed && state_ == Static::kStateDoorOpen && (!found)) {
-                        state_ = Static::kStateDoorClosing;
-                        activateBlocking();
-                        playAnimation(closingAnim_);
-                    } else if (pPed && pPed->isAlive()){
-                        state_ = Static::kStateDoorOpen;
-                        playAnimation(openedAnim_);
-                        deactivateBlocking();
+                        setStateTo(Static::kStateDoorClosing);
+                    } else if (pPed && pPed->isAlive()) {
+                        setStateTo(Static::kStateDoorOpen);
                         found = true;
                         pPed->unblockPath();
                     }
@@ -369,10 +381,8 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     y + rel_inc, z, aNature, &si));
                 if (pPed && pPed->isAlive()) {
                     if (!found) {
-                        state_ = Static::kStateDoorOpening;
-                        activateBlocking();
+                        setStateTo(Static::kStateDoorOpening);
                         found = true;
-                        playAnimation(openingAnim_);
                     }
                     pPed->blockPathWith(this, false, x, y, z);
                 }
@@ -384,10 +394,8 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     y + rel_inc, z, aNature, &si));
                 if (pPed && pPed->isAlive()) {
                     if (!found) {
-                        state_ = Static::kStateDoorOpening;
-                        activateBlocking();
+                        setStateTo(Static::kStateDoorOpening);
                         found = true;
-                        playAnimation(openingAnim_);
                     }
                     pPed->blockPathWith(this, false, x, y, z);
                 }
@@ -401,13 +409,9 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
  */
 void Door::handleAnimationEnded() {
     if (animationPlayer_->isCurrentAnimation(closingAnim_)) {
-        state_ = Static::kStateDoorClosed;
-        activateBlocking();
-        playAnimation(closedAnim_);
+        setStateTo(Static::kStateDoorClosed);
     } else if (animationPlayer_->isCurrentAnimation(openingAnim_)) {
-        state_ = Static::kStateDoorOpen;
-        deactivateBlocking();
-        playAnimation(openedAnim_);
+        setStateTo(Static::kStateDoorOpen);
     }
 }
 
@@ -425,8 +429,30 @@ LargeDoor::LargeDoor(uint16_t anId, Map *pMap, uint16_t baseAnim):
     closingAnim_ = animationPlayer_->addAnimation(baseAnim + 2);
     openingAnim_ = animationPlayer_->addAnimation(baseAnim + 4);
 
-    state_ = Static::kStateDoorClosed;
-    playAnimation(closedAnim_);
+    setStateTo(Static::kStateDoorClosed);
+}
+
+/*!
+ * Set the state of the static and react to the new state
+ * @param newState The new state
+ */
+void LargeDoor::setStateTo(StateDoors newState) {
+    state_ = newState;
+    if (newState == Static::kStateDoorOpen) {
+        deactivateBlocking();
+        // I set the closedAnim just to have an animation set as no frame
+        // is drawn when the state is Open
+        playAnimation(closedAnim_);
+    } else if (newState == Static::kStateDoorClosing) {
+        activateBlocking();
+        playAnimation(closingAnim_);
+    } else if (newState == Static::kStateDoorOpening) {
+        activateBlocking();
+        playAnimation(openingAnim_);
+    } else if (newState == Static::kStateDoorClosed) {
+        activateBlocking();
+        playAnimation(closedAnim_);
+    }
 }
 
 void LargeDoor::draw(const Point2D &screenPos) {
@@ -473,15 +499,9 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                                 (pMission->findObjectWithNatureAtPos(x + inc_rel,
                                                                     y + rel_inc,z, aNature, &si));
                 if (!pVehicle && !found) {
-                    state_ = Static::kStateDoorClosing;
-                    playAnimation(closingAnim_);
-                    activateBlocking();
+                    setStateTo(Static::kStateDoorClosing);
                 } else if (pVehicle){
-                    state_ = Static::kStateDoorOpen;
-                    // I set the closedAnim just to have an animation set as no frame
-                    // is drawn when the state is Open
-                    playAnimation(closedAnim_);
-                    deactivateBlocking();
+                    setStateTo(Static::kStateDoorOpen);
                     found = true;
                     pVehicle->unblockPath();
                 }
@@ -493,14 +513,9 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                                 (pMission->findObjectWithNatureAtPos(x + inc_rel,
                                                                     y + rel_inc,z,aNature,&si));
                 if (!pVehicle && !found) {
-                    state_ = Static::kStateDoorClosing;
-                    playAnimation(closingAnim_);
-                    activateBlocking();
-                } else if (pVehicle){
-                    state_ = Static::kStateDoorOpen;
-                    // see comment above
-                    playAnimation(closedAnim_);
-                    deactivateBlocking();
+                    setStateTo(Static::kStateDoorClosing);
+                } else if (pVehicle) {
+                    setStateTo(Static::kStateDoorOpen);
                     found = true;
                     pVehicle->unblockPath();
                 }
@@ -514,10 +529,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     if (pPed) {
                         found_peds.push_back(pPed);
                         if (!found && pPed->hasAccessCard()) {
-                            state_ = Static::kStateDoorOpen;
-                            // see comment above
-                            playAnimation(closedAnim_);
-                            deactivateBlocking();
+                            setStateTo(Static::kStateDoorOpen);
                             found = true;
                         }
                     }
@@ -532,10 +544,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     if (pPed) {
                         found_peds.push_back(pPed);
                         if (!found && pPed->hasAccessCard()) {
-                            state_ = Static::kStateDoorOpen;
-                            // see comment above
-                            playAnimation(closedAnim_);
-                            deactivateBlocking();
+                            setStateTo(Static::kStateDoorOpen);
                             found = true;
                         }
                     }
@@ -550,10 +559,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     if (pPed) {
                         found_peds_mid.push_back(pPed);
                         if (!found && pPed->hasAccessCard()) {
-                            state_ = Static::kStateDoorOpen;
-                            // see comment above
-                            playAnimation(closedAnim_);
-                            deactivateBlocking();
+                            setStateTo(Static::kStateDoorOpen);
                             found = true;
                         }
                     }
@@ -603,9 +609,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                                                                 y + rel_inc,z, aNature, &si));
             if (pVehicle) {
                 if (!found) {
-                    state_ = Static::kStateDoorOpening;
-                    playAnimation(openingAnim_);
-                    activateBlocking();
+                    setStateTo(Static::kStateDoorOpening);
                     found = true;
                 }
                 pVehicle->blockPathWith(this);
@@ -618,9 +622,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                                                                 y + rel_inc,z, aNature, &si));
             if (pVehicle) {
                 if (!found) {
-                    state_ = Static::kStateDoorOpening;
-                    playAnimation(openingAnim_);
-                    activateBlocking();
+                    setStateTo(Static::kStateDoorOpening);
                     found = true;
                 }
                 pVehicle->blockPathWith(this);
@@ -634,9 +636,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     if (pPed) {
                         found_peds.push_back(pPed);
                         if (!found && pPed->hasAccessCard()) {
-                            state_ = Static::kStateDoorOpening;
-                            playAnimation(openingAnim_);
-                            activateBlocking();
+                            setStateTo(Static::kStateDoorOpening);
                             found = true;
                         }
                     }
@@ -651,9 +651,7 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     if (pPed) {
                         found_peds.push_back(pPed);
                         if (!found && pPed->hasAccessCard()) {
-                            state_ = Static::kStateDoorOpening;
-                            playAnimation(openingAnim_);
-                            activateBlocking();
+                            setStateTo(Static::kStateDoorOpening);
                             found = true;
                         }
                     }
@@ -734,11 +732,9 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
     
 void LargeDoor::handleAnimationEnded() {
     if (animationPlayer_->isCurrentAnimation(closingAnim_)) {
-        state_ = Static::kStateDoorClosed;
-        activateBlocking();
+        setStateTo(Static::kStateDoorClosed);
     } else if (animationPlayer_->isCurrentAnimation(openingAnim_)) {
-        state_ = Static::kStateDoorOpen;
-        deactivateBlocking();
+        setStateTo(Static::kStateDoorOpen);
     }
 }
 
