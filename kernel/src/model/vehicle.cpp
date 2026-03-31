@@ -71,7 +71,7 @@ void Vehicle::draw(const Point2D &screenPos)
 
 void Vehicle::doUpdateState(uint32_t elapsed) {
     if (health_ > 0) {
-        doMove(elapsed, NULL);
+        doMove(elapsed);
     }
 }
 
@@ -566,7 +566,7 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
  * Moves a vehicle on the map.
  * \param elapsed Elapsed time sine last frame.
  */
-bool GenericCar::doMove(uint32_t elapsed, [[maybe_unused]] Mission *m)
+bool GenericCar::doMove(uint32_t elapsed)
 {
     bool updated = false;
     int used_time = elapsed;
@@ -576,8 +576,38 @@ bool GenericCar::doMove(uint32_t elapsed, [[maybe_unused]] Mission *m)
             if (hold_on_.terminatePath) {
                 // Must stop : clear destination and stop
                 clearDestination();
+                return updated;
             }
-            return updated;
+            if (hold_on_.pathBlocker->is(MapObject::kNatureVehicle)) {
+                // For vehicle blockers: check if the blocking car has left the tile
+                if (hold_on_.pathBlocker->tileX() == hold_on_.tilex
+                    && hold_on_.pathBlocker->tileY() == hold_on_.tiley) {
+                    return updated;  // still occupying the tile — wait
+                }
+                unblockPath();  // blocker has moved away — resume
+            } else {
+                return updated;  // non-vehicle blocker (door, obstacle…) — unchanged behaviour
+            }
+        }
+
+        // Check if the next tile is already occupied by another vehicle
+        {
+            const TilePoint &nextPt = dest_path_.front();
+            Mission *pMission = g_missionCtrl.mission();
+            if (pMission != nullptr) {
+                const std::vector<MapObject*> &occupants =
+                    pMission->getObjectsAtTile(nextPt);
+                for (MapObject *obj : occupants) {
+                    if (obj != this && obj->is(MapObject::kNatureVehicle)) {
+                        Vehicle *pBlocker = static_cast<Vehicle *>(obj);
+                        // Dead vehicles won't move: terminate the path so the car recomputes a route
+                        bool terminate = pBlocker->isDead();
+                        blockPathWith(obj, terminate,
+                                      nextPt.tx, nextPt.ty, nextPt.tz);
+                        return updated;
+                    }
+                }
+            }
         }
 
         // Get distance between car and next NodePath

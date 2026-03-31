@@ -475,11 +475,10 @@ public:
      * Update position of the object using the current path and speed.
      * Subclasses must implement this method.
      * \param elapsed int
-     * \param m Mission* Mission data
      * \return True if the position has been updated.
      *
      */
-    virtual bool doMove(uint32_t elapsed, Mission *m) = 0;
+    virtual bool doMove(uint32_t elapsed) = 0;
 
     //! Return true if object is moving
     bool isMoving() { return speed_ != 0; }

@@ -127,7 +127,7 @@ public:
     bool initMovementToDestination(Mission *m, const TilePoint &destinationPt) override;
 
     //! @copydoc ShootableMovableMapObject::doMove()
-    bool doMove(uint32_t elapsed, Mission *m) override;
+    bool doMove(uint32_t elapsed) override;
 
     //! Adds the given ped to the list of passengers
     void addPassenger(PedInstance *p);

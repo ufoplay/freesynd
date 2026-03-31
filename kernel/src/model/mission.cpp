@@ -3015,6 +3015,16 @@ uint8_t Mission::checkIfBlockersInShootingLine(const WorldPoint & originLoc, Sho
 }
 
 /*!
+ * Returns all dynamic objects present at tile tile this tick.
+ * The returned reference is valid until the next call to buildDynamicSpatialGrid().
+ * @param tile Tile coordinate
+ * @return Reference to the list of MapObject* at that tile in the dynamic grid.
+ */
+const std::vector<MapObject*>& Mission::getObjectsAtTile(const TilePoint & tile) const {
+    return dynamicSpatialGrid_[tile.tx + tile.ty * mmax_x_ + tile.tz * mmax_m_xy];
+}
+
+/*!
  * Returns the length of the path between a ped and a object if such a path exists and it is
  * shorter than the maximum length allowed.
  * \param pPed The origin of the path

@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -30,6 +30,7 @@
 #include "fs-engine/gfx/tile.h"
 #include "fs-kernel/model/pathsurfaces.h"
 #include "fs-kernel/model/mission.h"
+#include "fs-kernel/mgr/missionmanager.h"
 
 #if 0
 #include "SDL.h"
@@ -2323,10 +2324,11 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
 #endif
 }
 
-bool PedInstance::doMove(uint32_t elapsed, Mission *pMission)
+bool PedInstance::doMove(uint32_t elapsed)
 {
     bool updated = false;
     int used_time = elapsed;
+    Mission *pMission = g_missionCtrl.mission();
 
     while ((!dest_path_.empty()) && used_time != 0) {
         int nxtTileX = dest_path_.front().tx;

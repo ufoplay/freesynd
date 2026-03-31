@@ -52,7 +52,7 @@ public:
         return false;
     }
 
-    bool doMove([[maybe_unused]] uint32_t elapsed, [[maybe_unused]] Mission *m) override {
+    bool doMove([[maybe_unused]] uint32_t elapsed) override {
         return false;
     }
 
@@ -83,7 +83,7 @@ public:
     //! Set the destination to reach at given speed
     bool initMovementToDestination(Mission *m, const TilePoint &destinationPt) override;
 
-    bool doMove(uint32_t elapsed, Mission *m) override;
+    bool doMove(uint32_t elapsed) override;
 
     void appendTrainBody(TrainBody *pTrainBody);
 

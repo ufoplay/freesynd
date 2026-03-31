@@ -259,7 +259,7 @@ void WalkAction::doStart(Mission *pMission, PedInstance *pPed) {
  * \param pPed The ped executing the action.
  */
 bool WalkAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) {
-    bool updated = pPed->doMove(elapsed, pMission);
+    bool updated = pPed->doMove(elapsed);
     if (!pPed->hasDestination()) {
         // Ped has arrived at destination
         setSucceeded();
@@ -440,7 +440,7 @@ bool FollowAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *p
                 pPed->clearDestination();
                 pPed->leaveState(targetState_);
             } else {
-                updated = pPed->doMove(elapsed, pMission);
+                updated = pPed->doMove(elapsed);
             }
         }
 
@@ -515,7 +515,7 @@ bool FollowToShootAction::doExecute(uint32_t elapsed, Mission *pMission, PedInst
             setSucceeded();
             pPed->clearDestination();
         } else {
-            updated = pPed->doMove(elapsed, pMission);
+            updated = pPed->doMove(elapsed);
         }
 
     }

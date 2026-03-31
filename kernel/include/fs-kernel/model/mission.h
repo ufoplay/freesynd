@@ -291,6 +291,8 @@ public:
         bool checkTileOnly = false, double maxr = -1.0, double * distTo = NULL, const ShootableMapObject *pOrigin = NULL);
     //! Returns the distance between a ped and a object if a path exists between the two
     uint8_t getPathLengthBetween(PedInstance *pPed, ShootableMapObject* objectToReach, double distanceMax, double *length);
+    //! Returns all dynamic objects present at tile this tick.
+    const std::vector<MapObject*>& getObjectsAtTile(const TilePoint & tile) const;
 
     //! map-tile surfaces : x + y * mmax_x_ + z * mmax_m_xy
     uint8_t *mtsurfaces_;
