@@ -373,16 +373,16 @@ uint16_t Map::getPossibleDirectionsFromRoadTile(int x, int y, int z) {
     int near_tile;
 
     switch(getTileIdAt(x, y, z)){
-        case fs_eng::Tile::kTileRoadEW:
-            if(getTileIdAt(x + 1, y, z) == fs_eng::Tile::kTileRoadEW)
+        case fs_eng::Tile::kTileLargeDoorRailEW:
+            if(getTileIdAt(x + 1, y, z) == fs_eng::Tile::kTileLargeDoorRailEW)
                 dir = (0)|(0xFFF0);
-            if(getTileIdAt(x - 1, y, z) == fs_eng::Tile::kTileRoadEW)
+            if(getTileIdAt(x - 1, y, z) == fs_eng::Tile::kTileLargeDoorRailEW)
                 dir = (4<<8)|(0xF0FF);
             break;
-        case fs_eng::Tile::kTileRoadNS:
-            if(getTileIdAt(x, y - 1, z) == fs_eng::Tile::kTileRoadNS)
+        case fs_eng::Tile::kTileLargeDoorRailNS:
+            if(getTileIdAt(x, y - 1, z) == fs_eng::Tile::kTileLargeDoorRailNS)
                 dir = (2<<4)|(0xFF0F);
-            if(getTileIdAt(x, y + 1, z) == fs_eng::Tile::kTileRoadNS)
+            if(getTileIdAt(x, y + 1, z) == fs_eng::Tile::kTileLargeDoorRailNS)
                 dir = (6<<12)|(0x0FFF);
             break;
         case fs_eng::Tile::kTileRoadNtoS:
@@ -484,17 +484,17 @@ uint16_t Map::getPossibleDirectionsFromRoadTile(int x, int y, int z) {
                 dir = kTileDirAll;
                 near_tile = getTileIdAt(x, y + 1, z);
                 if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadNtoS
-                    || near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileRoadEW || near_tile == fs_eng::Tile::kTilePedCrossNS)
+                    || near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileLargeDoorRailEW || near_tile == fs_eng::Tile::kTilePedCrossNS)
                     dir = (dir & kDirClearNorth) | kForbidDirNorth;
                 near_tile = getTileIdAt(x, y - 1, z);
                 if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadNtoS
-                    || near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileRoadEW || near_tile == fs_eng::Tile::kTilePedCrossNS)
+                    || near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileLargeDoorRailEW || near_tile == fs_eng::Tile::kTilePedCrossNS)
                     dir &= kDirClearSouth;
                 near_tile = getTileIdAt(x + 1, y, z);
-                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadNS)
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileLargeDoorRailNS)
                     dir = (dir & kDirClearEast) | kForbidDirEast;
                 near_tile = getTileIdAt(x - 1, y, z);
-                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadEtoW || near_tile == fs_eng::Tile::kTileRoadNS)
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadEtoW || near_tile == fs_eng::Tile::kTileLargeDoorRailNS)
                     dir = (dir & kDirClearWest) | kForbidDirWest;
                 if (dir == kTileDirAll)
                     dir = kTileDirNone;
@@ -508,18 +508,18 @@ uint16_t Map::getPossibleDirectionsFromRoadTile(int x, int y, int z) {
             else {*/
                 dir = kTileDirAll;
                 near_tile = getTileIdAt(x, y + 1, z);
-                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadNtoS || near_tile == fs_eng::Tile::kTileRoadEW)
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadNtoS || near_tile == fs_eng::Tile::kTileLargeDoorRailEW)
                     dir = (dir & kDirClearNorth) | kForbidDirNorth;
                 near_tile = getTileIdAt(x, y - 1, z);
-                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileRoadEW)
+                if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadStoN || near_tile == fs_eng::Tile::kTileLargeDoorRailEW)
                     dir &= kDirClearSouth;
                 near_tile = getTileIdAt(x + 1, y, z);
                 if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadEtoW
-                    || near_tile == fs_eng::Tile::kTileRoadNS || near_tile == fs_eng::Tile::kTilePedCrossEW)
+                    || near_tile == fs_eng::Tile::kTileLargeDoorRailNS || near_tile == fs_eng::Tile::kTilePedCrossEW)
                     dir = (dir & kDirClearEast) | kForbidDirEast;
                 near_tile = getTileIdAt(x - 1, y, z);
                 if (/*near_tile == 119 || */near_tile == fs_eng::Tile::kTileRoadWtoE || near_tile == fs_eng::Tile::kTileRoadEtoW
-                    || near_tile == fs_eng::Tile::kTileRoadNS || near_tile == fs_eng::Tile::kTilePedCrossEW)
+                    || near_tile == fs_eng::Tile::kTileLargeDoorRailNS || near_tile == fs_eng::Tile::kTilePedCrossEW)
                     dir = (dir & kDirClearWest) | kForbidDirWest;
                 if (dir == kTileDirAll)
                     dir = kTileDirNone;

@@ -44,8 +44,8 @@ public:
     static const int kSubTileHeight;
 
     // Road tile type IDs used by GenericCar::tileDir() to determine allowed driving directions.
-    static constexpr int kTileRoadEW      = 80;  ///< Straight road, East-West axis
-    static constexpr int kTileRoadNS      = 81;  ///< Straight road, North-South axis
+    static constexpr int kTileLargeDoorRailEW = 80;  ///< Tile below large door, East-West axis
+    static constexpr int kTileLargeDoorRailNS = 81;  ///< Tile below large door, North-South axis
     static constexpr int kTileRoadNtoS    = 106; ///< Straight road, North to South axis
     static constexpr int kTileRoadStoN    = 107; ///< Straight road, South to North axis
     static constexpr int kTileRoadWtoE    = 108; ///< Straight road, West to East axis
