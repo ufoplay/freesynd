@@ -330,76 +330,67 @@ void Door::draw(const Point2D &screenPos) {
 
 void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
     Mission *pMission = g_missionCtrl.mission();
-    ShootableMovableMapObject *pPed = NULL;
     int x = tileX();
     int y = tileY();
     int z = tileZ();
-    MapObject::ObjectNature aNature;
-    size_t si;
-    char inc_rel = 0, rel_inc = 0;
-    char *i = 0, *j = 0;
     bool found = false;
 
     switch(state_) {
-        case Static::kStateDoorOpen:
+        case Static::kStateDoorOpen: {
+            char offsetX = 0, offsetY = 0;
+            char *pActiveOffset = nullptr;
             if (orientation_ == kStaticOrientation1) {
-                i = &rel_inc;
-                j = &inc_rel;
+                pActiveOffset = &offsetY;
             } else if (orientation_ == kStaticOrientation2) {
-                i = &inc_rel;
-                j = &rel_inc;
+                pActiveOffset = &offsetX;
             }
-            assert(i != 0 && j != 0);
-            for(*i = 0; *i < 2; *i += 1) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = dynamic_cast<ShootableMovableMapObject *>(pMission->findObjectWithNatureAtPos(x + inc_rel,
-                        y + rel_inc, z, aNature, &si));
-                    if (!pPed && state_ == Static::kStateDoorOpen && (!found)) {
-                        setStateTo(Static::kStateDoorClosing);
-                    } else if (pPed && pPed->isAlive()) {
+            assert(pActiveOffset != nullptr);
+            for (*pActiveOffset = 0; *pActiveOffset < 2; *pActiveOffset += 1) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                    if (!obj->is(MapObject::kNaturePed)) continue;
+                    auto *pPed = static_cast<ShootableMovableMapObject *>(obj);
+                    if (pPed->isAlive()) {
                         setStateTo(Static::kStateDoorOpen);
                         found = true;
                         pPed->unblockPath();
                     }
-                } while (pPed);
+                }
+            }
+            if (!found) {
+                setStateTo(Static::kStateDoorClosing);
             }
             break;
-        case Static::kStateDoorClosed:
+        }
+        case Static::kStateDoorClosed: {
+            char offsetX = 0, offsetY = 0;
+            char *pActiveOffset = nullptr;
             if (orientation_ == kStaticOrientation1) {
-                i = &rel_inc;
-                j = &inc_rel;
+                pActiveOffset = &offsetY;
             } else if (orientation_ == kStaticOrientation2) {
-                i = &inc_rel;
-                j = &rel_inc;
+                pActiveOffset = &offsetX;
             }
-            assert(i != 0 && j != 0);
-            *i = 1;
-            aNature = MapObject::kNaturePed; si = 0;
-            do {
-                pPed = dynamic_cast<ShootableMovableMapObject *>(pMission->findObjectWithNatureAtPos(x + inc_rel,
-                    y + rel_inc, z, aNature, &si));
-                if (pPed && pPed->isAlive()) {
-                    if (!found) {
-                        setStateTo(Static::kStateDoorOpening);
-                        found = true;
-                    }
+            assert(pActiveOffset != nullptr);
+            *pActiveOffset = 1;
+            for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                if (!obj->is(MapObject::kNaturePed)) continue;
+                auto *pPed = static_cast<ShootableMovableMapObject *>(obj);
+                if (pPed->isAlive()) {
+                    if (!found) { setStateTo(Static::kStateDoorOpening); found = true; }
                     pPed->blockPathWith(this, false, x, y, z);
                 }
-            } while (pPed);
-            *i = 0;
-            aNature = MapObject::kNaturePed; si = 0;
-            do {
-                pPed = dynamic_cast<ShootableMovableMapObject *>(pMission->findObjectWithNatureAtPos(x + inc_rel,
-                    y + rel_inc, z, aNature, &si));
-                if (pPed && pPed->isAlive()) {
-                    if (!found) {
-                        setStateTo(Static::kStateDoorOpening);
-                        found = true;
-                    }
+            }
+            *pActiveOffset = 0;
+            for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                if (!obj->is(MapObject::kNaturePed)) continue;
+                auto *pPed = static_cast<ShootableMovableMapObject *>(obj);
+                if (pPed->isAlive()) {
+                    if (!found) { setStateTo(Static::kStateDoorOpening); found = true; }
                     pPed->blockPathWith(this, false, x, y, z);
                 }
-            } while (pPed);
+            }
+            break;
+        }
+        default:
             break;
     }
 }
@@ -661,8 +652,8 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
             {
                 int xadj = (orientation_ == kStaticOrientation1) ? 1 : 0;
                 int yadj = (orientation_ == kStaticOrientation2) ? 1 : 0;
-                for (PedInstance *pPed : found_peds) {
-                    pPed->blockPathWith(this, terminatePath, x, y, z, xadj, yadj);
+                for (PedInstance *pFoundPed : found_peds) {
+                    pFoundPed->blockPathWith(this, terminatePath, x, y, z, xadj, yadj);
                 }
             }
             break;
@@ -726,6 +717,8 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                     pFoundPed->blockPathWith(this, terminatePath, x, y, z, xadj, yadj);
                 }
             }
+            break;
+        default:
             break;
     }
 }
