@@ -571,6 +571,12 @@ bool GenericCar::doMove(uint32_t elapsed)
     bool updated = false;
     int used_time = elapsed;
 
+    // Civilian and police drivers yield to pedestrians on crossroad tiles
+    PedInstance *pDriver = getDriver();
+    bool driverYieldsToCrossing = pDriver != nullptr
+        && (pDriver->type() == PedInstance::kPedTypeCivilian
+            || pDriver->type() == PedInstance::kPedTypePolice);
+
     while ((!dest_path_.empty()) && used_time != 0) {
         if (hold_on_.pathBlocker != nullptr) { // blocked by something
             if (hold_on_.terminatePath) {
@@ -585,12 +591,23 @@ bool GenericCar::doMove(uint32_t elapsed)
                     return updated;  // still occupying the tile — wait
                 }
                 unblockPath();  // blocker has moved away — resume
+            } else if (hold_on_.pathBlocker->is(MapObject::kNaturePed)) {
+                // For ped blockers on a crossroad: resume when the ped has left or died
+                PedInstance *pBlockingPed = static_cast<PedInstance *>(hold_on_.pathBlocker);
+                if (!pBlockingPed->isAlive()
+                        || pBlockingPed->tileX() != hold_on_.tilex
+                        || pBlockingPed->tileY() != hold_on_.tiley) {
+                    unblockPath();  // ped has cleared the tile — resume
+                } else {
+                    return updated;  // ped still on the crossroad — wait
+                }
             } else {
                 return updated;  // non-vehicle blocker (door, obstacle…) — unchanged behaviour
             }
         }
 
-        // Check if the next tile is already occupied by another vehicle
+        // Check if the next tile is already occupied by another vehicle,
+        // or if it is a crossroad tile with living pedestrians (for civilian/police drivers)
         {
             const TilePoint &nextPt = dest_path_.front();
             Mission *pMission = g_missionCtrl.mission();
@@ -605,6 +622,22 @@ bool GenericCar::doMove(uint32_t elapsed)
                         blockPathWith(obj, terminate,
                                       nextPt.tx, nextPt.ty, nextPt.tz);
                         return updated;
+                    }
+                }
+                if (driverYieldsToCrossing) {
+                    // Road is one level below the car
+                    fs_eng::Tile *pTile = pMap_->getTileAt(nextPt.tx, nextPt.ty, nextPt.tz - 1);
+                    if (pTile->isPedCrossing()) {
+                        for (MapObject *obj : occupants) {
+                            if (obj->is(MapObject::kNaturePed)) {
+                                PedInstance *pPed = static_cast<PedInstance *>(obj);
+                                if (pPed->isAlive()) {
+                                    blockPathWith(pPed, false,
+                                                  nextPt.tx, nextPt.ty, nextPt.tz);
+                                    return updated;
+                                }
+                            }
+                        }
                     }
                 }
             }

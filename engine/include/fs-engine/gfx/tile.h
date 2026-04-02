@@ -107,6 +107,11 @@ public:
         return type_ > kNone && type_ < kGround;
     }
 
+    //! Return true if this tile is a pedestrian crossing
+    bool isPedCrossing() {
+        return type_ == kRoadPedCross;
+    }
+
     uint8 getWalkData();
 
     //! Return true if there is at least one pixel to draw because it's not transparent
