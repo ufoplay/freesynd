@@ -39,10 +39,10 @@ namespace fs_knl {
  */
 class Static : public ShootableMapObject {
 public:
-    /*! Const for orientation 1 of Static.*/
-    static const int kStaticOrientation1;
-    /*! Const for orientation 2 of Static.*/
-    static const int kStaticOrientation2;
+    /*! Const for orientation on North-South axis of Static.*/
+    static const int kStaticOrientationNS;
+    /*! Const for orientation on East-West axis of Static.*/
+    static const int kStaticOrientationEW;
 
     enum StaticType {
         // NOTE: should be the same name as Class
@@ -79,7 +79,7 @@ protected:
     Static(uint16_t anId, Map *pMap, StaticType aType) :
             ShootableMapObject(anId, pMap, MapObject::kNatureStatic) {
         type_ = aType;
-        orientation_ = kStaticOrientation1;
+        orientation_ = kStaticOrientationNS;
     }
 
 protected:

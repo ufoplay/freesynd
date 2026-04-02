@@ -555,12 +555,12 @@ bool Mission::setSurfaces() {
             int indx = s->tileX() + s->tileY() * mmax_x_
                 + s->tileZ() * mmax_m_xy;
             mtsurfaces_[indx] = 0x00;
-            if (s->orientation() == Static::kStaticOrientation1) {
+            if (s->orientation() == Static::kStaticOrientationNS) {
                 if (indx - 1 >= 0)
                     mtsurfaces_[indx - 1] = 0x00;
                 if (indx + 1 < mmax_m_all)
                     mtsurfaces_[indx + 1] = 0x00;
-            } else if (s->orientation() == Static::kStaticOrientation2) {
+            } else if (s->orientation() == Static::kStaticOrientationEW) {
                 if (indx - mmax_x_ >= 0)
                     mtsurfaces_[indx - mmax_x_] = 0x00;
                 if (indx + mmax_x_ < mmax_m_all)

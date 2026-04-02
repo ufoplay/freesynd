@@ -33,8 +33,8 @@
 
 namespace fs_knl {
 
-const int Static::kStaticOrientation1 = 0;
-const int Static::kStaticOrientation2 = 2;
+const int Static::kStaticOrientationNS = 0;
+const int Static::kStaticOrientationEW = 2;
 const uint16_t Semaphore::kSemaphoreMaxColorAnim = 4;
 const uint16_t Semaphore::kSemaphoreDamagedOffset = 4;
 
@@ -81,12 +81,12 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
             if (gamdata->orientation == 0x00 || gamdata->orientation == 0x80
                 || gamdata->orientation == 0x7E || gamdata->orientation == 0xFE) {
                 s = new Door(id, pMap, baseanim, Static::kStateDoorClosed);
-                s->setOrientation(kStaticOrientation1);
+                s->setOrientation(kStaticOrientationNS);
                 s->setSize(256, 1, 196);
             } else {
                 baseanim++;
                 s = new Door(id, pMap, baseanim, Static::kStateDoorClosed);
-                s->setOrientation(kStaticOrientation2);
+                s->setOrientation(kStaticOrientationEW);
                 s->setSize(1, 256, 196);
             }
             break;
@@ -94,12 +94,12 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
             if (gamdata->orientation == 0x00 || gamdata->orientation == 0x80
                 || gamdata->orientation == 0x7E || gamdata->orientation == 0xFE) {
                 s = new Door(id, pMap, baseanim, Static::kStateDoorClosed);
-                s->setOrientation(kStaticOrientation1);
+                s->setOrientation(kStaticOrientationNS);
                 s->setSize(256, 1, 196);
             } else {
                 baseanim++;
                 s = new Door(id, pMap, baseanim, Static::kStateDoorClosed);
-                s->setOrientation(kStaticOrientation2);
+                s->setOrientation(kStaticOrientationEW);
                 s->setSize(1, 256, 196);
             }
             break;
@@ -107,12 +107,12 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
             if (gamdata->orientation == 0x00 || gamdata->orientation == 0x80
                 || gamdata->orientation == 0x7E || gamdata->orientation == 0xFE) {
                 s = new Door(id, pMap, baseanim, kStateDoorOpening);
-                s->setOrientation(kStaticOrientation1);
+                s->setOrientation(kStaticOrientationNS);
                 s->setSize(256, 1, 196);
             } else {
                 baseanim++;
                 s = new Door(id, pMap, baseanim, kStateDoorOpening);
-                s->setOrientation(kStaticOrientation2);
+                s->setOrientation(kStaticOrientationEW);
                 s->setSize(1, 256, 196);
             }
             break;
@@ -120,12 +120,12 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
             if (gamdata->orientation == 0x00 || gamdata->orientation == 0x80
                 || gamdata->orientation == 0x7E || gamdata->orientation == 0xFE) {
                 s = new Door(id, pMap, baseanim, kStateDoorOpening);
-                s->setOrientation(kStaticOrientation1);
+                s->setOrientation(kStaticOrientationNS);
                 s->setSize(256, 1, 196);
             } else {
                 baseanim++;
                 s = new Door(id, pMap, baseanim, kStateDoorOpening);
-                s->setOrientation(kStaticOrientation2);
+                s->setOrientation(kStaticOrientationEW);
                 s->setSize(1, 256, 196);
             }
             break;
@@ -137,10 +137,10 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
         case 0x12:  // open window
             s = new WindowObj(id, pMap, WindowObj::kStateWindowOpen, curanim - 2);
             if (gamdata->orientation == 0x00 || gamdata->orientation == 0x80) {
-                s->setOrientation(kStaticOrientation1);
+                s->setOrientation(kStaticOrientationNS);
                 s->setSize(96, 4, 96);
             } else {
-                s->setOrientation(kStaticOrientation2);
+                s->setOrientation(kStaticOrientationEW);
                 s->setSize(4, 96, 96);
             }
             s->setHealth(1);
@@ -149,10 +149,10 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
         case 0x13: // closed window
             s = new WindowObj(id, pMap, WindowObj::kStateWindowClosed, curanim);
             if (gamdata->orientation == 0x00 || gamdata->orientation == 0x80) {
-                s->setOrientation(kStaticOrientation1);
+                s->setOrientation(kStaticOrientationNS);
                 s->setSize(96, 4, 96);
             } else {
-                s->setOrientation(kStaticOrientation2);
+                s->setOrientation(kStaticOrientationEW);
                 s->setSize(4, 96, 96);
             }
             s->setHealth(1);
@@ -242,10 +242,10 @@ Static *Static::loadInstance(uint8_t * data, uint16_t id, Map *pMap)
             // 0x40,0xC0 weast - east = 2
             s = new LargeDoor(id, pMap, curanim);
             if (gamdata->orientation == 0x00 || gamdata->orientation == 0x80) {
-                s->setOrientation(kStaticOrientation1);
+                s->setOrientation(kStaticOrientationNS);
                 s->setSize(384, 64, 192);
             } else {
-                s->setOrientation(kStaticOrientation2);
+                s->setOrientation(kStaticOrientationEW);
                 s->setSize(64, 384, 192);
             }
             break;
@@ -339,9 +339,9 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
         case Static::kStateDoorOpen: {
             char offsetX = 0, offsetY = 0;
             char *pActiveOffset = nullptr;
-            if (orientation_ == kStaticOrientation1) {
+            if (orientation_ == kStaticOrientationNS) {
                 pActiveOffset = &offsetY;
-            } else if (orientation_ == kStaticOrientation2) {
+            } else if (orientation_ == kStaticOrientationEW) {
                 pActiveOffset = &offsetX;
             }
             assert(pActiveOffset != nullptr);
@@ -364,9 +364,9 @@ void Door::doUpdateState([[maybe_unused]] uint32_t elapsed) {
         case Static::kStateDoorClosed: {
             char offsetX = 0, offsetY = 0;
             char *pActiveOffset = nullptr;
-            if (orientation_ == kStaticOrientation1) {
+            if (orientation_ == kStaticOrientationNS) {
                 pActiveOffset = &offsetY;
-            } else if (orientation_ == kStaticOrientation2) {
+            } else if (orientation_ == kStaticOrientationEW) {
                 pActiveOffset = &offsetX;
             }
             assert(pActiveOffset != nullptr);
@@ -456,15 +456,11 @@ void LargeDoor::draw(const Point2D &screenPos) {
 void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
     // TODO: there must be somewhere locked door
     Mission *pMission = g_missionCtrl.mission();
-    ShootableMovableMapObject *pVehicle = NULL;
-    PedInstance *pPed = NULL;
     int x = tileX();
     int y = tileY();
     int z = tileZ();
-    MapObject::ObjectNature aNature;
-    size_t si;
-    char inc_rel = 0, rel_inc = 0;
-    char *i = 0, *j = 0;
+    char offsetX = 0, offsetY = 0;
+    char *pActiveOffset = nullptr, *pFixedOffset = nullptr;
     bool found = false;
     std::vector<PedInstance *> found_peds;
     found_peds.reserve(256);
@@ -474,87 +470,84 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
     bool terminatePath = false;
 
     switch(state_) {
-        case Static::kStateDoorOpen:
-            if (orientation_ == kStaticOrientation1) {
-                i = &rel_inc;
-                j = &inc_rel;
-            } else if (orientation_ == kStaticOrientation2) {
-                i = &inc_rel;
-                j = &rel_inc;
+        case Static::kStateDoorOpen: {
+            if (orientation_ == kStaticOrientationNS) {
+                pActiveOffset = &offsetY;
+                pFixedOffset = &offsetX;
+            } else if (orientation_ == kStaticOrientationEW) {
+                pActiveOffset = &offsetX;
+                pFixedOffset = &offsetY;
             }
-            assert(i != 0 && j != 0);
-            *j = -1;
-            for(*i = -2; *i < 3; (*i)++) {
-                aNature = MapObject::kNatureVehicle; si = 0;
-                pVehicle = dynamic_cast<ShootableMovableMapObject *>
-                                (pMission->findObjectWithNatureAtPos(x + inc_rel,
-                                                                    y + rel_inc,z, aNature, &si));
-                if (!pVehicle && !found) {
-                    setStateTo(Static::kStateDoorClosing);
-                } else if (pVehicle){
+            assert(pActiveOffset != nullptr && pFixedOffset != nullptr);
+            // Vehicles: tile coords use (x + offsetX, y + offsetY)
+            *pFixedOffset = -1;
+            for (*pActiveOffset = -2; *pActiveOffset < 3; (*pActiveOffset)++) {
+                bool vehicleAtTile = false;
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                    if (obj->nature() != MapObject::kNatureVehicle) continue;
+                    auto *pVehicle = static_cast<ShootableMovableMapObject *>(obj);
                     setStateTo(Static::kStateDoorOpen);
                     found = true;
+                    vehicleAtTile = true;
                     pVehicle->unblockPath();
+                    break;
+                }
+                if (!vehicleAtTile && !found) {
+                    setStateTo(Static::kStateDoorClosing);
                 }
             }
-            *j = 1;
-            for(*i = -2; *i < 3; (*i)++) {
-                aNature = MapObject::kNatureVehicle; si = 0;
-                pVehicle = dynamic_cast<ShootableMovableMapObject *>
-                                (pMission->findObjectWithNatureAtPos(x + inc_rel,
-                                                                    y + rel_inc,z,aNature,&si));
-                if (!pVehicle && !found) {
-                    setStateTo(Static::kStateDoorClosing);
-                } else if (pVehicle) {
+            *pFixedOffset = 1;
+            for (*pActiveOffset = -2; *pActiveOffset < 3; (*pActiveOffset)++) {
+                bool vehicleAtTile = false;
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                    if (obj->nature() != MapObject::kNatureVehicle) continue;
+                    auto *pVehicle = static_cast<ShootableMovableMapObject *>(obj);
                     setStateTo(Static::kStateDoorOpen);
                     found = true;
+                    vehicleAtTile = true;
                     pVehicle->unblockPath();
+                    break;
+                }
+                if (!vehicleAtTile && !found) {
+                    setStateTo(Static::kStateDoorClosing);
                 }
             }
-            *j = -1;
-            for (*i = -1; *i <= 1; (*i)++ ) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = (PedInstance *)(pMission->findObjectWithNatureAtPos(x + rel_inc,
-                        y + inc_rel, z, aNature, &si));
-                    if (pPed) {
-                        found_peds.push_back(pPed);
-                        if (!found && pPed->hasAccessCard()) {
-                            setStateTo(Static::kStateDoorOpen);
-                            found = true;
-                        }
+            // Peds: tile coords use (x + offsetY, y + offsetX) — axes are swapped vs vehicles
+            *pFixedOffset = -1;
+            for (*pActiveOffset = -1; *pActiveOffset <= 1; (*pActiveOffset)++) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetY, y + offsetX, z))) {
+                    if (obj->nature() != MapObject::kNaturePed) continue;
+                    auto *pPed = static_cast<PedInstance *>(obj);
+                    found_peds.push_back(pPed);
+                    if (!found && pPed->hasAccessCard()) {
+                        setStateTo(Static::kStateDoorOpen);
+                        found = true;
                     }
-                } while (pPed);
+                }
             }
-            *j = 1;
-            for (*i = -1; *i <= 1; (*i)++ ) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = (PedInstance *)(pMission->findObjectWithNatureAtPos(x + rel_inc,
-                        y + inc_rel, z, aNature, &si));
-                    if (pPed) {
-                        found_peds.push_back(pPed);
-                        if (!found && pPed->hasAccessCard()) {
-                            setStateTo(Static::kStateDoorOpen);
-                            found = true;
-                        }
+            *pFixedOffset = 1;
+            for (*pActiveOffset = -1; *pActiveOffset <= 1; (*pActiveOffset)++) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetY, y + offsetX, z))) {
+                    if (obj->nature() != MapObject::kNaturePed) continue;
+                    auto *pPed = static_cast<PedInstance *>(obj);
+                    found_peds.push_back(pPed);
+                    if (!found && pPed->hasAccessCard()) {
+                        setStateTo(Static::kStateDoorOpen);
+                        found = true;
                     }
-                } while (pPed);
+                }
             }
-            *j = 0;
-            for (*i = -1; *i <= 1; (*i)++ ) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = (PedInstance *)(pMission->findObjectWithNatureAtPos(x + rel_inc,
-                        y + inc_rel, z, aNature, &si));
-                    if (pPed) {
-                        found_peds_mid.push_back(pPed);
-                        if (!found && pPed->hasAccessCard()) {
-                            setStateTo(Static::kStateDoorOpen);
-                            found = true;
-                        }
+            *pFixedOffset = 0;
+            for (*pActiveOffset = -1; *pActiveOffset <= 1; (*pActiveOffset)++) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetY, y + offsetX, z))) {
+                    if (obj->nature() != MapObject::kNaturePed) continue;
+                    auto *pPed = static_cast<PedInstance *>(obj);
+                    found_peds_mid.push_back(pPed);
+                    if (!found && pPed->hasAccessCard()) {
+                        setStateTo(Static::kStateDoorOpen);
+                        found = true;
                     }
-                } while (pPed);
+                }
             }
             if (state_ == Static::kStateDoorOpen) {
                 for (PedInstance *foundPed : found_peds) {
@@ -565,8 +558,8 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 }
             } else {
                 {
-                    int xadj = (orientation_ == kStaticOrientation1) ? 1 : 0;
-                    int yadj = (orientation_ == kStaticOrientation2) ? 1 : 0;
+                    int xadj = (orientation_ == kStaticOrientationNS) ? 1 : 0;
+                    int yadj = (orientation_ == kStaticOrientationEW) ? 1 : 0;
                     for (PedInstance *pFoundPed : found_peds) {
                         pFoundPed->blockPathWith(this, true, x, y, z, xadj, yadj);
                     }
@@ -581,143 +574,123 @@ void LargeDoor::doUpdateState([[maybe_unused]] uint32_t elapsed) {
                 }
             }
             break;
-        case Static::kStateDoorClosed:
-            if (orientation_ == kStaticOrientation1) {
-                i = &rel_inc;
-                j = &inc_rel;
+        }
+        case Static::kStateDoorClosed: {
+            if (orientation_ == kStaticOrientationNS) {
+                pActiveOffset = &offsetY;
+                pFixedOffset = &offsetX;
                 sign = 1;
-            } else if (orientation_ == kStaticOrientation2) {
-                i = &inc_rel;
-                j = &rel_inc;
+            } else if (orientation_ == kStaticOrientationEW) {
+                pActiveOffset = &offsetX;
+                pFixedOffset = &offsetY;
                 sign = -1;
             }
-            assert(i != 0 && j != 0);
-            *j = -1 * sign;
-            *i = -2;
-            aNature = MapObject::kNatureVehicle; si = 0;
-            pVehicle = dynamic_cast<ShootableMovableMapObject *>
-                            (pMission->findObjectWithNatureAtPos(x + inc_rel,
-                                                                y + rel_inc,z, aNature, &si));
-            if (pVehicle) {
-                if (!found) {
-                    setStateTo(Static::kStateDoorOpening);
-                    found = true;
-                }
+            assert(pActiveOffset != nullptr && pFixedOffset != nullptr);
+            *pFixedOffset = static_cast<char>(-1 * sign);
+            *pActiveOffset = -2;
+            for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                if (obj->nature() != MapObject::kNatureVehicle) continue;
+                auto *pVehicle = static_cast<ShootableMovableMapObject *>(obj);
+                if (!found) { setStateTo(Static::kStateDoorOpening); found = true; }
                 pVehicle->blockPathWith(this);
+                break;
             }
-            *j = 1 * sign;
-            *i = 2;
-            aNature = MapObject::kNatureVehicle; si = 0;
-            pVehicle = dynamic_cast<ShootableMovableMapObject *>
-                            (pMission->findObjectWithNatureAtPos(x + inc_rel,
-                                                                y + rel_inc,z, aNature, &si));
-            if (pVehicle) {
-                if (!found) {
-                    setStateTo(Static::kStateDoorOpening);
-                    found = true;
-                }
+            *pFixedOffset = static_cast<char>(1 * sign);
+            *pActiveOffset = 2;
+            for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                if (obj->nature() != MapObject::kNatureVehicle) continue;
+                auto *pVehicle = static_cast<ShootableMovableMapObject *>(obj);
+                if (!found) { setStateTo(Static::kStateDoorOpening); found = true; }
                 pVehicle->blockPathWith(this);
+                break;
             }
-            *j = -1;
-            for (*i = -1; *i <= 1; (*i)++ ) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = (PedInstance *)(pMission->findObjectWithNatureAtPos(x + rel_inc,
-                        y + inc_rel, z, aNature, &si));
-                    if (pPed) {
-                        found_peds.push_back(pPed);
-                        if (!found && pPed->hasAccessCard()) {
-                            setStateTo(Static::kStateDoorOpening);
-                            found = true;
-                        }
+            *pFixedOffset = -1;
+            for (*pActiveOffset = -1; *pActiveOffset <= 1; (*pActiveOffset)++) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetY, y + offsetX, z))) {
+                    if (obj->nature() != MapObject::kNaturePed) continue;
+                    auto *pPed = static_cast<PedInstance *>(obj);
+                    found_peds.push_back(pPed);
+                    if (!found && pPed->hasAccessCard()) {
+                        setStateTo(Static::kStateDoorOpening);
+                        found = true;
                     }
-                } while (pPed);
+                }
             }
-            *j = 1;
-            for (*i = -1; *i <= 1; (*i)++ ) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = (PedInstance *)(pMission->findObjectWithNatureAtPos(x + rel_inc,
-                        y + inc_rel, z, aNature, &si));
-                    if (pPed) {
-                        found_peds.push_back(pPed);
-                        if (!found && pPed->hasAccessCard()) {
-                            setStateTo(Static::kStateDoorOpening);
-                            found = true;
-                        }
+            *pFixedOffset = 1;
+            for (*pActiveOffset = -1; *pActiveOffset <= 1; (*pActiveOffset)++) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetY, y + offsetX, z))) {
+                    if (obj->nature() != MapObject::kNaturePed) continue;
+                    auto *pPed = static_cast<PedInstance *>(obj);
+                    found_peds.push_back(pPed);
+                    if (!found && pPed->hasAccessCard()) {
+                        setStateTo(Static::kStateDoorOpening);
+                        found = true;
                     }
-                } while (pPed);
+                }
             }
             terminatePath = (state_ != Static::kStateDoorOpening);
             {
-                int xadj = (orientation_ == kStaticOrientation1) ? 1 : 0;
-                int yadj = (orientation_ == kStaticOrientation2) ? 1 : 0;
+                int xadj = (orientation_ == kStaticOrientationNS) ? 1 : 0;
+                int yadj = (orientation_ == kStaticOrientationEW) ? 1 : 0;
                 for (PedInstance *pFoundPed : found_peds) {
                     pFoundPed->blockPathWith(this, terminatePath, x, y, z, xadj, yadj);
                 }
             }
             break;
-        
-        case Static::kStateDoorOpening:
-            if (orientation_ == kStaticOrientation1) {
-                i = &rel_inc;
-                j = &inc_rel;
+        }
+        case Static::kStateDoorOpening: {
+            if (orientation_ == kStaticOrientationNS) {
+                pActiveOffset = &offsetY;
+                pFixedOffset = &offsetX;
                 sign = 1;
-            } else if (orientation_ == kStaticOrientation2) {
-                i = &inc_rel;
-                j = &rel_inc;
+            } else if (orientation_ == kStaticOrientationEW) {
+                pActiveOffset = &offsetX;
+                pFixedOffset = &offsetY;
                 sign = -1;
             }
-            assert(i != 0 && j != 0);
-            *j = -1 * sign;
-            *i = -2;
+            assert(pActiveOffset != nullptr && pFixedOffset != nullptr);
+            *pFixedOffset = static_cast<char>(-1 * sign);
+            *pActiveOffset = -2;
             terminatePath = (state_ != Static::kStateDoorOpening);
-            aNature = MapObject::kNatureVehicle; si = 0;
-            pVehicle = dynamic_cast<ShootableMovableMapObject *>
-                    (pMission->findObjectWithNatureAtPos(x + inc_rel,
-                y + rel_inc,z, aNature, &si));
-            if (pVehicle) {
+            for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                if (obj->nature() != MapObject::kNatureVehicle) continue;
+                auto *pVehicle = static_cast<ShootableMovableMapObject *>(obj);
                 pVehicle->blockPathWith(this);
+                break;
             }
-            *j = 1 * sign;
-            *i = 2;
-            aNature = MapObject::kNatureVehicle; si = 0;
-            pVehicle = dynamic_cast<ShootableMovableMapObject *>
-                    (pMission->findObjectWithNatureAtPos(x + inc_rel,
-                y + rel_inc,z, aNature, &si));
-            if (pVehicle) {
+            *pFixedOffset = static_cast<char>(1 * sign);
+            *pActiveOffset = 2;
+            for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetX, y + offsetY, z))) {
+                if (obj->nature() != MapObject::kNatureVehicle) continue;
+                auto *pVehicle = static_cast<ShootableMovableMapObject *>(obj);
                 pVehicle->blockPathWith(this);
+                break;
             }
-            *j = -1;
-            for (*i = -1; *i <= 1; (*i)++ ) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = (PedInstance *)(pMission->findObjectWithNatureAtPos(x + rel_inc,
-                        y + inc_rel, z, aNature, &si));
-                    if (pPed) {
-                        found_peds.push_back(pPed);
-                    }
-                } while (pPed);
+            *pFixedOffset = -1;
+            for (*pActiveOffset = -1; *pActiveOffset <= 1; (*pActiveOffset)++) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetY, y + offsetX, z))) {
+                    if (obj->nature() != MapObject::kNaturePed) continue;
+                    auto *pPed = static_cast<PedInstance *>(obj);
+                    found_peds.push_back(pPed);
+                }
             }
-            *j = 1;
-            for (*i = -1; *i <= 1; (*i)++ ) {
-                aNature = MapObject::kNaturePed; si = 0;
-                do {
-                    pPed = (PedInstance *)(pMission->findObjectWithNatureAtPos(x + rel_inc,
-                        y + inc_rel, z, aNature, &si));
-                    if (pPed) {
-                        found_peds.push_back(pPed);
-                    }
-                } while (pPed);
+            *pFixedOffset = 1;
+            for (*pActiveOffset = -1; *pActiveOffset <= 1; (*pActiveOffset)++) {
+                for (MapObject *obj : pMission->getObjectsAtTile(TilePoint(x + offsetY, y + offsetX, z))) {
+                    if (obj->nature() != MapObject::kNaturePed) continue;
+                    auto *pPed = static_cast<PedInstance *>(obj);
+                    found_peds.push_back(pPed);
+                }
             }
             {
-                int xadj = (orientation_ == kStaticOrientation1) ? 1 : 0;
-                int yadj = (orientation_ == kStaticOrientation2) ? 1 : 0;
+                int xadj = (orientation_ == kStaticOrientationNS) ? 1 : 0;
+                int yadj = (orientation_ == kStaticOrientationEW) ? 1 : 0;
                 for (PedInstance *pFoundPed : found_peds) {
                     pFoundPed->blockPathWith(this, terminatePath, x, y, z, xadj, yadj);
                 }
             }
             break;
+        }
         default:
             break;
     }
