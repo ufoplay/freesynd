@@ -163,6 +163,10 @@ protected:
     bool findPathToNearestWalkableTile(const TilePoint &startPt, int *startTx, int *startTy, std::vector < TilePoint > *recoveryPath);
     bool dirWalkable(TilePoint *p, int x, int y, int z);
     uint16_t forbiddenDirFromCurrentHeading();
+    //! Return true if car is blocked by something
+    bool isBlocked();
+    //! Check for potential blockers on the road
+    bool checkForBlockers(bool checkForCrossings);
 
 protected:
     //! Vehicle driver

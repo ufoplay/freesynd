@@ -563,6 +563,84 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
 }
 
 /*!
+ * @return true if this vehicle is currently blocked by something
+ */
+bool GenericCar::isBlocked() {
+    if (hold_on_.pathBlocker != nullptr) { // blocked by something
+        if (hold_on_.terminatePath) {
+            // Must stop : clear destination and stop
+            clearDestination();
+            return true;
+        }
+        if (hold_on_.pathBlocker->is(MapObject::kNatureVehicle)) {
+            // For vehicle blockers: check if the blocking car has left the tile
+            if (hold_on_.pathBlocker->tileX() == hold_on_.tilex
+                && hold_on_.pathBlocker->tileY() == hold_on_.tiley) {
+                return true;  // still occupying the tile — wait
+            }
+            unblockPath();  // blocker has moved away — resume
+        } else if (hold_on_.pathBlocker->is(MapObject::kNaturePed)) {
+            // For ped blockers on a crossroad: resume when the ped has left or died
+            PedInstance *pBlockingPed = static_cast<PedInstance *>(hold_on_.pathBlocker);
+            if (!pBlockingPed->isAlive()
+                    || pBlockingPed->tileX() != hold_on_.tilex
+                    || pBlockingPed->tileY() != hold_on_.tiley) {
+                unblockPath();  // ped has cleared the tile — resume
+            } else {
+                return true;  // ped still on the crossroad — wait
+            }
+        } else {
+            return true;  // non-vehicle blocker (door, obstacle…) — unchanged behaviour
+        }
+    }
+
+    return false;
+}
+
+/*!
+ * Check if the next tile is already occupied by another vehicle,
+ * or if it is a crossroad tile with living pedestrians (for civilian/police drivers)
+ * @param checkForCrossings True to check if peds crossing the road
+ * @return true if there is a blocker ahead
+ */
+bool GenericCar::checkForBlockers(bool checkForCrossings) {
+    const TilePoint &nextPt = dest_path_.front();
+    Mission *pMission = g_missionCtrl.mission();
+    if (pMission != nullptr) {
+        const std::vector<MapObject*> &occupants =
+            pMission->getObjectsAtTile(nextPt);
+        for (MapObject *obj : occupants) {
+            if (obj != this && obj->is(MapObject::kNatureVehicle)) {
+                Vehicle *pBlocker = static_cast<Vehicle *>(obj);
+                // Dead vehicles won't move: terminate the path so the car recomputes a route
+                bool terminate = pBlocker->isDead();
+                blockPathWith(obj, terminate,
+                                nextPt.tx, nextPt.ty, nextPt.tz);
+                return true;
+            }
+        }
+        if (checkForCrossings) {
+            // Road is one level below the car
+            fs_eng::Tile *pTile = pMap_->getTileAt(nextPt.tx, nextPt.ty, nextPt.tz - 1);
+            if (pTile->isPedCrossing()) {
+                for (MapObject *obj : occupants) {
+                    if (obj->is(MapObject::kNaturePed)) {
+                        PedInstance *pPed = static_cast<PedInstance *>(obj);
+                        if (pPed->isAlive()) {
+                            blockPathWith(pPed, false,
+                                            nextPt.tx, nextPt.ty, nextPt.tz);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+}
+
+/*!
  * Moves a vehicle on the map.
  * \param elapsed Elapsed time sine last frame.
  */
@@ -578,69 +656,13 @@ bool GenericCar::doMove(uint32_t elapsed)
             || pDriver->type() == PedInstance::kPedTypePolice);
 
     while ((!dest_path_.empty()) && used_time != 0) {
-        if (hold_on_.pathBlocker != nullptr) { // blocked by something
-            if (hold_on_.terminatePath) {
-                // Must stop : clear destination and stop
-                clearDestination();
-                return updated;
-            }
-            if (hold_on_.pathBlocker->is(MapObject::kNatureVehicle)) {
-                // For vehicle blockers: check if the blocking car has left the tile
-                if (hold_on_.pathBlocker->tileX() == hold_on_.tilex
-                    && hold_on_.pathBlocker->tileY() == hold_on_.tiley) {
-                    return updated;  // still occupying the tile — wait
-                }
-                unblockPath();  // blocker has moved away — resume
-            } else if (hold_on_.pathBlocker->is(MapObject::kNaturePed)) {
-                // For ped blockers on a crossroad: resume when the ped has left or died
-                PedInstance *pBlockingPed = static_cast<PedInstance *>(hold_on_.pathBlocker);
-                if (!pBlockingPed->isAlive()
-                        || pBlockingPed->tileX() != hold_on_.tilex
-                        || pBlockingPed->tileY() != hold_on_.tiley) {
-                    unblockPath();  // ped has cleared the tile — resume
-                } else {
-                    return updated;  // ped still on the crossroad — wait
-                }
-            } else {
-                return updated;  // non-vehicle blocker (door, obstacle…) — unchanged behaviour
-            }
+        if (isBlocked()) {
+            return false;
         }
 
-        // Check if the next tile is already occupied by another vehicle,
-        // or if it is a crossroad tile with living pedestrians (for civilian/police drivers)
-        {
-            const TilePoint &nextPt = dest_path_.front();
-            Mission *pMission = g_missionCtrl.mission();
-            if (pMission != nullptr) {
-                const std::vector<MapObject*> &occupants =
-                    pMission->getObjectsAtTile(nextPt);
-                for (MapObject *obj : occupants) {
-                    if (obj != this && obj->is(MapObject::kNatureVehicle)) {
-                        Vehicle *pBlocker = static_cast<Vehicle *>(obj);
-                        // Dead vehicles won't move: terminate the path so the car recomputes a route
-                        bool terminate = pBlocker->isDead();
-                        blockPathWith(obj, terminate,
-                                      nextPt.tx, nextPt.ty, nextPt.tz);
-                        return updated;
-                    }
-                }
-                if (driverYieldsToCrossing) {
-                    // Road is one level below the car
-                    fs_eng::Tile *pTile = pMap_->getTileAt(nextPt.tx, nextPt.ty, nextPt.tz - 1);
-                    if (pTile->isPedCrossing()) {
-                        for (MapObject *obj : occupants) {
-                            if (obj->is(MapObject::kNaturePed)) {
-                                PedInstance *pPed = static_cast<PedInstance *>(obj);
-                                if (pPed->isAlive()) {
-                                    blockPathWith(pPed, false,
-                                                  nextPt.tx, nextPt.ty, nextPt.tz);
-                                    return updated;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        // Check if there are any obstacle to stop the vehicle
+        if (checkForBlockers(driverYieldsToCrossing)) {
+            return false;
         }
 
         // Get distance between car and next NodePath
@@ -699,14 +721,7 @@ bool GenericCar::doMove(uint32_t elapsed)
 
             // Moves vehicle
             addOffsetToPosition(dx, dy);
-#if 0
-            if (addOffsetToPosition(dx, dy)) {
-                ;
-            } else {
-                // TODO: avoid obstacles.
-                speed_ = 0;
-            }
-#endif
+
             if(dest_path_.front().tx == pos_.tx
                 && dest_path_.front().ty == pos_.ty
                 && dest_path_.front().ox == pos_.ox
@@ -723,12 +738,10 @@ bool GenericCar::doMove(uint32_t elapsed)
         FSERR(Log::k_FLG_GAME, "GenericCar", "doMove", ("Car has no destination but has speed : %i", speed()));
         stop();
     }
-    if (!passengers_.empty()) {
-        for (std::list<PedInstance *>::iterator it = passengers_.begin();
-            it != passengers_.end(); it++
-        ) {
-            (*it)->setPosition(pos_);
-        }
+
+    // Update passengers position to be in sync with car position
+    for (auto passenger : passengers_) {
+        passenger->setPosition(pos_);
     }
 
     return updated;
