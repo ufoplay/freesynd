@@ -585,7 +585,7 @@ EnterVehicleAction::EnterVehicleAction(Vehicle *pVehicle) :
 }
 
 void EnterVehicleAction::doStart([[maybe_unused]] Mission *pMission, [[maybe_unused]] PedInstance *pPed) {
-    if (pVehicle_->isDead()) {
+    if (pVehicle_->isDead() || pPed->isInVehicle()) {
         setFailed();
     }
 }
@@ -610,7 +610,7 @@ DriveVehicleAction::DriveVehicleAction(GenericCar *pVehicle, const TilePoint &de
 void DriveVehicleAction::doStart(Mission *pMission, PedInstance *pPed) {
     if (pVehicle_->isDead() || !pVehicle_->containsPed(pPed)) {
         setFailed();
-    }
+        }
 
     if (!pVehicle_->initMovementToDestination(pMission, dest_)) {
         setFailed();

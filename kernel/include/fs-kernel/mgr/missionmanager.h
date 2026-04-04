@@ -73,9 +73,20 @@ private:
         DataIndex() : weapons() {}
     };
 
+    /**
+     * List of attributes of the scenario structure.
+     */
+    enum ScenarioAttribute {
+        kScenarioAttTileX = 4,
+        kScenarioAttTileY = 5,
+        kScenarioAttTileZ = 6
+    };
+
 private:
     //! When loading missions, possibly adds some info to the data
     void hackMissions(int n, uint8_t *data);
+    //! Convenient method to modify an specific attribute of a scenario
+    void hackScenarioLocation(uint8_t *data, int offset, ScenarioAttribute coord, uint8_t newCoord);
     //! Reads the mission file and return a representation of that file
     bool load_level_data(int n, LevelData::LevelDataAll &level_data);
     // Instanciate a mission from the data file

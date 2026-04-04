@@ -223,7 +223,24 @@ void MissionManager::hackMissions(int missionId, uint8_t *data) {
         // Same for ped #46
         scen_start = data + kScenarioOffset + 8 * 63;
         scen_start[4] = 110; // change only the tx coord
-        
+    } else if (missionId == 6) { // Iraq
+        // Change the second destination of the car 14 for ped 146
+        hackScenarioLocation(data, 384, kScenarioAttTileX, 90);
+        hackScenarioLocation(data, 384, kScenarioAttTileZ, 6);
+        // Change the second destination of the car 15 for ped 148
+        hackScenarioLocation(data, 400, kScenarioAttTileY, 54);
+        hackScenarioLocation(data, 400, kScenarioAttTileZ, 6);
+        // Change the second destination of the car 16 for ped 171
+        hackScenarioLocation(data, 416, kScenarioAttTileY, 54);
+        hackScenarioLocation(data, 416, kScenarioAttTileZ, 6);
+        // Change the second destination of the car 17 for ped 166
+        hackScenarioLocation(data, 432, kScenarioAttTileX, 94);
+        hackScenarioLocation(data, 432, kScenarioAttTileZ, 6);
+        // Change the second destination of the car 18 for ped 159
+        hackScenarioLocation(data, 448, kScenarioAttTileX, 130);
+        hackScenarioLocation(data, 448, kScenarioAttTileZ, 6);
+        // Change the second destination of the car 9 for ped 143
+        hackScenarioLocation(data, 368, kScenarioAttTileY, 50);
     } else if (missionId == 10) { // Western Europe
         // Change the second destination of the car for ped #168
         // as in original scenario that destination seems non walkable
@@ -273,6 +290,18 @@ void MissionManager::hackMissions(int missionId, uint8_t *data) {
         // type 1 = reach location
         scen_start[3] = 1;
     }
+}
+
+/*!
+ * Change an attribut of a scenario
+ * @param data Level data
+ * @param offset Offset of the scenario to hack
+ * @param coord The type of attribute to change
+ * @param newCoord The new value
+ */
+void MissionManager::hackScenarioLocation(uint8_t *data, int offset, ScenarioAttribute coord, uint8_t newCoord) {
+    uint8_t *scen_start = data + kScenarioOffset + offset;
+    scen_start[coord] = newCoord;
 }
 
 void MissionManager::exportMissionData(LevelData::LevelDataAll &level_data, Mission *pMission) {
@@ -715,7 +744,7 @@ void MissionManager::createScriptedActionsForPed(Mission *pMission, DataIndex &d
     uint16_t offset_start = fs_utl::READ_LE_UINT16(peopleData.offset_scenario_start);
     uint16_t offset_nxt = offset_start;
     Vehicle *v = pPed->inVehicle();
-    bool isInVehicle = v != NULL;
+    bool isInVehicle = v != nullptr;
 
 #ifdef _DEBUG
     if (offset_nxt) {
@@ -780,6 +809,7 @@ void MissionManager::createScriptedActionsForPed(Mission *pMission, DataIndex &d
                 bindx /= 42;
                 if (di.vindx[bindx] != 0xFFFF) {
                     v = pMission->vehicle(di.vindx[bindx]);
+                    isInVehicle = true; // set this to true so next scenarios knows we are in a car
                     // go to car and enter inside
                     MovementAction *pAction =
                         pPed->createActionEnterVehicle(v);
