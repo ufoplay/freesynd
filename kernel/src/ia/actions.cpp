@@ -612,9 +612,7 @@ void DriveVehicleAction::doStart(Mission *pMission, PedInstance *pPed) {
     if (pVehicle_->isDead() || !pVehicle_->containsPed(pPed)) {
         setFailed();
     } else if (!pVehicle_->initMovementToDestination(pMission, dest_)) {
-        // Should not happen as we have tested that the destination is a road
         setFailed();
-        FSERR(Log::k_FLG_GAME, "DriveVehicleAction", "doStart", ("Could not find path to %d, %d, %d for car %d", dest_.tx, dest_.ty, dest_.tz, pVehicle_->id()))
     }
 }
 

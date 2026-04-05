@@ -160,7 +160,7 @@ public:
     static const float kInfiniteDistance;                   ///< Sentinel "infinity" for distance comparisons
 
 protected:
-    bool findPathToNearestWalkableTile(const TilePoint &startPt, int *startTx, int *startTy, std::vector < TilePoint > *recoveryPath);
+    bool findPathToNearestWalkableTile(TilePoint &startPt, std::vector < TilePoint > &recoveryPath);
     bool dirWalkable(TilePoint *p, int x, int y, int z);
     uint16_t forbiddenDirFromCurrentHeading();
     //! Return true if car is blocked by something

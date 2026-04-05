@@ -257,12 +257,6 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
     std::set < TilePoint > closed;
     std::map < TilePoint, TilePoint > parent; // child → parent, for path reconstruction
 
-    // Effective start tile (may be updated if the car is currently off-road)
-    int startTx = pos_.tx, startTy = pos_.ty;
-    // Recovery path prepended when the car starts on a non-drivable tile
-    std::vector < TilePoint > recoveryPath;
-    recoveryPath.reserve(kMaxWalkableSearchRadius);
-
     TilePoint destPt(destinationPt);
 
     pMap_->clip(&destPt);
@@ -282,27 +276,26 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
         return false;
     }
 
-    // If vehicle is on a non drivable place, first set a path to a drivable tile
-    if (!pMap_->isTileWalkableByCar(pos_.tx, pos_.ty, destPt.tz)) {
-        TilePoint currentPos(pos_.tx , pos_.ty, destPt.tz, pos_.ox, pos_.oy);
+    // Effective start tile (may be updated if the car is currently off-road)
+    TilePoint startNode(pos_.tx , pos_.ty, destPt.tz, pos_.ox, pos_.oy);
 
-        if(!findPathToNearestWalkableTile(currentPos, &startTx, &startTy, &recoveryPath)) {
+    // If vehicle is on a non drivable place, first set a path to a drivable tile
+    // Recovery path prepended when the car starts on a non-drivable tile
+    std::vector < TilePoint > recoveryPath;
+    recoveryPath.reserve(kMaxWalkableSearchRadius);
+    if (!pMap_->isTileWalkableByCar(pos_.tx, pos_.ty, destPt.tz)) {
+        if(!findPathToNearestWalkableTile(startNode, recoveryPath)) {
             return false;
         }
     }
 
-    // Fallback node: the closest tile reached if the watchdog fires before we hit the goal
-    TilePoint closestReached;
-    float closestDist = kInfiniteDistance;
-
     // Seed the open set with the start tile.
     // forbiddenDir is derived from the car's current heading so we don't immediately U-turn.
     uint16_t forbiddenDir = forbiddenDirFromCurrentHeading();
-    TilePoint startNode(startTx, startTy, destPt.tz, pos_.ox, pos_.oy);
     gScore[startNode] = 0.0f;
     float hStart = sqrt(static_cast<float>(
-        (destPt.tx - startTx) * (destPt.tx - startTx) +
-        (destPt.ty - startTy) * (destPt.ty - startTy)));
+        (destPt.tx - startNode.tx) * (destPt.tx - startNode.tx) +
+        (destPt.ty - startNode.ty) * (destPt.ty - startNode.ty)));
     openQueue.push({hStart, startNode});
     openForbiddenDir[startNode] = forbiddenDir;
     int watchDog = kPathfindingWatchdog;
@@ -321,21 +314,13 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
         forbiddenDir = openForbiddenDir[p];
         openForbiddenDir.erase(p);
 
-        // Update closest-reached fallback (used if watchdog fires)
-        float distToGoal = sqrt(static_cast<float>(
-            (destPt.tx - p.tx) * (destPt.tx - p.tx) +
-            (destPt.ty - p.ty) * (destPt.ty - p.ty)));
-        if (distToGoal < closestDist) {
-            closestReached = p;
-            closestDist = distToGoal;
-        }
         closed.insert(p);
 
         // --- Goal test (or watchdog expiry → use best node reached so far) ---
         if (p.isSameTile(destPt) || watchDog < 0) {
             if (watchDog < 0) {
-                p = closestReached;
-                dest_path_.push_front(TilePoint(p.tx, p.ty, p.tz, destPt.ox, destPt.oy));
+                LOG(Log::k_FLG_GAME, "GenericCar", "initMovementToDestination", ("Hit wathdog before finding path\n"))
+                break;
             } else
                 dest_path_.push_front(TilePoint(destPt));
 
@@ -403,9 +388,6 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
  * @param forbiddenDir is the direction back to the parent — we skip it to prevent U-turns.
  */
 void GenericCar::expandCandidateNeighbours(std::map<TilePoint, uint16_t> & candidateNeighbors, TilePoint p, uint16_t forbiddenDir) {
-    if (id() == 11 && p.tx == 37 && p.ty == 25) {
-        printf("Car 11 path : point a probleme\n");
-    }
     uint16_t currentTileDir = pMap_->getPossibleDirectionsFromRoadTile(p.tx, p.ty, p.tz);
 
     // Try going West (tx-1): allowed if current tile has a West exit and we didn't come from West
@@ -518,7 +500,7 @@ void GenericCar::addIntraTileOffsetsToPath() {
  * \param recoveryPath [out] Sequence of tile points leading to the nearest walkable tile.
  * \return true if a walkable tile was found within the search radius; false otherwise.
  */
-bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *startTx, int *startTy, std::vector < TilePoint > *recoveryPath) {
+bool GenericCar::findPathToNearestWalkableTile(TilePoint &startPt, std::vector < TilePoint > &recoveryPath) {
     // Scan up to kMaxWalkableSearchRadius tiles in each of the 4 cardinal directions
     // to find the closest drivable tile. Uses squared distance to avoid sqrt.
     int bestDist = (int)kInfiniteDistance, curDist;
@@ -526,6 +508,9 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
     candidatePath.reserve(kMaxWalkableSearchRadius);
     // we got somewhere we shouldn't, we need to find somewhere that is walkable
     TilePoint probePoint = startPt;
+    // Store the final starting point
+    int startTx = startPt.tx;
+    int startTy = startPt.ty;
     for (int i = 1; i < kMaxWalkableSearchRadius; i++) {
         if (pos_.tx + i >= pMap_->maxTx())
             break;
@@ -535,9 +520,9 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
             curDist = i * i;
             if(curDist < bestDist) {
                 bestDist = curDist;
-                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
-                *startTx = pos_.tx + i;
-                *startTy = pos_.ty;
+                recoveryPath.assign(candidatePath.begin(), candidatePath.end());
+                startTx = pos_.tx + i;
+                startTy = pos_.ty;
                 break;
             }
         }
@@ -554,9 +539,9 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
             curDist = i * i;
             if(curDist < bestDist) {
                 bestDist = curDist;
-                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
-                *startTx = pos_.tx + i;
-                *startTy = pos_.ty;
+                recoveryPath.assign(candidatePath.begin(), candidatePath.end());
+                startTx = pos_.tx + i;
+                startTy = pos_.ty;
                 break;
             }
         }
@@ -573,9 +558,9 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
             curDist = i * i;
             if(curDist < bestDist) {
                 bestDist = curDist;
-                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
-                *startTx = pos_.tx;
-                *startTy = pos_.ty + i;
+                recoveryPath.assign(candidatePath.begin(), candidatePath.end());
+                startTx = pos_.tx;
+                startTy = pos_.ty + i;
                 break;
             }
         }
@@ -592,13 +577,16 @@ bool GenericCar::findPathToNearestWalkableTile(const TilePoint &startPt, int *st
             curDist = i * i;
             if(curDist < bestDist) {
                 bestDist = curDist;
-                recoveryPath->assign(candidatePath.begin(), candidatePath.end());
-                *startTx = pos_.tx;
-                *startTy = pos_.ty + i;
+                recoveryPath.assign(candidatePath.begin(), candidatePath.end());
+                startTx = pos_.tx;
+                startTy = pos_.ty + i;
                 break;
             }
         }
     }
+
+    startPt.tx = startTx;
+    startPt.ty = startTy;
     return (bestDist != (int)kInfiniteDistance);
 }
 
