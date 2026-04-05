@@ -105,6 +105,16 @@ public:
                 && otherTp.oz == oz;
     }
 
+    /*!
+     * Return true if this point matches the other
+     * but only for tx, ty and tz coords.
+     */
+    bool isSameTile(const TilePoint &otherTp) {
+        return otherTp.tx == tx
+                && otherTp.ty == ty
+                && otherTp.tz == tz;
+    }
+
     bool operator<(const TilePoint &other) const {
         int a = tx | (ty << 16);
         int b = other.tx | (other.ty << 16);

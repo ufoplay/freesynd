@@ -241,6 +241,8 @@ void MissionManager::hackMissions(int missionId, uint8_t *data) {
         hackScenarioLocation(data, 448, kScenarioAttTileZ, 6);
         // Change the second destination of the car 9 for ped 143
         hackScenarioLocation(data, 368, kScenarioAttTileY, 50);
+        // Change the second destination of the car 11 for ped 131
+        hackScenarioLocation(data, 296, kScenarioAttTileX, 200);
     } else if (missionId == 10) { // Western Europe
         // Change the second destination of the car for ped #168
         // as in original scenario that destination seems non walkable

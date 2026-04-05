@@ -156,7 +156,7 @@ public:
 
     // Pathfinding limits
     static const int   kMaxWalkableSearchRadius = 16;       ///< Max tile search radius in findPathToNearestWalkableTile()
-    static const int   kPathfindingWatchdog     = 1000;     ///< Max greedy-search iterations before giving up
+    static const int   kPathfindingWatchdog     = 5000;     ///< Max A* search iterations before giving up
     static const float kInfiniteDistance;                   ///< Sentinel "infinity" for distance comparisons
 
 protected:
@@ -167,6 +167,11 @@ protected:
     bool isBlocked();
     //! Check for potential blockers on the road
     bool checkForBlockers(bool checkForCrossings);
+
+    void expandCandidateNeighbours(std::map<TilePoint, uint16_t> & candidateNeighbors, TilePoint p, uint16_t forbiddenDir);
+
+    //!
+    void addIntraTileOffsetsToPath();
 
 protected:
     //! Vehicle driver
