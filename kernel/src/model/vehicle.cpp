@@ -164,19 +164,6 @@ GenericCar::GenericCar(uint16_t anId, uint8_t aType, Map *pMap, int maxSpeed):
     unblockPath();
 }
 
-uint16_t GenericCar::forbiddenDirFromCurrentHeading() {
-    // Converts the car's current discrete heading (returned by getDiscreteDirection(4))
-    // into the forbiddenDir mask that blocks the pathfinder from U-turning on the first step.
-    // Heading values: 0=South, 1=West, 2=North, 3=East
-    switch (getDiscreteDirection(4)) {
-        case 0: return Map::kForbidDirNorth;  // heading South → forbid going back North
-        case 1: return Map::kForbidDirWest;   // heading East  → forbid going back West
-        case 2: return Map::kForbidDirSouth;  // heading North → forbid going back South
-        case 3: return Map::kForbidDirEast;   // heading West  → forbid going back East
-        default: return Map::kForbidDirNorth;
-    }
-}
-
 /*!
  * Computes a path on the road network from the car's current position to \p destinationPt
  * and stores it in dest_path_.
@@ -214,8 +201,6 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
     // Min-heap ordered by f-score (smallest first).
     using OpenEntry = std::pair<float, TilePoint>;
     std::priority_queue<OpenEntry, std::vector<OpenEntry>, std::greater<OpenEntry>> openQueue;
-    // Lookup: node → forbiddenDir (direction we came from, to prevent U-turns)
-    std::map<TilePoint, uint16_t> openForbiddenDir;
     // Cumulative cost from the start node to each visited node
     std::map<TilePoint, float> gScore;
 
@@ -255,14 +240,12 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
     }
 
     // Seed the open set with the start tile.
-    // forbiddenDir is derived from the car's current heading so we don't immediately U-turn.
-    uint16_t forbiddenDir = forbiddenDirFromCurrentHeading();
     gScore[startNode] = 0.0f;
     float hStart = sqrt(static_cast<float>(
         (destPt.tx - startNode.tx) * (destPt.tx - startNode.tx) +
         (destPt.ty - startNode.ty) * (destPt.ty - startNode.ty)));
     openQueue.push({hStart, startNode});
-    openForbiddenDir[startNode] = forbiddenDir;
+
     int watchDog = kPathfindingWatchdog;
 
     while (!openQueue.empty()) {
@@ -274,10 +257,6 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
 
         // Lazy deletion: skip nodes already expanded (stale heap entries)
         if (closed.count(p)) continue;
-
-        // Retrieve and remove the forbiddenDir associated with this node
-        forbiddenDir = openForbiddenDir[p];
-        openForbiddenDir.erase(p);
 
         closed.insert(p);
 
@@ -320,7 +299,6 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
             if (!gScore.count(neighbor) || gNew < gScore[neighbor]) {
                 gScore[neighbor] = gNew;
                 parent[neighbor] = p;
-                openForbiddenDir[neighbor] = newForbiddenDir;
 
                 float h = sqrt(static_cast<float>(
                     (destPt.tx - neighbor.tx) * (destPt.tx - neighbor.tx) +
