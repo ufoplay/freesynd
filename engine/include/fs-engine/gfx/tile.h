@@ -43,7 +43,7 @@ public:
     //! Height of a component of a tile
     static const int kSubTileHeight;
 
-    // Road tile type IDs used by GenericCar::tileDir() to determine allowed driving directions.
+    // Specific tile ids for example for pathfinding
     static constexpr int kTileLargeDoorRailEW = 80;  ///< Tile below large door, East-West axis
     static constexpr int kTileLargeDoorRailNS = 81;  ///< Tile below large door, North-South axis
     static constexpr int kTileRoadNtoS    = 106; ///< Straight road, North to South axis
@@ -112,7 +112,9 @@ public:
         return type_ == kRoadPedCross;
     }
 
-    uint8 getWalkData();
+    uint8_t getWalkData();
+    //! Returns a bitfield indicating possible connexions on edge of tile
+    uint8_t getEdgeConnexionsForRoadTile();
 
     //! Return true if there is at least one pixel to draw because it's not transparent
     inline bool notTransparent() { return notAlpha_; }

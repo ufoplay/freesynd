@@ -164,39 +164,6 @@ GenericCar::GenericCar(uint16_t anId, uint8_t aType, Map *pMap, int maxSpeed):
     unblockPath();
 }
 
-bool GenericCar::dirWalkable(TilePoint *p, int x, int y, int z) {
-    if(!(pMap_->isTileWalkableByCar(x,y,z)))
-        return false;
-
-    uint16_t dirStart = pMap_->getPossibleDirectionsFromRoadTile(p->tx,p->ty,p->tz);
-    uint16_t dirEnd = pMap_->getPossibleDirectionsFromRoadTile(x,y,z);
-    if (dirStart == Map::kTileDirNone || dirEnd == Map::kTileDirNone)
-        return false;
-    if (dirStart == Map::kTileDirAll || dirEnd == Map::kTileDirAll)
-        return true;
-
-    // A transition is valid if both tiles share a matching non-blocked nibble
-    // (i.e. the road exits align in at least one cardinal direction).
-    if (((dirStart & Map::kDirMaskWest) != Map::kDirMaskWest)
-        || ((dirEnd & Map::kDirMaskWest) != Map::kDirMaskWest))
-        if ((dirStart & Map::kDirMaskWest) == (dirEnd & Map::kDirMaskWest))
-                return true;
-    if (((dirStart & Map::kDirMaskNorth) != Map::kDirMaskNorth)
-        || ((dirEnd & Map::kDirMaskNorth) != Map::kDirMaskNorth))
-        if ((dirStart & Map::kDirMaskNorth) == (dirEnd & Map::kDirMaskNorth))
-                return true;
-    if (((dirStart & Map::kDirMaskEast) != Map::kDirMaskEast)
-        || ((dirEnd & Map::kDirMaskEast) != Map::kDirMaskEast))
-        if ((dirStart & Map::kDirMaskEast) == (dirEnd & Map::kDirMaskEast))
-                return true;
-    if (((dirStart & Map::kDirMaskSouth) != Map::kDirMaskSouth)
-        || ((dirEnd & Map::kDirMaskSouth) != Map::kDirMaskSouth))
-        if ((dirStart & Map::kDirMaskSouth) == (dirEnd & Map::kDirMaskSouth))
-                return true;
-
-    return false;
-}
-
 uint16_t GenericCar::forbiddenDirFromCurrentHeading() {
     // Converts the car's current discrete heading (returned by getDiscreteDirection(4))
     // into the forbiddenDir mask that blocks the pathfinder from U-turning on the first step.
@@ -224,9 +191,7 @@ uint16_t GenericCar::forbiddenDirFromCurrentHeading() {
  *
  * \par Road constraints
  * Expansion is limited to tiles that are both walkable by cars (isTileWalkableByCar()) and
- * connected by compatible road exits as determined by getPossibleDirectionsFromRoadTile() and
- * dirWalkable(). U-turns are prevented by forbiddenDirFromCurrentHeading() and the forbiddenDir
- * field stored per open node.
+ * connected by compatible road exits as determined by getPossibleDirectionsFromRoadTile(). 
  *
  * \par Off-road recovery
  * If the car's current tile is not drivable (e.g. after a collision), findPathToNearestWalkableTile()
@@ -267,12 +232,12 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
     clearDestination();
 
     if (!isDrawable() || isDead()) {
-        LOG(Log::k_FLG_GFX, "GenericCar", "initMovementToDestination", ("Car is invisible or dead"))
+        LOG(Log::k_FLG_GAME, "GenericCar", "initMovementToDestination", ("Car is invisible or dead"))
         return false;
     }
 
     if (!(pMap_->isTileWalkableByCar(destPt.tx, destPt.ty, destPt.tz))) {
-        LOG(Log::k_FLG_GFX, "GenericCar", "initMovementToDestination", ("Destination point is not walkable by car %d : %d, %d, %d", id(), destPt.tx, destPt.ty, destPt.tz))
+        LOG(Log::k_FLG_GAME, "GenericCar", "initMovementToDestination", ("Destination point is not walkable by car %d : %d, %d, %d", id(), destPt.tx, destPt.ty, destPt.tz))
         return false;
     }
 
@@ -336,14 +301,15 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
 
         // Get candidate amoung neigbours
         std::map<TilePoint, uint16_t> candidateNeighbors;
-        expandCandidateNeighbours(candidateNeighbors, p, forbiddenDir);
+        expandCandidateNeighbours(p, candidateNeighbors);
 
         float gCurrent = gScore.count(p) ? gScore[p] : 0.0f;
 
+        if (candidateNeighbors.empty()) {
+            LOG(Log::k_FLG_GAME, "GenericCar", "initMovementToDestination", ("No neigbours for car %d at point %d, %d, %d\n", id(), p.tx, p.ty, p.tz))
+        }
+
         for (auto& [neighbor, newForbiddenDir] : candidateNeighbors) {
-            if (!dirWalkable(&p, neighbor.tx, neighbor.ty, neighbor.tz)) {
-                continue;
-            }
             if (closed.count(neighbor)) {
                 continue;
             }
@@ -383,104 +349,70 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
 }
 
 /*!
- * Expand neighbours: only road-adjacent tiles that respect driving direction
- * getPossibleDirectionsFromRoadTile() encodes which exits a tile has (4 nibbles, one per cardinal direction).
- * @param forbiddenDir is the direction back to the parent — we skip it to prevent U-turns.
+ * Find only road-adjacent tiles that respect driving direction
+ * @param p is the current tile for which we look candidates
+ * @param candidateNeighbors a map of candidates
  */
-void GenericCar::expandCandidateNeighbours(std::map<TilePoint, uint16_t> & candidateNeighbors, TilePoint p, uint16_t forbiddenDir) {
-    uint16_t currentTileDir = pMap_->getPossibleDirectionsFromRoadTile(p.tx, p.ty, p.tz);
-
-    // Try going West (tx-1): allowed if current tile has a West exit and we didn't come from West
-    if (forbiddenDir != Map::kForbidDirWest && p.tx > 0) {
-        if (dirWalkable(&p, p.tx - 1, p.ty, p.tz)
-            && ((currentTileDir & Map::kDirMaskWest) == Map::kForbidDirWest || currentTileDir == Map::kTileDirAll))
-            candidateNeighbors[TilePoint(p.tx - 1, p.ty, p.tz)] = Map::kForbidDirEast;
+void GenericCar::expandCandidateNeighbours(const TilePoint &p, std::map<TilePoint, uint16_t> & candidateNeighbors) {
+    uint8_t possibleConnexions = pMap_->getPossibleConnexionsForRoadTile(p);
+    
+    if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitNorth)) {
+        candidateNeighbors[TilePoint(p.tx, p.ty - 1, p.tz)] = Map::kForbidDirSouth;
     }
 
-    // Try going East (tx+1): allowed if current tile has an East exit and we didn't come from East
-    if (forbiddenDir != Map::kForbidDirEast && p.tx < pMap_->maxTx()) {
-        if (dirWalkable(&p, p.tx + 1, p.ty, p.tz)
-            && ((currentTileDir & Map::kDirMaskEast) == Map::kForbidDirEast || currentTileDir == Map::kTileDirAll))
-            candidateNeighbors[TilePoint(p.tx + 1, p.ty, p.tz)] = Map::kForbidDirWest;
+    if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitSouth)) {
+        candidateNeighbors[TilePoint(p.tx, p.ty + 1, p.tz)] = Map::kForbidDirNorth;
     }
 
-    // Try going North (ty-1): allowed if current tile has a North exit and we didn't come from North
-    if (forbiddenDir != Map::kForbidDirNorth && p.ty > 0)
-        if (dirWalkable(&p, p.tx, p.ty - 1, p.tz)
-            && ((currentTileDir & Map::kDirMaskNorth) == Map::kForbidDirNorth || currentTileDir == Map::kTileDirAll))
-            candidateNeighbors[TilePoint(p.tx, p.ty - 1, p.tz)] = Map::kForbidDirSouth;
+    if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitEast)) {
+        candidateNeighbors[TilePoint(p.tx + 1, p.ty, p.tz)] = Map::kForbidDirWest;
+    }
 
-    // Try going South (ty+1): allowed if current tile has a South exit and we didn't come from South
-    if (forbiddenDir != Map::kForbidDirSouth && p.ty < pMap_->maxTy())
-        if (dirWalkable(&p, p.tx, p.ty + 1, p.tz)
-            && ((currentTileDir & Map::kDirMaskSouth) == Map::kForbidDirSouth || currentTileDir == Map::kTileDirAll))
-            candidateNeighbors[TilePoint(p.tx, p.ty + 1, p.tz)] = Map::kForbidDirNorth;
+    if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitWest)) {
+        candidateNeighbors[TilePoint(p.tx - 1, p.ty, p.tz)] = Map::kForbidDirEast;
+    }
 }
 
 /*!
  * Adjust intra-tile offsets (ox, oy) so the car stays centered in the correct lane.
- * Each case matches a tileDir() pattern; kLaneOffsetLow/High position the car
- * on the appropriate side of the road based on driving direction.
+ * Use of kLaneOffsetLow/High to position the car on the appropriate side of the 
+ * road based on driving direction.
  */
 void GenericCar::addIntraTileOffsetsToPath() {
-    int curox = pos_.ox;
-    int curoy = pos_.oy;
+    TilePoint previous = pos_;
+
     for(std::list < TilePoint >::iterator it = dest_path_.begin();
-        it != dest_path_.end(); it++)
-    {
-        // TODO : adjust offsets respecting direction relative to
-        // close next tiles
-        switch(pMap_->getPossibleDirectionsFromRoadTile(it->tx, it->ty, it->tz)) {
-            case 0xFFF0:
-            case 0xFF20:
-                it->ox = kLaneOffsetHigh;
-                it->oy = kLaneOffsetLow;
-                curox = kLaneOffsetHigh;
-                curoy = kLaneOffsetLow;
-                break;
-            case 0xF4FF:
-                it->ox = kLaneOffsetLow;
-                it->oy = kLaneOffsetHigh;
-                curox = kLaneOffsetLow;
-                curoy = kLaneOffsetHigh;
-                break;
-            case 0xFF2F:
-            case 0xF42F:
-                it->ox = kLaneOffsetLow;
-                it->oy = kLaneOffsetLow;
-                curox = kLaneOffsetLow;
-                curoy = kLaneOffsetLow;
-                break;
-            case 0x6FFF:
-            case 0x64FF:
-                it->ox = kLaneOffsetLow;
-                it->oy = kLaneOffsetHigh;
-                curox = kLaneOffsetLow;
-                curoy = kLaneOffsetHigh;
-                break;
-            case 0x6FF0:
-                it->ox = kLaneOffsetHigh;
-                it->oy = kLaneOffsetHigh;
-                curox = kLaneOffsetHigh;
-                curoy = kLaneOffsetHigh;
-                break;
-            default:
-#if 0
-#if _DEBUG
-                printf("hmm tileDir %X at %i, %i, %i\n",
-                    (unsigned int)tileDir(it->tileX(), it->tileY(),
-                    it->tileZ()), it->tileX(), it->tileY(), it->tileZ());
-                printf("tileAt %i\n",
-                    (unsigned int)pMap_->tileAt(
-                    it->tileX(), it->tileY(), it->tileZ()));
-#endif
-#endif
-                it->ox = curox;
-                it->oy = curoy;
-                break;
+        it != dest_path_.end(); it++) {
+        if (it->tx == previous.tx + 1) { // moving from west to east
+            it->ox = kLaneOffsetMiddle;
+            it->oy = kLaneOffsetLow;
+        } else if (it->tx == previous.tx - 1) { // moving from east to west
+            it->ox = kLaneOffsetMiddle;
+            it->oy = kLaneOffsetHigh;
+        } else if (it->ty == previous.ty + 1) { // moving from north to south
+            it->ox = kLaneOffsetHigh;
+            it->oy = kLaneOffsetMiddle;
+        } else if (it->ty == previous.ty - 1) { // moving from south to north
+            it->ox = kLaneOffsetLow;
+            it->oy = kLaneOffsetMiddle;
         }
+
+        auto next = std::next(it, 1);
+        if (next != dest_path_.end()) {
+            if (it->tx == next->tx + 1) { // moving from east to west
+                it->oy = kLaneOffsetHigh;
+            } else if (it->tx == next->tx - 1) { // moving from west to east
+                it->oy = kLaneOffsetLow;
+            } else if (it->ty == next->ty + 1) { // moving from south to north
+                it->ox = kLaneOffsetLow;
+            } else if (it->ty == next->ty - 1) { // moving from north to south
+                it->ox = kLaneOffsetHigh;
+            }
+        }
+
         // Restore real vehicle Z coordinate (road tiles are at pos_.tz - 1)
         it->tz = pos_.tz;
+        previous = *it;
     }
 }
 

@@ -50,46 +50,12 @@ Tile::Tile(int id, bool notAlpha, EType type, Point2D textLoc)
     textureLocation_ = textLoc;
 }
 
-/*bool Tile::drawTo(uint8 * screen, int swidth, int sheight, int x, int y) const
-{
-    if (x + kTileWidth < 0 || y + kTileHeight < 0
-        || x >= swidth || y >= sheight)
-    {
-        return false;
-    }
-
-    int xlow = x < 0 ? 0 : x;
-    int clipped_w = kTileWidth - (xlow - x);
-    int xhigh = xlow + clipped_w >= swidth ? swidth : xlow + clipped_w;
-    int ylow = y < 0 ? 0 : y;
-    int clipped_h = kTileHeight - (ylow - y);
-    int yhigh = ylow + clipped_h >= sheight ? sheight : ylow + clipped_h;
-
-    uint8 *ptr_a_pixels = pixels_ + ((kTileHeight - 1) - (ylow - y)) * kTileWidth;
-    uint8 *ptr_screen = screen + ylow * swidth + xlow;
-    for (int j = ylow; j < yhigh; ++j)
-    {
-        uint8 *cp_ptr_a_pixels = ptr_a_pixels;
-        ptr_a_pixels -= kTileWidth;
-        uint8 *cp_ptr_screen = ptr_screen;
-        ptr_screen += swidth;
-        for (int i = xlow; i < xhigh; ++i) {
-            uint8 c = *cp_ptr_a_pixels++;
-            if (c != 255)
-                *cp_ptr_screen = c;
-            ++cp_ptr_screen;
-        }
-    }
-    return true;
-}*/
-
-
 /*! \brief
  *
- * \return uint8
+ * @return uint8_t
  *
  */
-uint8 Tile::getWalkData() {
+uint8_t Tile::getWalkData() {
     // little patch to enable full surface description
     // and eliminate unnecessary data
     // 0x10 - non-surface/non-walkable, always above train stop
@@ -106,6 +72,56 @@ uint8 Tile::getWalkData() {
     default:
         // else return the type of the tile
         return type_;
+    }
+}
+
+/*!
+ * Returns a 8-bit bitmask encoding the valid entry/exit directions for this tile.
+ * The bitmask is divided into two nibbles (4 bits each), the first for entries and
+ * second for exits:
+ * \code
+ *   bits  7-4   Entries N S E W : if bit is 1, then a car can enter this side of the tile
+ *   bits  3-0   Exits N S E W : if bit is 1, then a car can exit this side of the tile
+ * \endcode
+ * @return 0 when tile cannot be entered or exited
+ */
+uint8_t Tile::getEdgeConnexionsForRoadTile() {
+    switch (id_) {             // Entry: NSEW Exit: NSEW
+    case kTileLargeDoorRailEW: // Entry: 1100 Exit: 1100
+        return 0xCC;
+    case kTileLargeDoorRailNS: // Entry: 0011 Exit: 0011
+        return 0x33;
+    case kTileRoadNtoS :       // Entry: 1010 Exit: 0110
+        return 0xA6;
+    case kTileRoadStoN :       // Entry: 0101 Exit: 1001
+        return 0x59;
+    case kTileRoadWtoE :       // Entry: 1001 Exit: 1010
+        return 0x9A;
+    case kTileRoadEtoW :       // Entry: 0110 Exit: 0101
+        return 0x65;
+    case kTileCurveWtoS:       // Entry: 1001 Exit: 0110
+        return 0x96;
+    case kTileCurveNtoW:       // Entry: 1010 Exit: 0101
+        return 0xA5;
+    case kTileCurveStoE:       // Entry: 0101 Exit: 1010
+        return 0x5A;
+    case kTileCurveEtoN:       // Entry: 0110 Exit: 1001
+        return 0x69;
+    case kTileCurveNtoE:       // Entry: 1000 Exit: 0010
+        return 0x82;
+    case kTileCurveEtoS:       // Entry: 0010 Exit: 0100
+        return 0x24;
+    case kTileExtCurveStoW:    // Entry: 0100 Exit: 0001
+        return 0x41;
+    case kTileExtCurveWtoN:    // Entry: 0001 Exit: 1000
+        return 0x18;
+    case kTilePedCrossNS :     // Entry: 1100 Exit: 1100
+        return 0xCC;
+    case kTilePedCrossEW :     // Entry: 0011 Exit: 0011
+        return 0x33;
+    default:
+        // else no connexion possible
+        return 0;
     }
 }
 

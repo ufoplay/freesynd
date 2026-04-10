@@ -613,6 +613,7 @@ void DriveVehicleAction::doStart(Mission *pMission, PedInstance *pPed) {
         setFailed();
     } else if (!pVehicle_->initMovementToDestination(pMission, dest_)) {
         setFailed();
+        LOG(Log::k_FLG_GAME, "DriveVehicleAction", "doStart", ("No path found for car %d to dest : %d, %d, %d", pVehicle_->id(), dest_.tx, dest_.ty, dest_.tz))
     }
 }
 

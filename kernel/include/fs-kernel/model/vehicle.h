@@ -153,6 +153,7 @@ public:
     // Intra-tile lane offsets (ox/oy range 0-255)
     static const int kLaneOffsetLow  = 32;  ///< Position on the low side of the lane
     static const int kLaneOffsetHigh = 200; ///< Position on the high side of the lane
+    static const int kLaneOffsetMiddle = 128;
 
     // Pathfinding limits
     static const int   kMaxWalkableSearchRadius = 16;       ///< Max tile search radius in findPathToNearestWalkableTile()
@@ -161,14 +162,13 @@ public:
 
 protected:
     bool findPathToNearestWalkableTile(TilePoint &startPt, std::vector < TilePoint > &recoveryPath);
-    bool dirWalkable(TilePoint *p, int x, int y, int z);
     uint16_t forbiddenDirFromCurrentHeading();
     //! Return true if car is blocked by something
     bool isBlocked();
     //! Check for potential blockers on the road
     bool checkForBlockers(bool checkForCrossings);
-
-    void expandCandidateNeighbours(std::map<TilePoint, uint16_t> & candidateNeighbors, TilePoint p, uint16_t forbiddenDir);
+    //! In pathfinding, find possible tiles around p that can be crossed when leaving p
+    void expandCandidateNeighbours(const TilePoint &p, std::map<TilePoint, uint16_t> & candidateNeighbors);
 
     //!
     void addIntraTileOffsetsToPath();
