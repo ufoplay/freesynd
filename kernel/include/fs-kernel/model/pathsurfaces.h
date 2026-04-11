@@ -29,6 +29,14 @@ namespace fs_knl {
 
     class floodPointDesc {
     public:
+        floodPointDesc() {
+            bfNodeDesc = 0;
+            dirh = 0;
+            dirm = 0;
+            dirl = 0;
+            lvl = 0;
+            
+        }
         /*! Description of the node.
          * If value is 0 - not defined,
          * Bitfield :
@@ -86,7 +94,7 @@ namespace fs_knl {
         static const uint8_t kBMaskDirNorthWest;
     };
 
-    typedef enum {
+    enum mapFloodDesc {
         m_fdNotDefined    = 0,
         m_fdBasePoint     = 1,
         m_fdTargetPoint   = 2,
@@ -96,16 +104,17 @@ namespace fs_knl {
         m_fdNonWalkable   = 32,
         m_fdDefReq        = 64,
         m_fdSafeWalk      = 64
-    } mapFloodDesc;
+    };
 
     struct toSetDesc {
         WorldPoint coords;
         floodPointDesc *pNode;
     };
-    typedef struct {
+    
+    struct lvlNodesDesc {
         uint16_t indxs;
         uint16_t n;
-    } lvlNodesDesc;
+    };
 
 }
 

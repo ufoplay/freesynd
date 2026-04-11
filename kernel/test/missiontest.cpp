@@ -37,6 +37,10 @@ public:
     }
 };
 
+const int kTestMapMaxTx = 60;
+const int kTestMapMaxTy = 50;
+const int kTestMapMaxTz = 5;
+
 void configureMission(const LevelData::MapInfos &mapInfos, fs_knl::Map *map, fs_knl::Mission &mission) {
     REQUIRE( mission.init(map) );
     // Define a squad of 2 agents
@@ -146,13 +150,13 @@ void configureMapInfo(LevelData::MapInfos *mapInfos) {
 // Helper function to set a tile as walkable
 void configureMap(fs_eng::TileManager &tileMgr, fs_knl::Map &map) {
     // TODO : initialiser le tableau de tiles
-    int nbTiles = 10*8 * 5;
+    int nbTiles = kTestMapMaxTx * kTestMapMaxTy * kTestMapMaxTz;
     fs_eng::Tile **tiles = new fs_eng::Tile*[nbTiles];
     // initialise with transparent tiles
     for (int i=0; i<nbTiles; i++) {
         tiles[i] = tileMgr.getTile(fs_eng::TileManager::kIndexTransparentTile);
     }
-    map.setTiles(10, 8, 5, tiles);
+    map.setTiles(kTestMapMaxTx, kTestMapMaxTy, kTestMapMaxTz, tiles);
 
 
     delete[] tiles;
@@ -257,6 +261,6 @@ TEST_CASE( "Mission", "[kernel][mission]" ) {
             //REQUIRE(mtp.tz == 0);
             REQUIRE(mtp.ox == 128);
             REQUIRE(mtp.oy == 128);
-}
+        }
     }
 }

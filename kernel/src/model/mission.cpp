@@ -526,11 +526,8 @@ bool Mission::setSurfaces() {
 
     clrSurfaces();
     int mmax_m_all = mmax_x_ * mmax_y_ * mmax_z_;
-    //mtsurfaces_ = (uint8_t *)malloc(mmax_m_all * sizeof(uint8_t));
     mtsurfaces_ = new uint8_t[mmax_m_all];
-    //mdpoints_ = (floodPointDesc *)malloc(mmax_m_all * sizeof(floodPointDesc));
     mdpoints_ = new floodPointDesc[mmax_m_all];
-    //mdpoints_cp_ = (floodPointDesc *)malloc(mmax_m_all * sizeof(floodPointDesc));
     mdpoints_cp_ = new floodPointDesc[mmax_m_all];
     if(mtsurfaces_ == NULL || mdpoints_ == NULL || mdpoints_cp_ == NULL) {
         clrSurfaces();
@@ -539,7 +536,7 @@ bool Mission::setSurfaces() {
     }
     mmax_m_xy = mmax_x_ * mmax_y_;
     memset((void *)mtsurfaces_, 0, mmax_m_all * sizeof(uint8_t));
-    memset((void *)mdpoints_, 0, mmax_m_all * sizeof(floodPointDesc));
+    
     for (int ix = 0; ix < mmax_x_; ++ix) {
         for (int iy = 0; iy < mmax_y_; ++iy) {
             for (int iz = 0; iz < mmax_z_; ++iz) {
@@ -2311,15 +2308,15 @@ bool Mission::setSurfaces() {
 void Mission::clrSurfaces() {
 
     if(mtsurfaces_ != NULL) {
-        free(mtsurfaces_);
+        delete[] mtsurfaces_;
         mtsurfaces_ = NULL;
     }
     if(mdpoints_ != NULL) {
-        free(mdpoints_);
+        delete[] mdpoints_;
         mdpoints_ = NULL;
     }
     if(mdpoints_cp_ != NULL) {
-        free(mdpoints_cp_);
+        delete[] mdpoints_cp_;
         mdpoints_cp_ = NULL;
     }
     staticSpatialGrid_.clear();
