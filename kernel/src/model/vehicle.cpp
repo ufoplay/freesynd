@@ -171,22 +171,22 @@ GenericCar::GenericCar(uint16_t anId, uint8_t aType, Map *pMap, int maxSpeed):
  * \par Algorithm
  * Implements an \b A* search on the road tile graph. At each iteration the open node with
  * the smallest f-score (f = g + h) is expanded, where g is the cumulative tile cost from
- * the start and h is the Euclidean distance to the destination. The heuristic is admissible
+ * the start and h is the Manhattan distance to the destination. The heuristic is admissible
  * (never overestimates), so the algorithm always finds the shortest path when one exists.
  * A min-heap is used for O(log n) node selection; stale heap entries are discarded via lazy
  * deletion when a node is popped after already being closed.
  *
  * \par Road constraints
- * Expansion is limited to tiles that are both walkable by cars (isTileWalkableByCar()) and
- * connected by compatible road exits as determined by getPossibleDirectionsFromRoadTile(). 
+ * Expansion is limited to tiles that are connected by compatible road exits as determined 
+ * by Map::getPossibleConnexionsForRoadTile(). 
  *
  * \par Off-road recovery
- * If the car's current tile is not drivable (e.g. after a collision), findPathToNearestWalkableTile()
+ * If the car's current tile is not drivable (e.g. parked on non road), findPathToNearestWalkableTile()
  * is called first to build a short recovery path; this recovery path is prepended to the main path.
  *
  * \par Watchdog
- * If the search exceeds kPathfindingWatchdog iterations without reaching the goal, the closest
- * node reached so far is used as a fallback destination. With A* this should only trigger on
+ * If the search exceeds kPathfindingWatchdog iterations without reaching the goal, method returns false
+ * to indicate that no path to destination was found. With A* this should only trigger on
  * pathologically disconnected road networks.
  *
  * \param pMission Current mission (unused in the body — kept for interface compatibility).
@@ -196,13 +196,13 @@ GenericCar::GenericCar(uint16_t anId, uint8_t aType, Map *pMap, int maxSpeed):
 bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, const TilePoint &destinationPt) {
     // A* search on the road network.
     // At each step, expand the open node with the smallest f-score = g + h,
-    // where g is the cumulative tile cost and h is the Euclidean distance to the destination.
+    // where g is the cumulative tile cost and h is the Manhattan distance to the destination.
 
     // Min-heap ordered by f-score (smallest first).
-    using OpenEntry = std::pair<float, TilePoint>;
+    using OpenEntry = std::pair<int, TilePoint>;
     std::priority_queue<OpenEntry, std::vector<OpenEntry>, std::greater<OpenEntry>> openQueue;
     // Cumulative cost from the start node to each visited node
-    std::map<TilePoint, float> gScore;
+    std::map<TilePoint, int> gScore;
 
     std::set < TilePoint > closed;
     std::map < TilePoint, TilePoint > parent; // child → parent, for path reconstruction
@@ -240,10 +240,8 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
     }
 
     // Seed the open set with the start tile.
-    gScore[startNode] = 0.0f;
-    float hStart = sqrt(static_cast<float>(
-        (destPt.tx - startNode.tx) * (destPt.tx - startNode.tx) +
-        (destPt.ty - startNode.ty) * (destPt.ty - startNode.ty)));
+    gScore[startNode] = 0;
+    int hStart = abs(destPt.tx - startNode.tx) + abs(destPt.ty - startNode.ty);
     openQueue.push({hStart, startNode});
 
     int watchDog = kPathfindingWatchdog;
@@ -265,8 +263,9 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
             if (watchDog < 0) {
                 LOG(Log::k_FLG_GAME, "GenericCar", "initMovementToDestination", ("Hit wathdog before finding path\n"))
                 break;
-            } else
+            } else {
                 dest_path_.push_front(TilePoint(destPt));
+            }
 
             // Reconstruct path by following parent links back to the start tile
             while (parent.find(p) != parent.end()) {
@@ -282,7 +281,7 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
         std::map<TilePoint, uint16_t> candidateNeighbors;
         expandCandidateNeighbours(p, candidateNeighbors);
 
-        float gCurrent = gScore.count(p) ? gScore[p] : 0.0f;
+        int gCurrent = gScore.count(p) ? gScore[p] : 0;
 
         if (candidateNeighbors.empty()) {
             LOG(Log::k_FLG_GAME, "GenericCar", "initMovementToDestination", ("No neigbours for car %d at point %d, %d, %d\n", id(), p.tx, p.ty, p.tz))
@@ -293,16 +292,14 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
                 continue;
             }
 
-            float gNew = gCurrent + 1.0f;
+            int gNew = gCurrent + 1;
 
             // Only enqueue if we found a strictly better path to this neighbour
             if (!gScore.count(neighbor) || gNew < gScore[neighbor]) {
                 gScore[neighbor] = gNew;
                 parent[neighbor] = p;
 
-                float h = sqrt(static_cast<float>(
-                    (destPt.tx - neighbor.tx) * (destPt.tx - neighbor.tx) +
-                    (destPt.ty - neighbor.ty) * (destPt.ty - neighbor.ty)));
+                int h = abs(destPt.tx - neighbor.tx) + abs(destPt.ty - neighbor.ty);
                 openQueue.push({gNew + h, neighbor});
             }
         }
