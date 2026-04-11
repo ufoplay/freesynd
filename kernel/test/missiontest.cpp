@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -18,6 +18,8 @@
  * 
  */
 #include <catch2/catch_test_macros.hpp>
+
+#include "testcase.h"
 
 #include "fs-kernel/model/mission.h"
 #include "fs-kernel/model/ped.h"
@@ -149,7 +151,6 @@ void configureMapInfo(LevelData::MapInfos *mapInfos) {
 
 // Helper function to set a tile as walkable
 void configureMap(fs_eng::TileManager &tileMgr, fs_knl::Map &map) {
-    // TODO : initialiser le tableau de tiles
     int nbTiles = kTestMapMaxTx * kTestMapMaxTy * kTestMapMaxTz;
     fs_eng::Tile **tiles = new fs_eng::Tile*[nbTiles];
     // initialise with transparent tiles
@@ -158,11 +159,15 @@ void configureMap(fs_eng::TileManager &tileMgr, fs_knl::Map &map) {
     }
     map.setTiles(kTestMapMaxTx, kTestMapMaxTy, kTestMapMaxTz, tiles);
 
+    // TODO : use a file to initialize the map
+    /*
+    REQUIRE( loadMapFromCsv(TEST_DATA_DIR "/map-10-10-2.csv", tileMgr, map) );
+    REQUIRE( map.maxTx() == 10 );
+    REQUIRE( map.maxTy() == 10 );
+    REQUIRE( map.maxTz() == 2 );
+    */
 
     delete[] tiles;
-    /*int index = x + y * mission.mmax_x_ + z * mission.mmax_m_xy;
-    mission.mdpoints_[index].bfNodeDesc = fs_knl::m_fdWalkable;
-    mission.mtsurfaces_[index] = surface;*/
 }
 
 TEST_CASE( "Mission", "[kernel][mission]" ) {

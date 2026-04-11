@@ -1,7 +1,7 @@
 #
 #  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
 #
-#   Copyright (C) 2023-2025  Benoit Blancard <benblan@users.sourceforge.net>
+#   Copyright (C) 2023-2026  Benoit Blancard <benblan@users.sourceforge.net>
 #
 #   This program is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License as 
@@ -31,6 +31,9 @@ add_executable(test-kernel
     maptest.cpp)
 
 target_link_libraries(test-kernel PRIVATE Catch2::Catch2WithMain Freesynd::Kernel Freesynd::Utils Freesynd::Engine)
+
+target_compile_definitions(test-kernel PRIVATE
+    TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 # catch_discover_tests(test-kernel)
 add_test(test-kernel test-kernel)

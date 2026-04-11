@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -18,6 +18,8 @@
  * 
  */
 #include <catch2/catch_test_macros.hpp>
+#include <fstream>
+#include <sstream>
 
 #include "testcase.h"
 
@@ -92,6 +94,55 @@ void initWeaponConfigFile( ConfigFile &config ) {
     config.add("weapon.13.timeforshot", 75);
     config.add("weapon.13.ammo.impactNb", 1);
     config.add("weapon.13.weight", 8);
+}
+
+bool loadMapFromCsv(const std::string &filepath,
+                    fs_eng::TileManager &tileMgr,
+                    fs_knl::Map &map) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) return false;
+
+    int maxX = 0, maxY = 0, maxZ = 0;
+    std::string line;
+
+    // Read dimensions from the first non-comment line
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        std::istringstream ss(line);
+        char sep;
+        ss >> maxX >> sep >> maxY >> sep >> maxZ;
+        break;
+    }
+    if (maxX <= 0 || maxY <= 0 || maxZ <= 0) return false;
+
+    int total = maxX * maxY * maxZ;
+    fs_eng::Tile **tiles = new fs_eng::Tile*[total];
+    // Default every slot to the transparent tile
+    for (int i = 0; i < total; i++) {
+        tiles[i] = tileMgr.getTile(
+            static_cast<uint8_t>(fs_eng::TileManager::kIndexTransparentTile));
+    }
+
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        std::istringstream ss(line);
+        char sep;
+        int z;
+        ss >> z >> sep;
+        for (int y = 0; y < maxY; y++) {
+            for (int x = 0; x < maxX; x++) {
+                int tileId;
+                ss >> tileId;
+                if (x + 1 < maxX || y + 1 < maxY) ss >> sep; // consume comma
+                tiles[(y * maxX + x) * maxZ + z] =
+                    tileMgr.getTile(static_cast<uint8_t>(tileId));
+            }
+        }
+    }
+
+    map.setTiles(maxX, maxY, maxZ, tiles);
+    delete[] tiles;
+    return true;
 }
 
 TEST_CASE( "1: All test cases reside in other .cpp files (empty)", "[multi-file:1]" ) {
