@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -61,7 +61,7 @@ struct FS_MouseMotionEvent {
 
 struct FS_MouseButtonEvent {
     FS_EventType type;    /**< SDL_MOUSEMOTION */
-    uint8 button;    /**< The current button state */
+    uint8_t button;    /**< The current button state */
     int32_t x, y;    /**< The X/Y coordinates of the mouse */
     int keyMods;
 };

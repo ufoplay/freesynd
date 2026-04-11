@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2012, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2012, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -54,7 +54,7 @@ class MissionBriefing {
     ~MissionBriefing();
 
     //! Loads briefing from the given file
-    bool loadBriefing(uint8 * missData, int size);
+    bool loadBriefing(uint8_t * missData, int size);
     //! Init the minimap and minimap overlay
     void init_minimap(Map *p_map, LevelData::LevelDataAll &level_data);
 
@@ -95,7 +95,7 @@ class MissionBriefing {
      * \param infoLvl Value of 0 is the default information.
      * \return empty string if level is greater than available infos.
      */
-    const char * briefing(uint8 infoLvl) {
+    const char * briefing(uint8_t infoLvl) {
         return infoLvl <= i_nb_infos_ ?a_briefing_[infoLvl].c_str() : "";
     }
 
@@ -103,7 +103,7 @@ class MissionBriefing {
     MiniMap * minimap() { return p_minimap_; }
 
     //! Tells what is on the given tile
-    uint8 getMinimapOverlay(int x, int y);
+    uint8_t getMinimapOverlay(int x, int y);
 
  private:
     /*! Briefing text is stored in an array. Each entry is the text for
@@ -120,7 +120,7 @@ class MissionBriefing {
     /*! The minimap displayed in the brief menu.*/
     MiniMap *p_minimap_;
     /*! This grid holds position of agents on the minimap.*/
-    uint8 minimap_overlay_[128*128];
+    uint8_t minimap_overlay_[128*128];
 };
 
 }

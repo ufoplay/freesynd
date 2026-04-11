@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -104,11 +104,11 @@ void SoundManager::loadSounds(const std::string &tabFile, const std::string &dat
 {
     size_t tabSize, datSize;
 
-    uint8 *tabDataOri = fs_utl::File::loadOriginalFile(tabFile, tabSize);
-    uint8 *soundDataOri = fs_utl::File::loadOriginalFile(datFile, datSize);
+    uint8_t *tabDataOri = fs_utl::File::loadOriginalFile(tabFile, tabSize);
+    uint8_t *soundDataOri = fs_utl::File::loadOriginalFile(datFile, datSize);
 
-    uint8 *tabData = tabDataOri;
-    uint8 *soundData = soundDataOri;
+    uint8_t *tabData = tabDataOri;
+    uint8_t *soundData = soundDataOri;
 
     tabData += tabentry_startoffset_;
     uint32_t offset = 0;
@@ -121,7 +121,7 @@ void SoundManager::loadSounds(const std::string &tabFile, const std::string &dat
         // Samples with size < 144 are bogus
         if (soundsize > 144) {
             sounds.push_back(audio_->createSound());
-            uint8 *sample = new uint8[soundsize];
+            uint8_t *sample = new uint8[soundsize];
             memcpy(sample, soundData, soundsize);
             // patching wrong sample rate
             if (sounds.size() == 13)

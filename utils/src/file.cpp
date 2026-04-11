@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2011  Joey Parrish  <joey.parrish@gmail.com>
- *   Copyright (C) 2010, 2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2025-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -302,7 +302,7 @@ static bool getResourcePath(fs::path& resourcePath) {
     /*!
     * \return NULL if file cannot be read.
     */
-    uint8 *File::loadOriginalFileToMem(const std::string& filename, size_t &filesize) {
+    uint8_t *File::loadOriginalFileToMem(const std::string& filename, size_t &filesize) {
         // try lowercase, then uppercase.
         FILE *fp = fopen(getOriginalDataFullPath(filename, false).c_str(), "rb");
         if (!fp) fp = fopen(getOriginalDataFullPath(filename, true).c_str(), "rb");
@@ -312,7 +312,7 @@ static bool getResourcePath(fs::path& resourcePath) {
             long size = ftell(fp);
             if (size >= 0) {
                 filesize = static_cast<size_t>(size);
-                uint8 *mem = new uint8[filesize + 1];
+                uint8_t *mem = new uint8_t[filesize + 1];
                 mem[filesize] = '\0';
                 fseek(fp, 0, SEEK_SET);
                 size_t  n = fread(mem, 1, filesize, fp);
@@ -404,8 +404,8 @@ static bool getResourcePath(fs::path& resourcePath) {
         LOG(Log::k_FLG_IO, "File", "setSaveDataFolder", ("set save path to %s", path.c_str()));
     }
 
-    uint8 *File::loadOriginalFile(const std::string& filename, size_t &filesize) {
-        uint8 *data = loadOriginalFileToMem(filename, filesize);
+    uint8_t *File::loadOriginalFile(const std::string& filename, size_t &filesize) {
+        uint8_t *data = loadOriginalFileToMem(filename, filesize);
         if (data) {
             if (rnc::isRncCompressed(data)) {    //File is RNC compressed
                 rnc::RncRetCode result = rnc::unpackedLength(data, filesize );
@@ -512,7 +512,7 @@ static bool getResourcePath(fs::path& resourcePath) {
                     std::string str_crc32 = line.substr(pos+1);
                     uint64_t ui_crc32 = std::stoul(str_crc32, nullptr, 16);
                     size_t sz;
-                    uint8 *data = File::loadOriginalFileToMem(flname, sz);
+                    uint8_t *data = File::loadOriginalFileToMem(flname, sz);
                     if (!data) {
                         FSERR(Log::k_FLG_IO, "App", "testOriginalData", ("file not found \"%s\"\nLook at INSTALL/README file for possible solutions.", flname.c_str()));
                         rsp = false;

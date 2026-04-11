@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -319,9 +319,9 @@ void Explosion::generateFlameWaves(Mission *pMission, WorldPoint *pOrigin, doubl
     // TODO: exclude flames on water, put these flames to the ground,
     // don't draw in air(, stairs problem?)
     double angle_inc = fs_utl::kPI;
-    const uint8 waves = (int)dmg_rng / 144 + 1;
+    const uint8_t waves = (int)dmg_rng / 144 + 1;
 
-    for (uint8 i = 0; i < waves; i++) {
+    for (uint8_t i = 0; i < waves; i++) {
         double base_angle = 0.0;
         if (rand() % 100 > 74)
             base_angle += angle_inc;
@@ -335,7 +335,7 @@ void Explosion::generateFlameWaves(Mission *pMission, WorldPoint *pOrigin, doubl
             flamePosW.y = base_pos.y + (int)y;
             flamePosW.z = base_pos.z;
 
-            uint8 block_mask = pMission->checkBlockedByTile(*pOrigin, &flamePosW, true, dmg_rng);
+            uint8_t block_mask = pMission->checkBlockedByTile(*pOrigin, &flamePosW, true, dmg_rng);
             if (block_mask != 32) {
                 auto sfx = std::make_unique<SFXObject>(pMission->map(),
                                                         rngDmgAnim_, true, 100 * (rand() % 16));
@@ -528,7 +528,7 @@ bool ProjectileShot::moveProjectile(uint32_t elapsed, Mission *pMission) {
 
     // maxr here is set to maximum that projectile can fly from its
     // current position
-    uint8 block_mask = pMission->checkIfBlockersInShootingLine(
+    uint8_t block_mask = pMission->checkIfBlockersInShootingLine(
         curPosW_, &pShootableHit_, &nextPosW, true, false, distanceMax_ - currentDistance_, NULL, dmg_.d_owner);
 
     if (block_mask == 1) {

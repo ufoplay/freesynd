@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -79,13 +79,13 @@ public:
     fs_eng::Palette & getPalette() { return palette_; }
 
     //! Returns tile with the given index
-    Tile * getTile(uint8 index);
+    Tile * getTile(uint8_t index);
     //! Draws the tile to the screen
     bool drawTile(const Tile *tile, int x, int y);
 
 protected:
     //! Load a given tile
-    void loadTile(int id, const uint8_t * tileData, uint8 *typesData, uint8_t *tilesetBuffer);
+    void loadTile(int id, const uint8_t * tileData, uint8_t *typesData, uint8_t *tilesetBuffer);
     //! Load a given sub-tile
     void loadSubTile(const uint8_t * data, int offset, int index, int stride, uint8_t * pixels);
     //! Copy the tile from the tile array to the tilesetBuffer

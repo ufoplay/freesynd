@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2012, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2012, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -345,7 +345,7 @@ bool SquadSelection::isTargetInRange(fs_knl::Mission *pMission, fs_knl::Shootabl
             fs_knl::WorldPoint shooterPosW((*it)->position());
             fs_knl::WeaponInstance *pWeapon = (*it)->selectedWeapon();
 
-            uint8 blockRes = pMission->checkIfBlockersInShootingLine(
+            uint8_t blockRes = pMission->checkIfBlockersInShootingLine(
                 shooterPosW, &pTarget, NULL, false, false, pWeapon->range(), NULL, (*it));
 
             if (blockRes == 1) {

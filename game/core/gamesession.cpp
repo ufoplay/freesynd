@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *   Copyright (C) 2011  Joey Parrish  <joey.parrish@gmail.com>
  *
  *   This program is free software: you can redistribute it and/or
@@ -174,7 +174,7 @@ Block & GameSession::getSelectedBlock() {
  * else it's the syndicate given by Block.syndicate_owner.
  * \param blk The block to find the color.
  */
-uint8 GameSession::get_owner_color(Block & blk) {
+uint8_t GameSession::get_owner_color(Block & blk) {
     switch (blk.status) {
     case BLK_FINISHED:
     case BLK_REBEL:
@@ -505,7 +505,7 @@ bool GameSession::loadFromFile(fs_utl::PortableFile &infile, const fs_utl::Forma
 
         // Read owner (before 1.2 it was color)
         g_Blocks[i].syndicate_owner = 0;
-        uint8 value = infile.read8();
+        uint8_t value = infile.read8();
         if (v.majorVersion() == 1 && v.minorVersion() < 2) {
             if (g_Blocks[i].status != BLK_FINISHED && g_Blocks[i].status != BLK_REBEL) {
                 // The block is not owned by the player

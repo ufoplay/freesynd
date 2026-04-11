@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net> 
- *   Copyright (C) 2013, 2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2025-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -39,7 +39,7 @@ namespace fs_knl {
 class WeaponHolder {
 public:
     /*! Defines the maximum number of weapons an agent can carry.*/
-    static const uint8 kMaxHoldedWeapons;
+    static const uint8_t kMaxHoldedWeapons;
 
     WeaponHolder();
     virtual ~WeaponHolder();

@@ -2,7 +2,7 @@
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
  *   Copyright (C) 2013  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -412,14 +412,14 @@ protected:
  */
 class PutdownWeaponAction : public MovementAction {
 public:
-    PutdownWeaponAction(uint8 weaponIdx);
+    PutdownWeaponAction(uint8_t weaponIdx);
 
 protected:
     void doStart(Mission *pMission, PedInstance *pPed);
     bool doExecute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) override;
 protected:
     /*! Index of the weapon to drop in the ped's inventory.*/
-    uint8 weaponIdx_;
+    uint8_t weaponIdx_;
 };
 
 /*!
@@ -556,7 +556,7 @@ protected:
     /*! The ped that is being shot at by the action owner.*/
     PedInstance *pTarget_;
     /*! tells if it is a single or automatic shot.*/
-    uint8 shootType_;
+    uint8_t shootType_;
 };
 
 /*!
@@ -691,11 +691,11 @@ protected:
 class ShootAction : public UseWeaponAction {
 public:
     //! This constant is returned by Ped::addActionShootAt to indicate no action was added
-    static const uint8 kShootActionNotAdded;
+    static const uint8_t kShootActionNotAdded;
     //! This constant is returned by Ped::addActionShootAt to indicate that an AutomaticShootAction was added
-    static const uint8 kShootActionAutomaticShoot;
+    static const uint8_t kShootActionAutomaticShoot;
     //! This constant is returned by Ped::addActionShootAt to indicate that a ShootAction was added
-    static const uint8 kShootActionSingleShoot;
+    static const uint8_t kShootActionSingleShoot;
 
 public:
     ShootAction(const WorldPoint &aimedAt, WeaponInstance *pWeapon);

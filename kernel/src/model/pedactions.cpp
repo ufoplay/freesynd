@@ -2,7 +2,7 @@
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
  *   Copyright (C) 2012  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -440,9 +440,9 @@ void PedInstance::insertHitAction(DamageToInflict &d) {
  * \return kShootActionNotAdded if no action (see canAddUseWeaponAction()),
  *
  */
-uint8 PedInstance::addActionShootAt(const WorldPoint &aimedLocW) {
+uint8_t PedInstance::addActionShootAt(const WorldPoint &aimedLocW) {
     if (canAddUseWeaponAction()) {
-        uint8 res;
+        uint8_t res;
         // adds precision to the shoot
         WorldPoint adjAimedLocW = aimedLocW;
         WeaponInstance *pWeapon = selectedWeapon();

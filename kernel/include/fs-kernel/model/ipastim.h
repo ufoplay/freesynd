@@ -2,7 +2,7 @@
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
  *   Copyright (C) 2012  Ryan Cocks <ryan@ryancocks.net>
- *   Copyright (C) 2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2025-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -52,7 +52,7 @@ public:
     //! Return value varies from 0.5 to 2 and returns 1 for 'neutral' adrenaline.
     float getMultiplier() const;
 
-    //! We are using percentages, the original data files are using uint8 256 ranges
+    //! We are using percentages, the original data files are using uint8_t 256 ranges
     void setLevels256(int amount, int dependency, int effect)
     {
         setLevels(

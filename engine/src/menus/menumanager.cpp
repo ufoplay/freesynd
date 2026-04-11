@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -192,7 +192,7 @@ void MenuManager::loadMenuPalette() {
 
     LOG(Log::k_FLG_GFX, "MenuManager", "loadMenuPalette", ("Loading menu palette"))
 
-    uint8 *paletteData = fs_utl::File::loadOriginalFile("mselect.pal", size);
+    uint8_t *paletteData = fs_utl::File::loadOriginalFile("mselect.pal", size);
 
     if (!paletteData) {
         throw InitializationFailedException("Could not read mselect.pal");

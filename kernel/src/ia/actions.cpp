@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -42,9 +42,9 @@ namespace fs_knl {
 //*************************************
 const int FollowAction::kFollowDistance = 192;
 const int WalkBurnHitAction::kTimeToWalkBurning = 1000;
-const uint8 ShootAction::kShootActionNotAdded = 0;
-const uint8 ShootAction::kShootActionAutomaticShoot = 1;
-const uint8 ShootAction::kShootActionSingleShoot = 2;
+const uint8_t ShootAction::kShootActionNotAdded = 0;
+const uint8_t ShootAction::kShootActionAutomaticShoot = 1;
+const uint8_t ShootAction::kShootActionSingleShoot = 2;
 
 /*!
  * Default constructor.
@@ -523,7 +523,7 @@ bool FollowToShootAction::doExecute(uint32_t elapsed, Mission *pMission, PedInst
     return updated;
 }
 
-PutdownWeaponAction::PutdownWeaponAction(uint8 weaponIdx) : MovementAction(kActTypeDrop, true) {
+PutdownWeaponAction::PutdownWeaponAction(uint8_t weaponIdx) : MovementAction(kActTypeDrop, true) {
     weaponIdx_ = weaponIdx;
     targetState_ = PedInstance::pa_smPutDown;
 }

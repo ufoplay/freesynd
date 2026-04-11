@@ -2,7 +2,7 @@
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net> 
- *   Copyright (C) 2012, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2012, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -59,7 +59,7 @@ MissionBriefing::~MissionBriefing() {
  * \param data The content of the briefing file
  * \param size
  */
-bool MissionBriefing::loadBriefing(uint8 * data, int size) {
+bool MissionBriefing::loadBriefing(uint8_t * data, int size) {
     char *cp437car = reinterpret_cast<char *>(data);
     cp437car[size - 1] = 0;
 
@@ -192,7 +192,7 @@ void MissionBriefing::init_minimap(Map *p_map, LevelData::LevelDataAll &level_da
 /*!
  * \return - not present, 1 - our agent, 2 - enemy agent
  */
-uint8 MissionBriefing::getMinimapOverlay(int x, int y) {
+uint8_t MissionBriefing::getMinimapOverlay(int x, int y) {
     return minimap_overlay_[x + y * p_minimap_->max_x()];
 }
 

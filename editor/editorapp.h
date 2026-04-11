@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
@@ -53,7 +53,7 @@ class EditorApp : public fs_eng::BaseApp {
 
 #ifdef _DEBUG
 public:
-    uint8 debug_breakpoint_trigger_;
+    uint8_t debug_breakpoint_trigger_;
 #endif
 
 protected:

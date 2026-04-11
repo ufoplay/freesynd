@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -70,7 +70,7 @@ private:
     //! Number of logos in the game
     int numberLogo_;
     //! This contains the pixels data for all logos and are loaded from a file
-    uint8 *data_all_logos_;
+    uint8_t *data_all_logos_;
 
     //! A texture that stores the logos big and small
     std::unique_ptr<FSTexture> logosTexture_;

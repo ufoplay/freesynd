@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2012, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2012, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -581,7 +581,7 @@ void GamePlayMinimapRenderer::drawVehicles(const fs_eng::Palette & palette) {
             if (p_vehicle->containsOurAgents()) {
                 /* int px = mapToMiniMapX(tx + 1, p_vehicle->offX());
                 int py = mapToMiniMapY(ty + 1, p_vehicle->offY());
-                uint8 borderColor = (mm_timer_ped.state()) ? fs_utl::kColorBlack : fs_utl::kColorLightGreen; */
+                uint8_t borderColor = (mm_timer_ped.state()) ? fs_utl::kColorBlack : fs_utl::kColorLightGreen; */
                 drawPedCircle(screenPos, 0);
 
             } else {

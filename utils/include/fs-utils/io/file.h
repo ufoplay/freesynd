@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -58,7 +58,7 @@ namespace fs_utl {
         //*************************************
         // Original files apis
         //*************************************
-        static uint8 *loadOriginalFile(const std::string& filename, size_t &filesize);
+        static uint8_t *loadOriginalFile(const std::string& filename, size_t &filesize);
         static FILE *openOriginalFile(const std::string& filename);
 
         //! Tests Syndicate original data for existence and correctness
@@ -74,7 +74,7 @@ namespace fs_utl {
         static void getFullPathForSaveSlot(int slot, std::string &path);
         //! Returns the list of game saved names
         static void getGameSavedNames(std::vector<std::string> &files);
-        static uint8 *loadOriginalFileToMem(const std::string& filename, size_t &filesize);
+        static uint8_t *loadOriginalFileToMem(const std::string& filename, size_t &filesize);
         //! Returns the full path of the given original game resource using the current root path.
         static std::string getOriginalDataFullPath(const std::string& filename, bool uppercase);
 

@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -97,7 +97,7 @@ TileManager::~TileManager()
  * \param type The tile type
  * \param tilesetBuffer The tile will be copied in this buffer
  */
-void TileManager::loadTile(int id, const uint8_t * tilesData, uint8 *typesData, uint8_t *tilesetBuffer)
+void TileManager::loadTile(int id, const uint8_t * tilesData, uint8_t *typesData, uint8_t *tilesetBuffer)
 {
     int offset = id * kTileIndexSize;
     uint8_t *tilePixels = new uint8_t[Tile::kTileWidth * Tile::kTileHeight];
@@ -238,7 +238,7 @@ Tile::EType TileManager::toTileType(uint8_t data)
 bool TileManager::loadTiles()
 {
     size_t size;
-    uint8 *typesData;
+    uint8_t *typesData;
 
     // first reads tile types
     typesData = fs_utl::File::loadOriginalFile("col01.dat", size);
@@ -247,7 +247,7 @@ bool TileManager::loadTiles()
     }
 
     // then reads tiles
-    uint8 *tilesData = fs_utl::File::loadOriginalFile("hblk01.dat", size);
+    uint8_t *tilesData = fs_utl::File::loadOriginalFile("hblk01.dat", size);
 
     if (!tilesData) {
         throw InitializationFailedException("Failed to load tiles data in file hblk01.dat");
@@ -317,7 +317,7 @@ bool TileManager::setPalette(int paletteId) {
  * \param tileNum The tile index in the tile manager.
  * \return The tile or null if no tile is found for the index.
  */
-Tile * TileManager::getTile(uint8 tileNum) {
+Tile * TileManager::getTile(uint8_t tileNum) {
     return tiles_[tileNum];
 }
 

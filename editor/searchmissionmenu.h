@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2015, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2015, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -43,15 +43,15 @@ fs_knl::PedInstance::PedType type_;
 
 class VehicleTypeAdapter {
 public:
-    VehicleTypeAdapter(uint8 type) {
+    VehicleTypeAdapter(uint8_t type) {
         type_ = type;
     }
 
-    uint8 getType() { return type_; }
+    uint8_t getType() { return type_; }
     std::string getName();
 
 private:
-    uint8 type_;
+    uint8_t type_;
 };
 
 /*!
@@ -88,7 +88,7 @@ protected:
     fs_knl::PedInstance::PedType pedTypeCriteria_;
 
     bool searchOnVehicleType_;
-    uint8 vehicleTypeCriteria_;
+    uint8_t vehicleTypeCriteria_;
 };
 
 #endif // SEARCHMISSIONMENU_H_
