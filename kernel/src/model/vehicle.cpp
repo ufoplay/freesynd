@@ -578,10 +578,9 @@ bool GenericCar::checkForBlockers(bool checkForCrossings) {
  * Moves a vehicle on the map.
  * \param elapsed Elapsed time sine last frame.
  */
-bool GenericCar::doMove(uint32_t elapsed)
-{
+bool GenericCar::doMove(uint32_t elapsed) {
     bool updated = false;
-    int used_time = elapsed;
+    int used_time = static_cast<int>(elapsed);
 
     // Civilian and police drivers yield to pedestrians on crossroad tiles
     PedInstance *pDriver = getDriver();
@@ -589,7 +588,7 @@ bool GenericCar::doMove(uint32_t elapsed)
         && (pDriver->type() == PedInstance::kPedTypeCivilian
             || pDriver->type() == PedInstance::kPedTypePolice);
 
-    while ((!dest_path_.empty()) && used_time != 0) {
+    while (!dest_path_.empty() && used_time != 0) {
         if (isBlocked()) {
             return false;
         }
@@ -599,27 +598,14 @@ bool GenericCar::doMove(uint32_t elapsed)
             return false;
         }
 
-        // Get distance between car and next NodePath
-        int adx =
-            dest_path_.front().tx * 256 + dest_path_.front().ox;
-        int ady =
-            dest_path_.front().ty * 256 + dest_path_.front().oy;
-        int atx = pos_.tx * 256 + pos_.ox;
-        int aty = pos_.ty * 256 + pos_.oy;
-        int diffx = adx - atx, diffy = ady - aty;
+        const TilePoint &nextPt = dest_path_.front();
+        int adx = nextPt.tx * 256 + nextPt.ox;
+        int ady = nextPt.ty * 256 + nextPt.oy;
+        int diffx = adx - (pos_.tx * 256 + pos_.ox);
+        int diffy = ady - (pos_.ty * 256 + pos_.oy);
 
-        if (abs(diffx) < 16 && abs(diffy) < 16) {
-            // We reached the next point : remove it from path
-            pos_.oy = dest_path_.front().oy;
-            pos_.ox = dest_path_.front().ox;
-            pos_.ty = dest_path_.front().ty;
-            pos_.tx = dest_path_.front().tx;
-            dest_path_.pop_front();
-            // There's no following point so stop moving
-            if (dest_path_.size() == 0)
-                stop();
-            updated = true;
-        } else {
+        if (abs(diffx) >= 16 || abs(diffy) >= 16) {
+            // Not yet at waypoint: advance toward it
             setDirection(diffx, diffy, &dir_);
             int dx = 0, dy = 0;
             double d = sqrt((double)(diffx * diffx + diffy * diffy));
@@ -631,10 +617,8 @@ bool GenericCar::doMove(uint32_t elapsed)
 
             // computes distance travelled by vehicle in the available time
             if (abs(diffx) > 0)
-                // dx = diffx * (speed_ * used_time / 1000) / d;
                 dx = (int)((diffx * (speed() * avail_time_use) / d) / 1000);
             if (abs(diffy) > 0)
-                // dy = diffy * (speed_ * used_time / 1000) / d;
                 dy = (int)((diffy * (speed() * avail_time_use) / d) / 1000);
 
             // Updates the available time
@@ -646,26 +630,31 @@ bool GenericCar::doMove(uint32_t elapsed)
                 } else if (dy) {
                     used_time -= (int)(((double) dy * 1000.0 * d)
                         / (double)(diffy * speed()));
-                } else
+                } else {
                     used_time = 0;
+                }
                 if (used_time < 0 || prv_time == used_time)
                     used_time = 0;
-            } else
+            } else {
                 used_time = 0;
+            }
 
-            // Moves vehicle
             addOffsetToPosition(dx, dy);
 
-            if(dest_path_.front().tx == pos_.tx
-                && dest_path_.front().ty == pos_.ty
-                && dest_path_.front().ox == pos_.ox
-                && dest_path_.front().oy == pos_.oy)
-                dest_path_.pop_front();
-            if (dest_path_.size() == 0)
-                stop();
-
-            updated = true;
+            // Recompute diff after movement (addOffsetToPosition may have changed tx/ty)
+            diffx = adx - (pos_.tx * 256 + pos_.ox);
+            diffy = ady - (pos_.ty * 256 + pos_.oy);
         }
+
+        // Unified arrival check: snap to waypoint and advance path
+        if (abs(diffx) < 16 && abs(diffy) < 16) {
+            pos_.tx = nextPt.tx; pos_.ty = nextPt.ty;
+            pos_.ox = nextPt.ox; pos_.oy = nextPt.oy;
+            dest_path_.pop_front();
+            if (dest_path_.empty()) stop();
+        }
+
+        updated = true;
     }
 
     if (dest_path_.empty() && isMoving()) {
