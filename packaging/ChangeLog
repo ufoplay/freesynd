@@ -3,9 +3,10 @@ freesynd (0.10) unstable; urgency=low
   * New menu in Editor to display a mission and infos on tiles and objects
   * Car stops before other cars or peds crossing roads. Closes: #53
   [ Changed ]
-  * 
+  * Cars now uses A* algorithm for finding path for better results
   [ Fixed ]
   * Patched some wrong coordinates in mission Far East
+  * Patched some wrong coordinates in mission Iraq. Closes: #73
   [ Removed ]
   * 
 
