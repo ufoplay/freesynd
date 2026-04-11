@@ -32,11 +32,6 @@
 #include "fs-kernel/model/mission.h"
 #include "fs-kernel/mgr/missionmanager.h"
 
-#if 0
-#include "SDL.h"
-#define EXECUTION_SPEED_TIME
-#endif
-
 namespace fs_knl {
 
 const uint8_t floodPointDesc::kBMaskDirNorth = 0x10;
@@ -67,11 +62,6 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
 
     // NOTE: this is a "flood" algorithm, it expands until it reaches other's
     // flood point, then it removes unrelated points
-#ifdef EXECUTION_SPEED_TIME
-    printf("---------------------------");
-    printf("start time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
-
 
     floodPointDesc *targetd = &(m->mdpoints_[clippedDestPt.tx + clippedDestPt.ty * m->mmax_x_ + clippedDestPt.tz * m->mmax_m_xy]);
 
@@ -118,34 +108,20 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
         // path finding even if costly
         return false;
     }
-#ifdef EXECUTION_SPEED_TIME
-    printf("directions-map copy start %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
+
     floodPointDesc *mdpmirror = m->mdpoints_cp_;
     memcpy((void *)mdpmirror, (void *)m->mdpoints_,
         m->mmax_x_ * m->mmax_y_ * m->mmax_z_ * sizeof(floodPointDesc));
 
-#ifdef EXECUTION_SPEED_TIME
-    printf("directions-map copy complete %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
-
     if (!floodMap(m, clippedDestPt, mdpmirror)) {
         return false;
     }
-
-#ifdef EXECUTION_SPEED_TIME
-    printf("non-related removed time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
 
     // path is created here
     std::vector<TilePoint> cdestpath;
     cdestpath.reserve(256);
 
     createPath(m, mdpmirror, cdestpath);
-
-#ifdef EXECUTION_SPEED_TIME
-    printf("path creation time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
 
     // TODO: smoother path
     // stairs to surface, surface to stairs correction
@@ -168,11 +144,6 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
         it != dest_path_.end(); ++it) {
         printf("x %i, y %i, z %i\n", it->bfNodeDescileX(),it->tileY(),it->tileZ());
     }
-#endif
-#ifdef EXECUTION_SPEED_TIME
-    dest_path_.clear();
-    printf("+++++++++++++++++++++++++++");
-    printf("end time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
 #endif
 }
 
@@ -214,9 +185,6 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
     bn.push_back(ladd);
     tn.push_back(ladd);
     bool nodeset, lnknr = true;
-#ifdef EXECUTION_SPEED_TIME
-    printf("data allocation/setup complete %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
 
 #ifdef FIND_DEFINED_TILE
     bool assertion_bool = true;
@@ -946,11 +914,7 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
             break;
         }
     } while (lnknr);
-    //printf("bv %i, tv %i\n", bv.size(), tv.size());
-#ifdef EXECUTION_SPEED_TIME
-    printf("blvl %i, tlvl %i\n",tlvl, blvl);
-    printf("target reached in %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
+
     if (!nodeset && lnknr) {
         return false;
     }
@@ -1017,9 +981,6 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
         }
         tn[tlvl].n -= nr;
     }
-#ifdef EXECUTION_SPEED_TIME
-    printf("tops removed time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
 
     // tiles that have no childs are removed
     removeTilesWithNoChildsFromBase(m, blvl, bv, bn, mdpmirror);
@@ -2318,16 +2279,12 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
             }
         }
     }
-
-#ifdef EXECUTION_SPEED_TIME
-    printf("smoothing time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
 }
 
 bool PedInstance::doMove(uint32_t elapsed)
 {
     bool updated = false;
-    int used_time = elapsed;
+    int used_time = static_cast<int>(elapsed);
     Mission *pMission = g_missionCtrl.mission();
 
     while ((!dest_path_.empty()) && used_time != 0) {

@@ -85,14 +85,6 @@ target_link_libraries (freesynd PRIVATE freesynd_warnings Freesynd::Utils Freesy
 target_link_libraries(freesynd PRIVATE Tracy::TracyClient)
 target_compile_definitions(freesynd PRIVATE TRACY_ENABLE)
 
-# This option enables the calculation of the frame per second counter and
-# display
-option(FS_TRACK_FPS "Track FPS" OFF)
-
-if (FS_TRACK_FPS)
-    target_compile_definitions(freesynd PRIVATE "FS_TRACK_FPS")
-endif()
-
 # We only define an install target if we're doing a release build.
 if (APPLE)
     install (TARGETS freesynd BUNDLE DESTINATION .)

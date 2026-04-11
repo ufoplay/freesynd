@@ -38,9 +38,6 @@ const int BriefMenu::kMiniMapWidth = 120;
 const int BriefMenu::kMiniMapHeight = 120;
 const int BriefMenu::kMaxLinePerPage = 14;
 
-#if 0
-#define EXECUTION_SPEED_TIME
-#endif
 BriefMenu::BriefMenu(fs_eng::MenuManager * m)
         : fs_eng::Menu(m, fs_game_menus::kMenuIdBrief, fs_game_menus::kMenuIdMap, true),
           start_line_(0), p_briefing_(NULL), mm_renderer_(kMiniMapScreenPos) {
@@ -279,16 +276,8 @@ void BriefMenu::handleRender() {
     g_LogoMgr.draw({18, 14}, g_Session.getLogo(), g_Session.getLogoColour(), true);
 
     // write briefing
-#ifdef EXECUTION_SPEED_TIME
-    printf("---------------------------");
-    printf("start time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
     render_briefing_text();
     
-#ifdef EXECUTION_SPEED_TIME
-    printf("+++++++++++++++++++++++++++");
-    printf("end time %i.%i\n", SDL_GetTicks()/1000, SDL_GetTicks()%1000);
-#endif
     // NOTE: enhance levels: 0 = 10px(5), 1 = 8px(4), 2 = 6px(3), 3 - 4px(2),
     // 4 - 2px(1); x = 502(251), y = 218(109), 124x124(62x62)
     // enemy peds are at maximum enhance lvl

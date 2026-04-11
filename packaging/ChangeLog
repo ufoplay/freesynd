@@ -2,6 +2,7 @@ freesynd (0.10) unstable; urgency=low
   [ Added ]
   * New menu in Editor to display a mission and infos on tiles and objects
   * Car stops before other cars or peds crossing roads. Closes: #53
+  * Using Tracy for application profiling
   [ Changed ]
   * Cars now uses A* algorithm for finding path for better results
   [ Fixed ]

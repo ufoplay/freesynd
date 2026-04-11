@@ -50,8 +50,6 @@ const int kScrollStep = 16;
 
 const Point2D GameplayMenu::kMiniMapScreenPos = {0, 46 + 44 + 10 + 46 + 44 + 15 + 2 * 32 + 2};
 
-//#define ANIM_PLUS_FRAME_VIEW
-
 GameplayMenu::GameplayMenu(fs_eng::MenuManager *m) :
 Menu(m, fs_game_menus::kMenuIdGameplay, fs_game_menus::kMenuIdDebrief),
 tick_count_(0), last_animate_tick_(0),
@@ -121,10 +119,6 @@ bool GameplayMenu::handleBeforeShow() {
 
     return true;
 }
-
-#ifdef ANIM_PLUS_FRAME_VIEW
-int qanim = 1959, qframe = 0;
-#endif
 
 int GameplayMenu::isMousePositionScrollonX(Point2D point) {
     if (point.x < 5) {
@@ -319,31 +313,7 @@ void GameplayMenu::handleRender() {
     }
 #endif
     // this is used in combination with keys
-#ifdef ANIM_PLUS_FRAME_VIEW
-    g_SpriteMgr.drawFrame(qanim, qframe, 320, 200);
-#endif
-#endif
 
-#ifdef FS_TRACK_FPS
-    std::stringstream fpsText;
-    static uint32_t current_time = 0;
-    static uint32_t last_time = 0;
-    static float fps = 0;
-    static int frame = 0;
-
-    current_time = g_System.getTicks();
-
-    uint32_t elapsed = current_time - last_time;
-    frame++;
-
-    if (elapsed > 1000) {
-        fps = (float) frame / ((float) elapsed / 1000.0f);
-        frame = 0;
-        last_time = current_time;
-    }
-
-    fpsText << "FPS: " << fps; 
-    gameFont()->drawText(10, fs_eng::kScreenHeight - 15, fpsText.str().c_str(), menu_manager_->kMenuColorYellow);
 #endif
 }
 
@@ -787,48 +757,6 @@ bool GameplayMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
 
     printf("%i %i %i\n", mission_->ped(0)->tileX(), mission_->ped(0)->tileY(),
         mission_->ped(0)->tileZ());
-#endif
-
-#ifdef ANIM_PLUS_FRAME_VIEW
-    // used to see animations by number + frame
-    if (key.unicode == 'a') {
-        qanim--;
-        if (qanim < 0)
-            qanim = 0;
-    }
-
-    if (key.unicode == 's') {
-        qanim++;
-        if (qanim > 1969)
-            qanim = 1969;
-    }
-
-    if (key.unicode == 'q') {
-        qanim -= 8;
-        if (qanim < 0)
-            qanim = 0;
-    }
-
-    if (key.unicode == 'w') {
-        qanim += 8;
-        if (qanim > 1969)
-            qanim = 1969;
-    }
-
-    if (key.unicode == 'x') {
-        qframe++;
-        if (qframe > 30)
-            qframe = 0;
-    }
-
-    if (key.unicode == 'z') {
-        qframe--;
-        if (qframe < 0)
-            qframe = 0;
-    }
-
-    if (key.unicode == ' ')
-        printf("qanim %i qframe %i\n", qanim, qframe);
 #endif
 
 #if 0
