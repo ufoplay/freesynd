@@ -82,6 +82,9 @@ add_executable (freesynd MACOSX_BUNDLE ${SOURCES} ${HEADERS})
 
 target_link_libraries (freesynd PRIVATE freesynd_warnings Freesynd::Utils Freesynd::Engine Freesynd::Kernel)
 
+target_link_libraries(freesynd PRIVATE Tracy::TracyClient)
+target_compile_definitions(freesynd PRIVATE TRACY_ENABLE)
+
 # This option enables the calculation of the frame per second counter and
 # display
 option(FS_TRACK_FPS "Track FPS" OFF)

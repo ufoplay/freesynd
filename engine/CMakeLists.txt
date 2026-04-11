@@ -96,6 +96,9 @@ target_include_directories(fs_engine PUBLIC include)
 target_link_libraries(fs_engine PRIVATE freesynd_warnings Freesynd::Utils PNG::PNG CLI11::CLI11 utf8cpp)
 target_link_libraries(fs_engine INTERFACE CLI11::CLI11 utf8cpp)
 
+target_link_libraries(fs_engine PRIVATE Tracy::TracyClient)
+target_compile_definitions(fs_engine PUBLIC TRACY_ENABLE)
+
 # The USE_SYSTEM_SDL option enables the creation of the fs_engine_sdl
 # library. If not on, there will be an error as there is not other implementation
 option(USE_SYSTEM_SDL "Use SDL Library" ON)

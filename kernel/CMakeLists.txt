@@ -99,6 +99,9 @@ target_include_directories(fs_kernel PUBLIC include)
 
 target_link_libraries(fs_kernel PRIVATE freesynd_warnings Freesynd::Utils Freesynd::Engine )
 
+target_link_libraries(fs_kernel PRIVATE Tracy::TracyClient)
+target_compile_definitions(fs_kernel PUBLIC TRACY_ENABLE)
+
 # IDEs should put the headers in a nice place
 source_group(
   TREE "${PROJECT_SOURCE_DIR}/kernel/include"

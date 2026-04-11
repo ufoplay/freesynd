@@ -12,6 +12,7 @@ class ExampleRecipe(ConanFile):
         self.requires("crcpp/1.2.0.0")
         self.requires("catch2/3.8.0")
         self.requires("utfcpp/4.0.8")
+        self.requires("tracy/0.13.1")
 
     def layout(self):
         cmake_layout(self)

@@ -28,6 +28,8 @@
 
 #include <cassert>
 
+#include "tracy/Tracy.hpp"
+
 #include "fs-engine/gfx/animationmanager.h"
 #include "fs-engine/sound/musicmanager.h"
 #include "fs-engine/sound/soundmanager.h"
@@ -221,6 +223,7 @@ void GameplayMenu::updateCursorFromTarget(const Point2D &point) {
 
 bool GameplayMenu::handleTick(uint32_t elapsed)
 {
+    ZoneScoped;
     if (paused_)
         return true;
 

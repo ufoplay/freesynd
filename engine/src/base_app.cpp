@@ -22,6 +22,8 @@
 
 #include <format>
 
+#include "tracy/Tracy.hpp"
+
 #include "fs-utils/log/log.h"
 #include "fs-utils/io/file.h"
 
@@ -228,6 +230,8 @@ int BaseApp::run() {
         menus_.renderMenu();
         lasttick = curtick;
         system_->updateScreen();
+        
+        FrameMark;
     }
 
     return 0;

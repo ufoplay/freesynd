@@ -118,6 +118,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(Catch)
 endif()
 
+option(ENABLE_TRACY "Enable Tracy profiler instrumentation" OFF)
+
+find_package(Tracy REQUIRED)
+message(STATUS "Tracy profiler enabled")
+
+
 
 # Build the sources in these subdirectory.
 add_subdirectory (packaging)
