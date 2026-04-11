@@ -417,7 +417,7 @@ static bool getResourcePath(fs::path& resourcePath) {
                     Error::setError(Log::k_FLG_IO, "File", "loadFile", "Read length is zero for file '{}'", filename);
                 }
 
-                uint8_t *buffer = new uint8[filesize + 1];
+                uint8_t *buffer = new uint8_t[filesize + 1];
                 buffer[filesize] = '\0';
                 size_t realSize = 0;
 

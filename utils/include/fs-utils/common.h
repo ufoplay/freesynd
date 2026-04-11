@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2011  Joey Parrish  <joey.parrish@gmail.com>
  *   Copyright (C) 2012  Ryan Cocks <ryan@ryancocks.net>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -30,10 +30,6 @@
 #include <string>
 #include <cstring>
 #include <cassert>
-
-
-typedef signed char int8;
-typedef unsigned char uint8;
 
 namespace fs_utl {
 

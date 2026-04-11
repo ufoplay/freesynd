@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2010, 2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2025-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
@@ -36,7 +36,7 @@ namespace LevelData {
      * total: 8 bytes
      */
     struct Unkn01 {
-        uint8 unkn10[6];
+        uint8_t unkn10[6];
     };
 
     /*!
@@ -50,7 +50,7 @@ namespace LevelData {
      */
     struct Map {//
         //! 128*128 offsets size 2 bytes(LE)
-        uint8 objs[32768];
+        uint8_t objs[32768];
     };
 
     /*!
@@ -61,17 +61,17 @@ namespace LevelData {
     struct People {
         // (LE data)'offset + 32774' gives the offset in this
         // file of the next object
-        uint8 offset_next[2];
+        uint8_t offset_next[2];
         // (LE data)'offset + 32774' gives the offset in this
         // file of the previous object (sometimes weapon, or
         // the next target for example ???)
-        uint8 offset_prev[2];
+        uint8_t offset_prev[2];
         // [0] - offset, [1] - tile
-        uint8 mapposx[2];
-        uint8 mapposy[2];
+        uint8_t mapposx[2];
+        uint8_t mapposy[2];
         // to convert to our system use as uint16(LE)
         // tile = (uint16)/128, offz =(uint16)%128 or offz = mapposz[0] & 0x1F
-        uint8 mapposz[2];
+        uint8_t mapposz[2];
         /*!
          * This field gives information on the ped location. Values are:
          * 0x04 - ped on map
@@ -80,24 +80,24 @@ namespace LevelData {
          * 0x0C - located level above possible walking surface, purpose?
          * 0x0D and 0x0C are excluded from being loaded
          */
-        uint8 location;
+        uint8_t location;
         /*!
          * This field gives information on the ped's state. Values are:
          * 0x0 - standing
          * 0x10 - walking
          * 0x11 - dead
          */
-        uint8 state;
-        uint8 unkn3[2];         // nothing changes when this changes
-        uint8 index_base_anim[2];  //index in (HSTA-0.ANI)
-        uint8 index_current_frame[2];   //index in (HFRA-0.ANI)
-        uint8 index_current_anim[2]; // index in (HSTA-0.ANI)
-        uint8 health[2];
-        uint8 offset_last_enemy[2];
+        uint8_t state;
+        uint8_t unkn3[2];         // nothing changes when this changes
+        uint8_t index_base_anim[2];  //index in (HSTA-0.ANI)
+        uint8_t index_current_frame[2];   //index in (HFRA-0.ANI)
+        uint8_t index_current_anim[2]; // index in (HSTA-0.ANI)
+        uint8_t health[2];
+        uint8_t offset_last_enemy[2];
         //0x01 ped; 0x02 vehicle; 0x04 weapon;
         //0x05 object; allow to display a target, a pickup, and for minimap
-        uint8 type;
-        uint8 status; // this can be sub type(?)
+        uint8_t type;
+        uint8_t status; // this can be sub type(?)
         //from 0xF0 to 0x10 : south = 0
         //from 0x10 to 0x30 : south-east = 1
         //from 0x30 to 0x50 : east = 2
@@ -107,45 +107,45 @@ namespace LevelData {
         //from 0xB0 to 0xD0 : west = 6
         //from 0xD0 to 0xF0 : west-south = 7
         // surface is mapped not to 360 degrees/surface, but 256 degrees/surface
-        uint8 orientation;
-        uint8 unkn4;
+        uint8_t orientation;
+        uint8_t unkn4;
         // when 01 pedestrian, 02 agent, 04 police, 08 guard, 16 criminal
-        uint8 type_ped;
-        uint8 unkn5[3];
-        uint8 offset_of_persuader[2];
-        uint8 unkn6[2];
-        uint8 offset_of_vehicle[2];
+        uint8_t type_ped;
+        uint8_t unkn5[3];
+        uint8_t offset_of_persuader[2];
+        uint8_t unkn6[2];
+        uint8_t offset_of_vehicle[2];
         // currently executed scenario
-        uint8 offset_scenario_curr[2];
+        uint8_t offset_scenario_curr[2];
         // starting point for current scenario
-        uint8 offset_scenario_start[2];
-        uint8 unkn7[2];
-        uint8 offset_of_vehicle_2[2]; // ??
-        uint8 goto_mapposx[2];
-        uint8 goto_mapposy[2];
-        uint8 goto_mapposz[2];
-        uint8 unkn8[6];
-        uint8 offset_equipment[2];
+        uint8_t offset_scenario_start[2];
+        uint8_t unkn7[2];
+        uint8_t offset_of_vehicle_2[2]; // ??
+        uint8_t goto_mapposx[2];
+        uint8_t goto_mapposy[2];
+        uint8_t goto_mapposz[2];
+        uint8_t unkn8[6];
+        uint8_t offset_equipment[2];
         //bitmask, 0b - gender, 1-2b - leg, 3-4b - arm, 5-6b - chest
         // 7-8b - heart, 9-10b - eye, 11-12b - brain, 13-15b - unknown
-        uint8 mods_info[2];
-        uint8 unkn9[6];
-        uint8 offset_cur_weapon[2];
+        uint8_t mods_info[2];
+        uint8_t unkn9[6];
+        uint8_t offset_cur_weapon[2];
         // IPA levels: white bar level,set level,exhaused level and forced level
-        uint8 unkn10;
-        uint8 adrena_amount;
-        uint8 adrena_dependency;
-        uint8 adrena_effect;
-        uint8 unkn11;
-        uint8 inteli_amount;
-        uint8 inteli_dependency;
-        uint8 inteli_effect;
-        uint8 unkn12;
-        uint8 percep_amount;
-        uint8 percep_dependency;
-        uint8 percep_effect;
-        uint8 unkn13;
-        uint8 unkn14[9];
+        uint8_t unkn10;
+        uint8_t adrena_amount;
+        uint8_t adrena_dependency;
+        uint8_t adrena_effect;
+        uint8_t unkn11;
+        uint8_t inteli_amount;
+        uint8_t inteli_dependency;
+        uint8_t inteli_effect;
+        uint8_t unkn12;
+        uint8_t percep_amount;
+        uint8_t percep_dependency;
+        uint8_t percep_effect;
+        uint8_t unkn13;
+        uint8_t unkn14[9];
     };
 
     /*!
@@ -153,30 +153,30 @@ namespace LevelData {
      * This struct size is 42.
      */
     struct Cars {
-        uint8 offset_next[2];
-        uint8 offset_prev[2];
-        uint8 mapposx[2];
-        uint8 mapposy[2];
-        uint8 mapposz[2];
+        uint8_t offset_next[2];
+        uint8_t offset_prev[2];
+        uint8_t mapposx[2];
+        uint8_t mapposy[2];
+        uint8_t mapposz[2];
         // 0x04 on map(visible)
         // 0x05 not on map(hidden)
-        uint8 desc;
-        uint8 unkn1;
-        uint8 unkn2;
-        uint8 unkn3;
-        uint8 index_base_anim[2];
-        uint8 index_current_frame[2];
-        uint8 index_current_anim[2];
-        uint8 health[2];
-        uint8 offset_last_enemy[2];
-        uint8 type; // 0x02
-        uint8 sub_type;
-        uint8 orientation;
-        uint8 unkn4;
-        uint8 offset_of_driver; //driver
-        uint8 unkn5[11];
-        uint8 speed;
-        uint8 unkn6;
+        uint8_t desc;
+        uint8_t unkn1;
+        uint8_t unkn2;
+        uint8_t unkn3;
+        uint8_t index_base_anim[2];
+        uint8_t index_current_frame[2];
+        uint8_t index_current_anim[2];
+        uint8_t health[2];
+        uint8_t offset_last_enemy[2];
+        uint8_t type; // 0x02
+        uint8_t sub_type;
+        uint8_t orientation;
+        uint8_t unkn4;
+        uint8_t offset_of_driver; //driver
+        uint8_t unkn5[11];
+        uint8_t speed;
+        uint8_t unkn6;
     };
 
     /*!
@@ -184,28 +184,28 @@ namespace LevelData {
      * total: 30 bytes
      */
     struct Statics {
-        uint8 offset_next[2];
-        uint8 offset_prev[2];
-        uint8 mapposx[2];
-        uint8 mapposy[2];
-        uint8 mapposz[2];
+        uint8_t offset_next[2];
+        uint8_t offset_prev[2];
+        uint8_t mapposx[2];
+        uint8_t mapposy[2];
+        uint8_t mapposz[2];
         // 0x04 - on map;
         // 0x06 - on map, but why not 0x04?
         // 0x07 - on map, objects visibility is dependent on
         // orientation 0x40, 0x80 are drawn
-        uint8 desc;
-        uint8 unkn11;
-        uint8 unkn12;
-        uint8 unkn13;
-        uint8 index_base_anim[2];
-        uint8 index_current_frame[2];
-        uint8 index_current_anim[2];
-        uint8 unkn20[4];
-        uint8 type;
+        uint8_t desc;
+        uint8_t unkn11;
+        uint8_t unkn12;
+        uint8_t unkn13;
+        uint8_t index_base_anim[2];
+        uint8_t index_current_frame[2];
+        uint8_t index_current_anim[2];
+        uint8_t unkn20[4];
+        uint8_t type;
         // more info mapobject.cpp
-        uint8 sub_type;
-        uint8 orientation;
-        uint8 unkn27[3];
+        uint8_t sub_type;
+        uint8_t orientation;
+        uint8_t unkn27[3];
     };
 
     /*!
@@ -213,51 +213,51 @@ namespace LevelData {
      * total: 36 bytes
      */
     struct Weapons {
-        uint8 offset_next[2];
-        uint8 offset_prev[2];
-        uint8 mapposx[2];
-        uint8 mapposy[2];
-        uint8 mapposz[2];
+        uint8_t offset_next[2];
+        uint8_t offset_prev[2];
+        uint8_t mapposx[2];
+        uint8_t mapposy[2];
+        uint8_t mapposz[2];
         // 0x04 on map
         // 0x05 not on map(in inventory)
-        uint8 desc;
-        uint8 unkn2;
-        uint8 unkn3;
-        uint8 unkn4;
-        uint8 index_base_anim[2];
-        uint8 index_current_frame[2];
-        uint8 index_current_anim[2];
-        uint8 unkn5[4];
+        uint8_t desc;
+        uint8_t unkn2;
+        uint8_t unkn3;
+        uint8_t unkn4;
+        uint8_t index_base_anim[2];
+        uint8_t index_current_frame[2];
+        uint8_t index_current_anim[2];
+        uint8_t unkn5[4];
         // look peds for more info
-        uint8 type; // 0x04
+        uint8_t type; // 0x04
         /* 0x01 persuadertron; 0x02 pistol; 0x03 gauss gun; 0x04 shotgun;
          * 0x05 uzi; 0x06 minigun; 0x07 laser; 0x08 flamer; 0x09 long range;
          * 0x0A scanner; 0x0B medikit; 0x0C time bomb; 0x0D access card;
          * 0x0E invalid; 0x0F invalid; 0x10 invalid; 0x11 energy shield;
         */
-        uint8 sub_type;
-        uint8 unkn6[2];
-        uint8 offset_next_inventory[2];
-        uint8 offset_prev_inventory[2];
-        uint8 offset_owner[2];
-        uint8 unkn7[2];
+        uint8_t sub_type;
+        uint8_t unkn6[2];
+        uint8_t offset_next_inventory[2];
+        uint8_t offset_prev_inventory[2];
+        uint8_t offset_owner[2];
+        uint8_t unkn7[2];
     };
 
     /*!
      * total: 30 bytes
      */
     struct Sfx {
-        uint8 offset_next[2];
-        uint8 offset_prev[2];
-        uint8 mapposx[2];
-        uint8 mapposy[2];
-        uint8 mapposz[2];
-        uint8 unkn1[4];
-        uint8 index_base_anim[2];
-        uint8 index_current_frame[2];
-        uint8 index_current_anim[2];
-        uint8 unkn2[8];
-        uint8 offset_owner[2];
+        uint8_t offset_next[2];
+        uint8_t offset_prev[2];
+        uint8_t mapposx[2];
+        uint8_t mapposy[2];
+        uint8_t mapposz[2];
+        uint8_t unkn1[4];
+        uint8_t index_base_anim[2];
+        uint8_t index_current_frame[2];
+        uint8_t index_current_anim[2];
+        uint8_t unkn2[8];
+        uint8_t offset_owner[2];
     };
 
     /*!
@@ -265,16 +265,16 @@ namespace LevelData {
      */
     struct Scenarios {
         // first scenario should be skipped, type 0x00
-        uint8 next[2];
-        uint8 offset_object[2];
+        uint8_t next[2];
+        uint8_t offset_object[2];
         // tile_x_ = tilex >> 1
         // off_x_ = (tilex & 0x01) << 7
-        uint8 tilex;
+        uint8_t tilex;
         // tile_y_ = tiley >> 1
         // off_y_ = (tiley & 0x01) << 7
-        uint8 tiley;
+        uint8_t tiley;
         // tile_z_ = tilez
-        uint8 tilez;
+        uint8_t tilez;
         /*!
          * Gives the type of scenario. Values are:
          * 0x00 - unset scenario type, is found at start of array and end;
@@ -289,28 +289,28 @@ namespace LevelData {
          * 0x0A - train stops and waits
          * 0x0B - protected target reached destination(kenya) (TODO properly)
          */
-        uint8 type;
+        uint8_t type;
     };
 
     /*!
      * total: 448 bytes
      */
     struct Unkn09{
-        uint8 unkn10[448];
+        uint8_t unkn10[448];
     };
 
     /*!
      * total: 14 bytes
      */
     struct MapInfos {
-        uint8 map[2];
-        uint8 min_x[2];
-        uint8 min_y[2];
-        uint8 max_x[2];
-        uint8 max_y[2];
+        uint8_t map[2];
+        uint8_t min_x[2];
+        uint8_t min_y[2];
+        uint8_t max_x[2];
+        uint8_t max_y[2];
         //status flag is set to 1 if the mission has been successfully completed
-        uint8 status;
-        uint8 unkn1[3];
+        uint8_t status;
+        uint8_t unkn1[3];
     };
 
     /*!
@@ -324,25 +324,25 @@ namespace LevelData {
          * 0x10 evacuate
          * more info in mission.cpp : loadLevel()
         */
-        uint8 type[2];
+        uint8_t type[2];
         // 'offset + 32774' gives the offset in this file of the first objective
-        uint8 offset[2];
-        uint8 mapposx[2];
-        uint8 mapposy[2];
-        uint8 mapposz[2];
+        uint8_t offset[2];
+        uint8_t mapposx[2];
+        uint8_t mapposy[2];
+        uint8_t mapposz[2];
         /* If "protect", the next objective are the goals and their type is zero.
          * The list finish with zero and the offset of the protected item ?
          * The status flag is set to 1 if the objective has to be completed
         */
-        uint8 status;
-        uint8 unkn1[3];
+        uint8_t status;
+        uint8_t unkn1[3];
     };
 
     /*!
      * total: 1896 bytes
      */
     struct Unkn11 {
-        uint8 unkn10[1952];
+        uint8_t unkn10[1952];
     };
 
     /*!
@@ -351,7 +351,7 @@ namespace LevelData {
     struct LevelDataAll {
         /*      0 */ Unkn01 u01;
         /*      6 */ Map map;
-        /*  32774 0x0*/ uint8 offset_ref[2];
+        /*  32774 0x0*/ uint8_t offset_ref[2];
         /*  32776 0x02*/ People people[256];
         /*  56328 0x5C02*/ Cars cars[64];
         /*  59016 0x6682*/ Statics statics[400];

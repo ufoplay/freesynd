@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -312,7 +312,7 @@ void FliPlayer::decodeByteRun(uint8_t *data) {
     while ((ptr - offscreen_) < (fli_info_.width * fli_info_.height)) {
         uint8_t chunks = *data++;
         while (chunks--) {
-            int8 count = *data++;
+            int8_t count = *data++;
             if (count > 0) {
                 while (count--) {
                     *ptr++ = *data;
@@ -368,7 +368,7 @@ void FliPlayer::decodeDeltaFLC(uint8_t *data) {
         //Now interpret the RLE data
         while (packetCount--) {
             column += *data++;
-            int8 rleCount = (int8) * data++;
+            int8_t rleCount = (int8_t) * data++;
 
             if (rleCount > 0) {
                 memcpy((void *) (offscreen_ +

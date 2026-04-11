@@ -121,7 +121,7 @@ void SoundManager::loadSounds(const std::string &tabFile, const std::string &dat
         // Samples with size < 144 are bogus
         if (soundsize > 144) {
             sounds.push_back(audio_->createSound());
-            uint8_t *sample = new uint8[soundsize];
+            uint8_t *sample = new uint8_t[soundsize];
             memcpy(sample, soundData, soundsize);
             // patching wrong sample rate
             if (sounds.size() == 13)
