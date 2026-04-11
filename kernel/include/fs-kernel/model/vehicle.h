@@ -165,7 +165,7 @@ protected:
     //! Return true if car is blocked by something
     bool isBlocked();
     //! Check for potential blockers on the road
-    bool checkForBlockers(bool checkForCrossings);
+    virtual bool checkForBlockers(bool checkForCrossings);
     //! In pathfinding, find possible tiles around p that can be crossed when leaving p
     void expandCandidateNeighbours(const TilePoint &p, std::map<TilePoint, uint16_t> & candidateNeighbors);
 
