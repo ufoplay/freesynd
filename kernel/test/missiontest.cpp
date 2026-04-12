@@ -25,20 +25,6 @@
 #include "fs-kernel/model/ped.h"
 #include "fs-kernel/model/vehicle.h"
 
-class MemoryTileManager : public fs_eng::TileManager {
-public:
-    MemoryTileManager() : fs_eng::TileManager(){}
-
-    void loadTestTiles() {
-        tiles_[0] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
-        tiles_[1] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
-        tiles_[2] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
-        tiles_[3] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
-        tiles_[4] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
-        tiles_[5] = new fs_eng::Tile(0, false, fs_eng::Tile::kRoadCurve, {0, 0});
-    }
-};
-
 const int kTestMapMaxTx = 60;
 const int kTestMapMaxTy = 50;
 const int kTestMapMaxTz = 5;
@@ -174,7 +160,6 @@ TEST_CASE( "Mission", "[kernel][mission]" ) {
     LevelData::MapInfos mapInfos;
     configureMapInfo(&mapInfos);
     MemoryTileManager tileMgr;
-    tileMgr.loadTestTiles();
     fs_knl::Map map(&tileMgr, 1);
     configureMap(tileMgr, map);
 

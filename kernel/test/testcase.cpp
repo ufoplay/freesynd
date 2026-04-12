@@ -123,13 +123,20 @@ bool loadMapFromCsv(const std::string &filepath,
             static_cast<uint8_t>(fs_eng::TileManager::kIndexTransparentTile));
     }
 
+    int previousZ = -1;
+    int y = 0;
     while (std::getline(file, line)) {
         if (line.empty() || line[0] == '#') continue;
         std::istringstream ss(line);
         char sep;
         int z;
         ss >> z >> sep;
-        for (int y = 0; y < maxY; y++) {
+        y++;
+        if (y < maxY) {
+            if (z != previousZ) {
+                previousZ = z;
+                y = 0;
+            }
             for (int x = 0; x < maxX; x++) {
                 int tileId;
                 ss >> tileId;
@@ -143,6 +150,23 @@ bool loadMapFromCsv(const std::string &filepath,
     map.setTiles(maxX, maxY, maxZ, tiles);
     delete[] tiles;
     return true;
+}
+
+MemoryTileManager::MemoryTileManager() : fs_eng::TileManager() {
+    // Default transparent tile (kNone — not road, not ped crossing, not road mark)
+    tiles_[0]   = new fs_eng::Tile(0,   false, fs_eng::Tile::kNone,        {0, 0});
+    // Road tile (kRoadNtoS id, kRoadSideEW type — isRoad() == true)
+    tiles_[106] = new fs_eng::Tile(106, false, fs_eng::Tile::kRoadSideEW,  {0, 0});
+    // Pedestrian crossing tiles (kRoadPedCross type — isRoad() and isPedCrossing() both true)
+    tiles_[225] = new fs_eng::Tile(225, false, fs_eng::Tile::kRoadPedCross, {0, 0});
+    tiles_[226] = new fs_eng::Tile(226, false, fs_eng::Tile::kRoadPedCross, {0, 0});
+    // Road mark separator tiles (kRoadMark type — isRoadMark() == true, isRoad() == false)
+    tiles_[100] = new fs_eng::Tile(100, false, fs_eng::Tile::kRoadMark,    {0, 0});
+    tiles_[101] = new fs_eng::Tile(101, false, fs_eng::Tile::kRoadMark,    {0, 0});
+    tiles_[114] = new fs_eng::Tile(114, false, fs_eng::Tile::kRoadMark,    {0, 0});
+    tiles_[115] = new fs_eng::Tile(115, false, fs_eng::Tile::kRoadMark,    {0, 0});
+    tiles_[116] = new fs_eng::Tile(116, false, fs_eng::Tile::kRoadMark,    {0, 0});
+    tiles_[117] = new fs_eng::Tile(117, false, fs_eng::Tile::kRoadMark,    {0, 0});
 }
 
 TEST_CASE( "1: All test cases reside in other .cpp files (empty)", "[multi-file:1]" ) {

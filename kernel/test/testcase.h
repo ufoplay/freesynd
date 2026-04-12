@@ -44,3 +44,12 @@
  bool loadMapFromCsv(const std::string &filepath,
                      fs_eng::TileManager &tileMgr,
                      fs_knl::Map &map);
+
+
+/*!
+ * @brief A Mock TileManager
+ */
+class MemoryTileManager : public fs_eng::TileManager {
+public:
+    MemoryTileManager();
+};
