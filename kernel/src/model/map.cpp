@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -317,7 +317,7 @@ bool Map::isTileWalkableByCar(int x, int y, int z)
     fs_eng::Tile *pTile = getTileAt(x, y, z);
     int tileId = pTile->id();
 
-    if(tileId == 80) {
+    if(tileId == fs_eng::Tile::kTileIdLargeDoorRailEW) {
         fs_eng::Tile::EType near_type = getTileAt(x, y - 1, z)->type();
         if((near_type < fs_eng::Tile::kRoadSideEW || near_type > fs_eng::Tile::kRoadSideNS)
             && near_type != fs_eng::Tile::kRoadPedCross) {
@@ -331,7 +331,7 @@ bool Map::isTileWalkableByCar(int x, int y, int z)
          }
         return true;
     }
-    if(tileId == 81) {
+    if(tileId == fs_eng::Tile::kTileIdLargeDoorRailNS) {
         fs_eng::Tile::EType near_type = getTileAt(x - 1, y, z)->type();
          if((near_type < fs_eng::Tile::kRoadSideEW || near_type > fs_eng::Tile::kRoadSideNS)
              && near_type != fs_eng::Tile::kRoadPedCross)
@@ -400,6 +400,50 @@ uint8_t Map::getPossibleConnexionsForRoadTile(const TilePoint &tilePt) {
     }
 
     return possibleConnexions;
+}
+
+/*!
+ * This method checks that the given point points to a road type of tile.
+ * If it points to some kind of tiles (for example, road separator), depending
+ * on where the point is, it moves the given point to a "real" road tile.
+ * @param tilePt The point to check and change if necessary
+ * @return True if the tile is a road tile
+ */
+bool Map::adjustClickOnRoad(TilePoint &tilePt) {
+    // Road tiles sit one level below the vehicle's visual Z coordinate.
+    // All pathfinding is done at (pos_.tz - 1);
+    fs_eng::Tile *pTile = getTileAt(tilePt.tx, tilePt.ty, tilePt.tz - 1);
+
+    if (pTile->isRoad()) {
+        return true;
+    } else if (pTile->isPedCrossing()) {
+        return pTile->id() == fs_eng::Tile::kTileIdPedCrossEW || pTile->id() == fs_eng::Tile::kTileIdPedCrossNS;
+    } else if (pTile->isRoadMark()) {
+        if (pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorNS ||
+            pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorEndNS1 ||
+            pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorEndNS2) {
+            if (tilePt.ox < 60) { // We hit the North to south portion of the tile
+                // So offset destination from one tile
+                tilePt.tx -= 1;
+                return true;
+            } else if (tilePt.ox > 180) { // We hit the South to North portion of the tile
+                tilePt.tx += 1;
+                return true;
+            }
+        } else if (pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorEW ||
+                    pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorEndEW1 ||
+                    pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorEndEW2) {
+            if (tilePt.oy < 60) { // We hit the East to West portion of the tile
+                tilePt.ty -= 1;
+                return true;
+            } else if (tilePt.oy > 180) { // We hit the West to East portion of the tile
+                tilePt.ty += 1;
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 const uint8_t MiniMap::kOverlayNone = 0;

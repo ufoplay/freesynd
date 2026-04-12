@@ -281,30 +281,19 @@ void SquadSelection::enterOrLeaveVehicle(fs_knl::Vehicle *pVehicle, bool addActi
  * \param addAction True to add the action at the end of the list of action,
  * false to set as the only action.
  */
-void SquadSelection::moveTo(fs_knl::TilePoint &mapPt, bool addAction) {
+void SquadSelection::moveTo(const fs_knl::TilePoint &mapPt, bool addAction) {
     size_t i=0;
-    for (SquadSelection::Iterator it = begin(); it != end(); ++it, i++)
-    {
+    for (SquadSelection::Iterator it = begin(); it != end(); ++it, i++) {
         fs_knl::PedInstance *pAgent = *it;
         fs_knl::Vehicle *pVehicle = pAgent->inVehicle();
         if (pVehicle) {
             if (pVehicle->isCar()) {
-                // Agent is in drivable vehicle
+                // Agent must be the driver of the car
                 fs_knl::GenericCar *pCar = dynamic_cast<fs_knl::GenericCar *>(pVehicle);
-                if (pCar->isDriver(pAgent))
-                {
-                    int stx = mapPt.tx;
-                    int sty = mapPt.ty;
-                    //int sox = ox;
-                    //int soy = oy;
-                    stx = mapPt.tx * 256 + mapPt.ox + 128 * (pVehicle->tileZ() - 1);
-                    //sox = stx % 256;
-                    stx = stx / 256;
-                    sty = mapPt.ty * 256 + mapPt.oy + 128 * (pVehicle->tileZ() - 1);
-                    //soy = sty % 256;
-                    sty = sty / 256;
-                    fs_knl::TilePoint posT = fs_knl::TilePoint(stx, sty, 0, 128, 128);
-                    pAgent->addActionDriveVehicle(pCar, posT, addAction);
+                fs_knl::TilePoint finalDest = mapPt;
+                
+                if (pCar->isDriver(pAgent) && pAgent->map()->adjustClickOnRoad(finalDest)) {
+                    pAgent->addActionDriveVehicle(pCar, finalDest, addAction);
                 }
             }
         } else {

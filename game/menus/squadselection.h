@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2012, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2012, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -174,7 +174,7 @@ class SquadSelection {
     //! Enter or leave the vehicle : do the same as leader
     void enterOrLeaveVehicle(fs_knl::Vehicle *pVehicle, bool addAction);
     //! Move selected agents to the given point
-    void moveTo(fs_knl::TilePoint &mapPt, bool addAction);
+    void moveTo(const fs_knl::TilePoint &mapPt, bool addAction);
     //! Every selected armed agent shoot at location
     void shootAt(const fs_knl::WorldPoint &aimedLocW);
     //! Return true if target is in range of at least one agent

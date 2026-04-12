@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -143,10 +143,17 @@ public:
 
     void patchMap(int x, int y, int z, uint8_t tileNum);
 
+    /**
+     * @name Road related methods
+     */
+    ///@{
     //! Return true if tile at given position is traversable by car
     bool isTileWalkableByCar(int x, int y, int z);
     //! Return a bitmask indicating what directions are possible when leaving this tile
     uint8_t getPossibleConnexionsForRoadTile(const TilePoint &tilePt);
+    //! Return true if this points to a road tile and adjust the point in some cases
+    bool adjustClickOnRoad(TilePoint &tilePt);
+    ///@}
 
 protected:
     /*!  Every map has a unique ID which is used to identify the

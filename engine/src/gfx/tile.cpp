@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -87,37 +87,37 @@ uint8_t Tile::getWalkData() {
  */
 uint8_t Tile::getEdgeConnexionsForRoadTile() {
     switch (id_) {             // Entry: NSEW Exit: NSEW
-    case kTileLargeDoorRailEW: // Entry: 1100 Exit: 1100
+    case kTileIdLargeDoorRailEW: // Entry: 1100 Exit: 1100
         return 0xCC;
-    case kTileLargeDoorRailNS: // Entry: 0011 Exit: 0011
+    case kTileIdLargeDoorRailNS: // Entry: 0011 Exit: 0011
         return 0x33;
-    case kTileRoadNtoS :       // Entry: 1010 Exit: 0110
+    case kTileIdRoadNtoS :       // Entry: 1010 Exit: 0110
         return 0xA6;
-    case kTileRoadStoN :       // Entry: 0101 Exit: 1001
+    case kTileIdRoadStoN :       // Entry: 0101 Exit: 1001
         return 0x59;
-    case kTileRoadWtoE :       // Entry: 1001 Exit: 1010
+    case kTileIdRoadWtoE :       // Entry: 1001 Exit: 1010
         return 0x9A;
-    case kTileRoadEtoW :       // Entry: 0110 Exit: 0101
+    case kTileIdRoadEtoW :       // Entry: 0110 Exit: 0101
         return 0x65;
-    case kTileCurveWtoS:       // Entry: 1001 Exit: 0110
+    case kTileIdCurveWtoS:       // Entry: 1001 Exit: 0110
         return 0x96;
-    case kTileCurveNtoW:       // Entry: 1010 Exit: 0101
+    case kTileIdCurveNtoW:       // Entry: 1010 Exit: 0101
         return 0xA5;
-    case kTileCurveStoE:       // Entry: 0101 Exit: 1010
+    case kTileIdCurveStoE:       // Entry: 0101 Exit: 1010
         return 0x5A;
-    case kTileCurveEtoN:       // Entry: 0110 Exit: 1001
+    case kTileIdCurveEtoN:       // Entry: 0110 Exit: 1001
         return 0x69;
-    case kTileCurveNtoE:       // Entry: 1000 Exit: 0010
+    case kTileIdCurveNtoE:       // Entry: 1000 Exit: 0010
         return 0x82;
-    case kTileCurveEtoS:       // Entry: 0010 Exit: 0100
+    case kTileIdCurveEtoS:       // Entry: 0010 Exit: 0100
         return 0x24;
-    case kTileExtCurveStoW:    // Entry: 0100 Exit: 0001
+    case kTileIdExtCurveStoW:    // Entry: 0100 Exit: 0001
         return 0x41;
-    case kTileExtCurveWtoN:    // Entry: 0001 Exit: 1000
+    case kTileIdExtCurveWtoN:    // Entry: 0001 Exit: 1000
         return 0x18;
-    case kTilePedCrossNS :     // Entry: 1100 Exit: 1100
+    case kTileIdPedCrossNS :     // Entry: 1100 Exit: 1100
         return 0xCC;
-    case kTilePedCrossEW :     // Entry: 0011 Exit: 0011
+    case kTileIdPedCrossEW :     // Entry: 0011 Exit: 0011
         return 0x33;
     default:
         // else no connexion possible

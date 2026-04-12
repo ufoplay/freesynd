@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -74,6 +74,9 @@ public:
 
     //! Return the object's id
     uint16_t id() const { return id_; }
+
+    //! Return the map that this object is on
+    Map * map() const { return pMap_; }
 
     //!Sets the current map
     void setMap(Map *pMap) {

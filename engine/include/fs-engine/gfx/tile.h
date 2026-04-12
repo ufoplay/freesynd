@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -44,23 +44,29 @@ public:
     static const int kSubTileHeight;
 
     // Specific tile ids for example for pathfinding
-    static constexpr int kTileLargeDoorRailEW = 80;  ///< Tile below large door, East-West axis
-    static constexpr int kTileLargeDoorRailNS = 81;  ///< Tile below large door, North-South axis
-    static constexpr int kTileRoadNtoS    = 106; ///< Straight road, North to South axis
-    static constexpr int kTileRoadStoN    = 107; ///< Straight road, South to North axis
-    static constexpr int kTileRoadWtoE    = 108; ///< Straight road, West to East axis
-    static constexpr int kTileRoadEtoW    = 109; ///< Straight road, East to West axis
-    static constexpr int kTileCurveWtoS   = 110; ///< Corner junction South-East
-    static constexpr int kTileCurveNtoW   = 111; ///< Corner junction North-West
-    static constexpr int kTileCurveStoE   = 112; ///< Corner junction South-East
-    static constexpr int kTileCurveEtoN   = 113; ///< Corner junction East-North
-    static constexpr int kTileRoundAbout  = 118; ///< Non-drivable tile center of intersections
-    static constexpr int kTileCurveNtoE   = 120; ///< Corner junction North-East
-    static constexpr int kTileCurveEtoS   = 121; ///< Corner junction East-South
-    static constexpr int kTileExtCurveStoW = 122; ///< Exterior corner junction South-West
-    static constexpr int kTileExtCurveWtoN = 123; ///< Exterior corner junction West-North
-    static constexpr int kTilePedCrossNS   = 225; ///< Pedestrian crossing on NS road
-    static constexpr int kTilePedCrossEW   = 226; ///< Pedestrian crossing on EW road
+    static constexpr int kTileIdLargeDoorRailEW = 80;  ///< Tile below large door, East-West axis
+    static constexpr int kTileIdLargeDoorRailNS = 81;  ///< Tile below large door, North-South axis
+    static constexpr int kTileIdRoadMarkSeparatorNS = 100;  ///< Road separator, North-South axis
+    static constexpr int kTileIdRoadMarkSeparatorEW = 101;  ///< Road separator, East-West axis
+    static constexpr int kTileIdRoadNtoS    = 106; ///< Straight road, North to South axis
+    static constexpr int kTileIdRoadStoN    = 107; ///< Straight road, South to North axis
+    static constexpr int kTileIdRoadWtoE    = 108; ///< Straight road, West to East axis
+    static constexpr int kTileIdRoadEtoW    = 109; ///< Straight road, East to West axis
+    static constexpr int kTileIdCurveWtoS   = 110; ///< Corner junction South-East
+    static constexpr int kTileIdCurveNtoW   = 111; ///< Corner junction North-West
+    static constexpr int kTileIdCurveStoE   = 112; ///< Corner junction South-East
+    static constexpr int kTileIdCurveEtoN   = 113; ///< Corner junction East-North
+    static constexpr int kTileIdRoadMarkSeparatorEndNS1 = 114;  ///< Road separator end, North-South axis
+    static constexpr int kTileIdRoadMarkSeparatorEndNS2 = 116;  ///< Road separator end, North-South axis
+    static constexpr int kTileIdRoadMarkSeparatorEndEW1 = 115;  ///< Road separator end, East-West axis
+    static constexpr int kTileIdRoadMarkSeparatorEndEW2 = 117;  ///< Road separator end, East-West axis
+    static constexpr int kTileIdRoundAbout  = 118; ///< Non-drivable tile center of intersections
+    static constexpr int kTileIdCurveNtoE   = 120; ///< Corner junction North-East
+    static constexpr int kTileIdCurveEtoS   = 121; ///< Corner junction East-South
+    static constexpr int kTileIdExtCurveStoW = 122; ///< Exterior corner junction South-West
+    static constexpr int kTileIdExtCurveWtoN = 123; ///< Exterior corner junction West-North
+    static constexpr int kTileIdPedCrossNS   = 225; ///< Pedestrian crossing on NS road
+    static constexpr int kTileIdPedCrossEW   = 226; ///< Pedestrian crossing on EW road
 
     /*!
      * A tile type.
@@ -110,6 +116,11 @@ public:
     //! Return true if this tile is a pedestrian crossing
     bool isPedCrossing() {
         return type_ == kRoadPedCross;
+    }
+
+    //! Return true if this tile is a road mark tile
+    bool isRoadMark() {
+        return type_ == kRoadMark;
     }
 
     uint8_t getWalkData();
