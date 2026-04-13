@@ -41,6 +41,7 @@ protected:
     void setAnimIdText(uint16_t animId);
     void changeFrameId(int newFrameId);
     void updateTotalFrames();
+    void setTileIdText(uint8_t tileId);
 
 protected:
     uint16_t animId_;
@@ -50,6 +51,9 @@ protected:
     fs_eng::TextField *pAnimIdTF_;
     int txtFrameId_;
     int txtTotalFrames_;
+
+    uint8_t tileId_;
+    fs_eng::TextField *pTileIdTF_;
 };
 
 #endif // EDITOR_ANIMMENU_H_

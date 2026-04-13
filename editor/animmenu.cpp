@@ -30,6 +30,7 @@
 #include "fs-engine/gfx/animationmanager.h"
 
 #include "editormenuid.h"
+#include "editorcontroller.h"
 
 using fs_eng::MenuManager;
 using fs_eng::Menu;
@@ -60,6 +61,14 @@ AnimMenu::AnimMenu(MenuManager * m)
     
     txtTotalFrames_ = addStatic(160, 280, "", FontManager::SIZE_2, true);
     updateTotalFrames();
+
+    // Tile id
+    tileId_ = 0;
+    addStatic(390, 100, "TILE:", FontManager::SIZE_2, true);
+    pTileIdTF_ = addTextField(450, 245, 40, 21, FontManager::SIZE_2, 3, false, true);
+    pTileIdTF_->setText("0");
+    std::string tileCount = std::format("/{}", fs_eng::TileManager::kNumOfTiles - 1);
+    addStatic(500, 248, tileCount.c_str(), FontManager::SIZE_2, true);
 }
 
 void AnimMenu::handleRender() {
@@ -71,6 +80,15 @@ void AnimMenu::handleRender() {
     // Draw frame animation
     g_AnimMgr.drawFrame(animId_, frameId_, pos);
 
+    // Rectangle around tile textfield
+    g_System.drawRect({448, 245}, 50, 23, menu_manager_->kMenuColorLightGreen);
+    // Draw rect for tile preview
+    g_System.drawFillRect({390, 130}, 150, 100, menu_manager_->kMenuColorWhite);
+    // Draw current tile
+    fs_eng::Tile *pTile = g_editorCtrl.tileManager().getTile(tileId_);
+    if (pTile != nullptr) {
+        g_editorCtrl.tileManager().drawTile(pTile, 440, 160);
+    }
 }
 
 void AnimMenu::handleLeave() {
@@ -80,6 +98,11 @@ void AnimMenu::handleLeave() {
 void AnimMenu::setAnimIdText(uint16_t animId) {
     std::string str = std::to_string(animId);
     pAnimIdTF_->setText(str.c_str());
+}
+
+void AnimMenu::setTileIdText(uint8_t tileId) {
+    std::string str = std::to_string(tileId);
+    pTileIdTF_->setText(str.c_str());
 }
 
 void AnimMenu::changeFrameId(int newFrameId) {
@@ -95,7 +118,7 @@ void AnimMenu::updateTotalFrames() {
 
 bool AnimMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
     fs_eng::TextField *pTextField = getCapturingInput();
-    if (key.keyCode == fs_eng::kKeyCode_Up && pTextField == nullptr) {
+    if (key.keyCode == fs_eng::kKeyCode_Up && pTextField != pAnimIdTF_) {
         // We don't want to scroll up while editing the field
         if (animId_ < g_AnimMgr.getNumAnims() - 1) {
             setAnimIdText(++animId_);
@@ -103,12 +126,22 @@ bool AnimMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
             updateTotalFrames();
         }
         return true;
-    } else if (key.keyCode == fs_eng::kKeyCode_Down && pTextField == nullptr) {
+    } else if (key.keyCode == fs_eng::kKeyCode_PageUp && pTextField != pTileIdTF_) {
+        if (tileId_ < static_cast<uint8_t>(fs_eng::TileManager::kNumOfTiles - 1)) {
+            setTileIdText(++tileId_);
+        }
+        return true;
+    } else if (key.keyCode == fs_eng::kKeyCode_Down && pTextField != pAnimIdTF_) {
         // We don't want to scroll down while editing the field
         if (animId_ > 0) {
             setAnimIdText(--animId_);
             changeFrameId(0);
             updateTotalFrames();
+        }
+        return true;
+    } else if (key.keyCode == fs_eng::kKeyCode_PageDown && pTextField != pTileIdTF_) {
+        if (tileId_ > 0) {
+            setTileIdText(--tileId_);
         }
         return true;
     } else if (key.keyCode == fs_eng::kKeyCode_Right) {
@@ -136,12 +169,25 @@ bool AnimMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
             } catch (...) {
                 // don't do anything
             }
+        } else if (pTextField == pTileIdTF_) {
+            try {
+                int val = std::stoi(pTextField->getText());
+                if (val >= 0 && val < fs_eng::TileManager::kNumOfTiles) {
+                    tileId_ = static_cast<uint8_t>(val);
+                    captureInputBy(nullptr);
+                }
+            } catch (...) {
+                // don't do anything
+            }
         }
         return true;
     } else if (key.keyCode == fs_eng::kKeyCode_Escape) {
-        if (pTextField != nullptr) {
-            uint16_t originId = (pTextField == pAnimIdTF_) ? animId_ : animId_;
-            setAnimIdText(originId);
+        if (pTextField == pAnimIdTF_) {
+            setAnimIdText(animId_);
+            captureInputBy(nullptr);
+            return true;
+        } else if (pTextField == pTileIdTF_) {
+            setTileIdText(tileId_);
             captureInputBy(nullptr);
             return true;
         }

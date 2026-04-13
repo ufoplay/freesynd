@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2023-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2023-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "fs-utils/misc/singleton.h"
+#include "fs-engine/gfx/tilemanager.h"
 #include "fs-kernel/mgr/agentmanager.h"
 #include "fs-kernel/mgr/weaponmanager.h"
 #include "fs-kernel/mgr/modmanager.h"
@@ -61,6 +62,10 @@ class EditorController : public Singleton < EditorController > {
 
     fs_knl::ModManager &mods() {
         return mods_;
+    }
+
+    fs_eng::TileManager &tileManager() {
+        return tileMgr_;
     }
 
     //*************************************

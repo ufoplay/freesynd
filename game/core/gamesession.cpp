@@ -27,7 +27,7 @@
 #include "fs-engine/gfx/logomanager.h"
 
 Block g_Blocks[50] = {
-    // name,      defpop,   popul,    mis_id, tax, addtotax, popStatus, daysToNextStatus, daysStatusElapsed, status, nextMission, color, infos, enhanced
+    // name,      defpop,   popul,    mis_id, tax, addtotax, popStatus, daysToNextStatus, daysStatusElapsed, status, nextMission, color, infos, enhanced, paletteId
     {"#CNTRY_17", 46000000, 46000000, 17, 30, 0, STAT_VERY_HAPPY, 0, 0, BLK_UNAVAIL, NULL, 0, 0, 0, 3},            // 0 - ALASKA
     {"#CNTRY_39", 56000000, 56000000, 39, 30, 0, STAT_VERY_HAPPY, 0, 0, BLK_UNAVAIL, NULL, 0, 0, 0, 5},            // 1 - NORTHWEST TERRITORIES
     {"#CNTRY_08", 58000000, 58000000, 8, 30, 0, STAT_VERY_HAPPY, 0, 0, BLK_UNAVAIL, NULL, 0, 0, 0, 4},             // 2 - NORTHEAST TERRITORIES

@@ -42,6 +42,7 @@ bool EditorController::initialize() {
     if (!tileMgr_.loadTiles()) {
         return false;
     }
+    tileMgr_.setPalette(1);
     g_missionCtrl.destroyMission();
     // Reset default mods and weapons
     mods_.reset();
