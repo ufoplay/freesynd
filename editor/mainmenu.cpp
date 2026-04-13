@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -38,13 +38,13 @@ MainMenu::MainMenu(MenuManager * m):Menu(m, fs_edit_menus::kMenuIdMain, fs_edit_
     cursorOnShow_ = kMenuCursor;
     addStatic(0, 40, fs_eng::kScreenWidth, "GAME EDITOR", FontManager::SIZE_4, false);
 
-    addStatic(201, 130, 100, "GRAPHICS", FontManager::SIZE_3, false);
-    addOption(201, 155, 130, 25, "- MENU SPRITES", FontManager::SIZE_2, fs_edit_menus::kMenuIdFont, true, false);
-    addOption(201, 180, 130, 25, "- ANIMATIONS", FontManager::SIZE_2, fs_edit_menus::kMenuIdAnim, true, false);
-    addOption(201, 205, 130, 25, "- AUDIO", FontManager::SIZE_2, fs_edit_menus::kMenuIdAudio, true, false);
+    addStatic(201, 130, 100, "RESOURCES", FontManager::SIZE_3, false);
+    addOption(201, 155, 170, 25, "- MENU SPRITES", FontManager::SIZE_2, fs_edit_menus::kMenuIdFont, true, false);
+    addOption(201, 180, 210, 25, "- ANIMATIONS-TILES", FontManager::SIZE_2, fs_edit_menus::kMenuIdAnim, true, false);
+    addOption(201, 205, 90, 25, "- AUDIO", FontManager::SIZE_2, fs_edit_menus::kMenuIdAudio, true, false);
 
     addStatic(201, 235, 100, "MISSIONS", FontManager::SIZE_3, false);
-    addOption(210, 260, 130, 25, "- SEARCH", FontManager::SIZE_2, fs_edit_menus::kMenuIdSrchMis, true, false);
+    addOption(210, 260, 90, 25, "- VIEW", FontManager::SIZE_2, fs_edit_menus::kMenuIdSrchMis, true, false);
     quitButId_ = addOption(201, 300, 300, 25, "#MAIN_QUIT", FontManager::SIZE_3, kMenuIdNoMenu, true, false);
 }
 

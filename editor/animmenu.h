@@ -4,7 +4,7 @@
  *   Copyright (C) 2005  Stuart Binge  <skbinge@gmail.com>
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -38,14 +38,17 @@ public:
 protected:
     bool handleUnMappedKey(const fs_eng::FS_Key key) override;
 
-    void displayFont();
+    void changeFrameId(int newFrameId);
+    void updateTotalFrames();
 
 protected:
-    int animId_;
+    uint16_t animId_;
     int frameId_;
+    size_t txtTotalAnimations_;
 
-    int txtAnimId_;
+    fs_eng::TextField *pAnimIdTF_;
     int txtFrameId_;
+    int txtTotalFrames_;
 };
 
 #endif // EDITOR_ANIMMENU_H_

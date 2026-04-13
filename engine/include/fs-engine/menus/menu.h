@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -174,6 +174,8 @@ public:
     void selectToggleAction(int id) { group_.selectButton(id); }
 
     void captureInputBy(TextField *pTextfield);
+    //! Return the Textfield that currently has the cursor or nullpointer if none
+    TextField * getCapturingInput() { return pCaptureInput_; }
     bool isPaused() { return paused_; }
 
     MenuManager *getMenuManager() { return menu_manager_; }
