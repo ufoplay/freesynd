@@ -42,7 +42,7 @@ AnimMenu::AnimMenu(MenuManager * m)
     animId_ = 0;
     frameId_ = 0;
 
-    addStatic(0, 40, fs_eng::kScreenWidth, "ANIMATIONS - LOGOS", FontManager::SIZE_4, false);
+    addStatic(0, 40, fs_eng::kScreenWidth, "ANIMATIONS - TILES", FontManager::SIZE_4, false);
     // Accept button
     addOption(17, 347, 128, 25, "BACK", FontManager::SIZE_2, fs_edit_menus::kMenuIdMain);
 
@@ -77,6 +77,11 @@ void AnimMenu::handleLeave() {
     g_System.hideCursor();
 }
 
+void AnimMenu::setAnimIdText(uint16_t animId) {
+    std::string str = std::to_string(animId);
+    pAnimIdTF_->setText(str.c_str());
+}
+
 void AnimMenu::changeFrameId(int newFrameId) {
     frameId_ = newFrameId;
     std::string s = std::format("{}", frameId_);
@@ -89,16 +94,19 @@ void AnimMenu::updateTotalFrames() {
 }
 
 bool AnimMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
-    if (key.keyCode == fs_eng::kKeyCode_Up) {
+    fs_eng::TextField *pTextField = getCapturingInput();
+    if (key.keyCode == fs_eng::kKeyCode_Up && pTextField == nullptr) {
+        // We don't want to scroll up while editing the field
         if (animId_ < g_AnimMgr.getNumAnims() - 1) {
-            animId_++;
+            setAnimIdText(++animId_);
             changeFrameId(0);
             updateTotalFrames();
         }
         return true;
-    } else if (key.keyCode == fs_eng::kKeyCode_Down) {
+    } else if (key.keyCode == fs_eng::kKeyCode_Down && pTextField == nullptr) {
+        // We don't want to scroll down while editing the field
         if (animId_ > 0) {
-            animId_--;
+            setAnimIdText(--animId_);
             changeFrameId(0);
             updateTotalFrames();
         }
@@ -116,8 +124,6 @@ bool AnimMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
         }
         return true;
     } else if (key.keyCode == fs_eng::kKeyCode_Return) {
-        fs_eng::TextField *pTextField = getCapturingInput();
-
         if (pTextField == pAnimIdTF_) {
             try {
                 uint16_t newAnimId = static_cast<uint16_t> (std::stoi(pTextField->getText()));
@@ -132,6 +138,13 @@ bool AnimMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
             }
         }
         return true;
+    } else if (key.keyCode == fs_eng::kKeyCode_Escape) {
+        if (pTextField != nullptr) {
+            uint16_t originId = (pTextField == pAnimIdTF_) ? animId_ : animId_;
+            setAnimIdText(originId);
+            captureInputBy(nullptr);
+            return true;
+        }
     }
 
     return false;

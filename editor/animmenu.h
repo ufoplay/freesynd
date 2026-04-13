@@ -38,6 +38,7 @@ public:
 protected:
     bool handleUnMappedKey(const fs_eng::FS_Key key) override;
 
+    void setAnimIdText(uint16_t animId);
     void changeFrameId(int newFrameId);
     void updateTotalFrames();
 
