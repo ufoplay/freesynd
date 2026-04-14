@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -278,7 +278,7 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
         }
 
         // Get candidate amoung neigbours
-        std::map<TilePoint, uint16_t> candidateNeighbors;
+        std::list<TilePoint> candidateNeighbors;
         expandCandidateNeighbours(p, candidateNeighbors);
 
         int gCurrent = gScore.count(p) ? gScore[p] : 0;
@@ -287,7 +287,7 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
             LOG(Log::k_FLG_GAME, "GenericCar", "initMovementToDestination", ("No neigbours for car %d at point %d, %d, %d\n", id(), p.tx, p.ty, p.tz))
         }
 
-        for (auto& [neighbor, newForbiddenDir] : candidateNeighbors) {
+        for (auto& neighbor : candidateNeighbors) {
             if (closed.count(neighbor)) {
                 continue;
             }
@@ -328,23 +328,23 @@ bool GenericCar::initMovementToDestination([[maybe_unused]] Mission *pMission, c
  * @param p is the current tile for which we look candidates
  * @param candidateNeighbors a map of candidates
  */
-void GenericCar::expandCandidateNeighbours(const TilePoint &p, std::map<TilePoint, uint16_t> & candidateNeighbors) {
+void GenericCar::expandCandidateNeighbours(const TilePoint &p, std::list<TilePoint> & candidateNeighbors) {
     uint8_t possibleConnexions = pMap_->getPossibleConnexionsForRoadTile(p);
     
     if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitNorth)) {
-        candidateNeighbors[TilePoint(p.tx, p.ty - 1, p.tz)] = Map::kForbidDirSouth;
+        candidateNeighbors.push_back(TilePoint(p.tx, p.ty - 1, p.tz));
     }
 
     if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitSouth)) {
-        candidateNeighbors[TilePoint(p.tx, p.ty + 1, p.tz)] = Map::kForbidDirNorth;
+        candidateNeighbors.push_back(TilePoint(p.tx, p.ty + 1, p.tz));
     }
 
     if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitEast)) {
-        candidateNeighbors[TilePoint(p.tx + 1, p.ty, p.tz)] = Map::kForbidDirWest;
+        candidateNeighbors.push_back(TilePoint(p.tx + 1, p.ty, p.tz));
     }
 
     if (fs_utl::isBitsOnWithMask(possibleConnexions, Map::kConnexionMaskExitWest)) {
-        candidateNeighbors[TilePoint(p.tx - 1, p.ty, p.tz)] = Map::kForbidDirEast;
+        candidateNeighbors.push_back(TilePoint(p.tx - 1, p.ty, p.tz));
     }
 }
 

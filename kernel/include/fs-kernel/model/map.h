@@ -37,11 +37,6 @@ namespace fs_knl {
  */
 class Map {
 public:
-    // forbiddenDir values: encode "from which direction we came" to prevent U-turns.
-    static const uint16_t kForbidDirSouth = 0x0000; ///< Came from South — no going back South
-    static const uint16_t kForbidDirEast  = 0x0020; ///< Came from East  — no going back East
-    static const uint16_t kForbidDirNorth = 0x0400; ///< Came from North — no going back North
-    static const uint16_t kForbidDirWest  = 0x6000; ///< Came from West  — no going back West
 
     static const uint8_t kConnexionMaskEntryNorth; ///< Used to test if we can enter the tile by north
     static const uint8_t kConnexionMaskEntrySouth; ///< Used to test if we can enter the tile by south 

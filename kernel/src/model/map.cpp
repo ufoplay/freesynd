@@ -346,9 +346,6 @@ bool Map::isTileWalkableByCar(int x, int y, int z)
          }
         return true;
     }
-    if(tileId == 72) {
-        return false;
-    }
 
     if(tileId == 119) {
         return false;
@@ -417,7 +414,7 @@ bool Map::adjustClickOnRoad(TilePoint &tilePt) {
     if (pTile->isRoad()) {
         return true;
     } else if (pTile->isPedCrossing()) {
-        return pTile->id() == fs_eng::Tile::kTileIdPedCrossEW || pTile->id() == fs_eng::Tile::kTileIdPedCrossNS;
+        return pTile->id() != fs_eng::Tile::kTileIdPedCrossManhole;
     } else if (pTile->isRoadMark()) {
         if (pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorNS ||
             pTile->id() == fs_eng::Tile::kTileIdRoadMarkSeparatorEndNS1 ||

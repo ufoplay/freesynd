@@ -44,6 +44,7 @@ public:
     static const int kSubTileHeight;
 
     // Specific tile ids for example for pathfinding
+    static constexpr int kTileIdPedCrossManhole = 72;  ///< Pedestrian crossing with manhole
     static constexpr int kTileIdLargeDoorRailEW = 80;  ///< Tile below large door, East-West axis
     static constexpr int kTileIdLargeDoorRailNS = 81;  ///< Tile below large door, North-South axis
     static constexpr int kTileIdRoadMarkSeparatorNS = 100;  ///< Road separator, North-South axis
@@ -105,7 +106,7 @@ public:
 
     //! Convenience method to tell whether this tile is a road type or not
     bool isRoad() {
-        return  (type_ == kRoadCurve || type_ == kRoadPedCross ||
+        return  (type_ == kRoadCurve || id_ == kTileIdPedCrossEW || id_ == kTileIdPedCrossNS ||
                 (type_ > kGround && type_ < kWall));
     }
     //! Convenience method to tell whether this tile is a stair type or not

@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net> 
- *   Copyright (C) 2013, 2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2025-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -167,7 +167,7 @@ protected:
     //! Check for potential blockers on the road
     virtual bool checkForBlockers(bool checkForCrossings);
     //! In pathfinding, find possible tiles around p that can be crossed when leaving p
-    void expandCandidateNeighbours(const TilePoint &p, std::map<TilePoint, uint16_t> & candidateNeighbors);
+    void expandCandidateNeighbours(const TilePoint &p, std::list<TilePoint> & candidateNeighbors);
 
     //!
     void addIntraTileOffsetsToPath();
