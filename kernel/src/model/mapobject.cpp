@@ -487,6 +487,16 @@ void ShootableMovableMapObject::blockPathWith(MapObject *blocker, bool terminate
     hold_on_.xadj = xadj;
     hold_on_.yadj = yadj;
 }
+
+/*!
+ * @brief 
+ * @param pObject 
+ * @return 
+ */
+bool ShootableMovableMapObject::isBlockedBy(const MapObject *pObject) {
+    return (hold_on_.pathBlocker != nullptr && hold_on_.pathBlocker == pObject);
+}
+
 //! Unblock the object
 void ShootableMovableMapObject::unblockPath() {
     hold_on_.pathBlocker = nullptr;

@@ -485,10 +485,13 @@ public:
 
     //! Return true if object is moving
     bool isMoving() { return speed_ != 0; }
+
     //! Blocks temporaly this object by a blocker
     void blockPathWith(MapObject *blocker, bool terminatePath = false,
                    int tilex = 0, int tiley = 0, int tilez = 0,
                    int xadj = 0, int yadj = 0);
+    //! Return true if this object is blocked by the given object
+    bool isBlockedBy(const MapObject *pObject);
     //! Unblock the object
     void unblockPath();
 

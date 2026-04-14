@@ -539,31 +539,51 @@ bool GenericCar::isBlocked() {
  * @return true if there is a blocker ahead
  */
 bool GenericCar::checkForBlockers(bool checkForCrossings) {
-    const TilePoint &nextPt = dest_path_.front();
     Mission *pMission = g_missionCtrl.mission();
-    assert( pMission != nullptr);
+    assert(pMission != nullptr);
+
+    // Determine the effective waypoint to check for blockers.
+    // If the vehicle's leading edge has already passed nextPt
+    // (dist(center, nextPt) < vehicle half-size), advance to dest_path_[1]
+    // so that the vehicle stops before its body overlaps the blocker's tile.
+    auto it = dest_path_.begin();
+    if (dest_path_.size() > 1) {
+        const TilePoint &nextPt = *it;
+        int diffx = nextPt.tx * 256 + nextPt.ox - (pos_.tx * 256 + pos_.ox);
+        int diffy = nextPt.ty * 256 + nextPt.oy - (pos_.ty * 256 + pos_.oy);
+        int halfSize = std::max(sizeX(), sizeY());
+        if (diffx * diffx + diffy * diffy < halfSize * halfSize) {
+            ++it;  // vehicle front is past nextPt → check the following waypoint
+        }
+    }
+
+    const TilePoint &checkPt = *it;
     const std::vector<MapObject*> &occupants =
-        pMission->getObjectsAtTile(nextPt);
+        pMission->getObjectsAtTile(checkPt);
     for (MapObject *obj : occupants) {
         if (obj != this && obj->is(MapObject::kNatureVehicle)) {
             Vehicle *pBlocker = static_cast<Vehicle *>(obj);
+            if (pBlocker->isBlockedBy(this)) { 
+                // trying to prevent interblocking of two cars
+                // by no blocking the second one
+                continue; }
             // Dead vehicles won't move: terminate the path so the car recomputes a route
             bool terminate = pBlocker->isDead();
             blockPathWith(obj, terminate,
-                            nextPt.tx, nextPt.ty, nextPt.tz);
+                          checkPt.tx, checkPt.ty, checkPt.tz);
             return true;
         }
     }
     if (checkForCrossings) {
         // Road is one level below the car
-        fs_eng::Tile *pTile = pMap_->getTileAt(nextPt.tx, nextPt.ty, nextPt.tz - 1);
+        fs_eng::Tile *pTile = pMap_->getTileAt(checkPt.tx, checkPt.ty, checkPt.tz - 1);
         if (pTile->isPedCrossing()) {
             for (MapObject *obj : occupants) {
                 if (obj->is(MapObject::kNaturePed)) {
                     PedInstance *pPed = static_cast<PedInstance *>(obj);
                     if (pPed->isAlive()) {
                         blockPathWith(pPed, false,
-                                        nextPt.tx, nextPt.ty, nextPt.tz);
+                                      checkPt.tx, checkPt.ty, checkPt.tz);
                         return true;
                     }
                 }
