@@ -1,7 +1,7 @@
 /*
  *  FreeSynd - a remake of the classic Bullfrog game "Syndicate".
  *
- *   Copyright (C) 2023-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2023-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -24,6 +24,7 @@
 
 #include "fs-utils/log/log.h"
 #include "fs-utils/io/file.h"
+#include "fs-engine/gfx/animationmanager.h"
 #include "fs-kernel/model/squad.h"
 #include "fs-kernel/model/ped.h"
 
@@ -43,6 +44,7 @@ bool EditorController::initialize() {
         return false;
     }
     tileMgr_.setPalette(1);
+    g_AnimMgr.setPalette(tileMgr_.getPalette());
     g_missionCtrl.destroyMission();
     // Reset default mods and weapons
     mods_.reset();
