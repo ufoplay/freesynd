@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -47,9 +47,11 @@ namespace {
 
 namespace fs_knl {
 
+const uint8_t Mission::kBMaskBlockerTargetInRange = 0x01;
 const uint8_t Mission::kBMaskBlockerTargetOutOfMap = 0x20;
 const uint8_t Mission::kBMaskBlockerTargetObjectUpdated = 0x02;
 const uint8_t Mission::kBMaskBlockerTargetPosUpdated = 0x04;
+const uint8_t Mission::kBMaskBlockerBlockedByTile = 0x10;
 
 /*!
  * Initialize the statistics.
@@ -2704,8 +2706,17 @@ MapObject * Mission::checkBlockedByObject(WorldPoint * pStartPt, WorldPoint * pE
         if (static_cast<const MapObject*>(obj) == static_cast<const MapObject*>(pOrigin)) return;
         if (obj == pShooterVehicle) return;
         // Peds may have died since the grid was built this tick
-        if (obj->is(MapObject::kNaturePed) &&
-                static_cast<ShootableMapObject*>(obj)->isDead()) return;
+        if (obj->is(MapObject::kNaturePed)) {
+            PedInstance *pPed = static_cast<PedInstance*>(obj);
+            if (pPed->isDead()) return;
+            if (pPed->isOurAgent()) {
+                if (pOrigin && pOrigin->is(MapObject::kNaturePed) &&
+                    static_cast<const PedInstance*>(pOrigin)->isOurAgent()) {
+                        // no friendly fire
+                        return;
+                }
+            }
+        }
         if (obj->isBlocker(&copyStartPt, &copyEndPt, inc_xyz)) {
             int cx = pStartPt->x - copyStartPt.x;
             int cy = pStartPt->y - copyStartPt.y;
@@ -2784,10 +2795,10 @@ MapObject * Mission::checkBlockedByObject(WorldPoint * pStartPt, WorldPoint * pE
  *   reached before pTargetPosW, then path is stopped.
  * \param pInitialDistance This is the distance between origin and initial target position
  * \return a bitmask indicating the type of result:
- *      - 0b(1) : target in range
+ *      - 0b(kBMaskBlockerTargetInRange) : target in range
  *      - 3b(8) : distanceMax is reached
- *      - 4b(16): blocker tile, "pTargetLoc" is set
- *      - 5b(32): out of visible reach
+ *      - 4b(kBMaskBlockerBlockedByTile): blocker tile, "pTargetLoc" is set
+ *      - 5b(kBMaskBlockerTargetOutOfMap): out of visible reach
  */
 uint8_t Mission::checkBlockedByTile(const WorldPoint & originPosW, WorldPoint *pTargetPosW,
                                   bool updateLoc, double distanceMax, double *pInitialDistance) {
@@ -2811,7 +2822,7 @@ uint8_t Mission::checkBlockedByTile(const WorldPoint & originPosW, WorldPoint *p
     double distanceToTarget = 0;
     distanceToTarget = sqrt((double)((tmpTargetWLoc.x - cx) * (tmpTargetWLoc.x - cx) + (tmpTargetWLoc.y - cy) * (tmpTargetWLoc.y - cy)
         + (tmpTargetWLoc.z - cz) * (tmpTargetWLoc.z - cz)));
-    uint8_t block_mask = 1;
+    uint8_t block_mask = kBMaskBlockerTargetInRange;
 
     if (pInitialDistance)
         *pInitialDistance = distanceToTarget;
@@ -2898,10 +2909,10 @@ uint8_t Mission::checkBlockedByTile(const WorldPoint & originPosW, WorldPoint *p
                     tmpTargetWLoc.z = (int)sz;
                     dist_close = sqrt(dsx * dsx + dsy * dsy + dsz * dsz);
                     // set mask to indicate path is blocked by a tile
-                    if (block_mask == 1)
-                        block_mask = 16;
+                    if (block_mask == kBMaskBlockerTargetInRange)
+                        block_mask = kBMaskBlockerBlockedByTile;
                     else
-                        block_mask |= 16;
+                        block_mask |= kBMaskBlockerBlockedByTile;
                     if (updateLoc) {
                         pTargetPosW->x = (int)sx;
                         pTargetPosW->y = (int)sy;
@@ -2927,14 +2938,10 @@ uint8_t Mission::checkBlockedByTile(const WorldPoint & originPosW, WorldPoint *p
  * \param originLoc
  * \param pTarget
  * \param pTargetPosW
- * \param setBlocker
- * \param checkTileOnly Check blockers only for map elements not objects.
- * \param maxr maximum distance we can run
  * \param distTo
- * \param pOrigin
  * \return mask where bits are:
  *   - 0b : target in range(1)
- *   - 1b : blocker is object, "t" is set(2)
+ *   - 1b : blocker is object, pTarget is set(2)
  *   - 2b : blocker object, "pn" is set(4)
  *   - 3b : reachable point set (8)
  *   - 4b : blocker tile, "pn" is set(16)
@@ -2942,9 +2949,8 @@ uint8_t Mission::checkBlockedByTile(const WorldPoint & originPosW, WorldPoint *p
  * NOTE: only if "pn" or "t" are not null, variables are set
 
 */
-uint8_t Mission::checkIfBlockersInShootingLine(const WorldPoint & originLoc, ShootableMapObject ** pTarget,
-    WorldPoint *pTargetPosW, bool setBlocker, bool checkTileOnly, double maxr,
-    double * distTo, const ShootableMapObject *pOrigin)
+uint8_t Mission::checkIfBlockersInShootingLine(const WorldPoint & originLoc,  const BlockerCriteria crits, 
+        ShootableMapObject **pTarget, WorldPoint *pTargetPosW, double * distTo)
 {
     // search for a tile blocking the path towards the target
     // tmpPosW will hold the updated position after that search
@@ -2955,17 +2961,17 @@ uint8_t Mission::checkIfBlockersInShootingLine(const WorldPoint & originLoc, Sho
         tmpPosW = *pTargetPosW;
     }
 
-    uint8_t bfBlockerFound = checkBlockedByTile(originLoc, &tmpPosW, true, maxr, distTo);
+    uint8_t bfBlockerFound = checkBlockedByTile(originLoc, &tmpPosW, true, crits.maxr, distTo);
     if (bfBlockerFound == kBMaskBlockerTargetOutOfMap) {
         // coords are out of map limits
         return bfBlockerFound;
     }
 
-    if (setBlocker) {
+    if (crits.setBlocker) {
         *pTargetPosW = tmpPosW;
     }
 
-    if (checkTileOnly)
+    if (crits.checkTileOnly)
         return bfBlockerFound;
 
     WorldPoint tmpOrigin = originLoc;
@@ -2977,13 +2983,13 @@ uint8_t Mission::checkIfBlockersInShootingLine(const WorldPoint & originLoc, Sho
     int dy = tmpPosW.y - originLoc.y;
     int dz = tmpPosW.z - originLoc.z;
     double distToBlocker = sqrt((double)(dx * dx + dy * dy + dz * dz));
-    MapObject *blockerObj = checkBlockedByObject(&tmpOrigin, &tmpEnd, &distToBlocker, pOrigin);
+    MapObject *blockerObj = checkBlockedByObject(&tmpOrigin, &tmpEnd, &distToBlocker, crits.pOrigin);
 
     if (blockerObj) {
-        if (bfBlockerFound == 1)
+        if (bfBlockerFound == kBMaskBlockerTargetInRange)
             bfBlockerFound = 0;
 
-        if (setBlocker) {
+        if (crits.setBlocker) {
             if (pTargetPosW) {
                 *pTargetPosW = tmpOrigin;
                 bfBlockerFound |= kBMaskBlockerTargetPosUpdated;
@@ -2995,16 +3001,16 @@ uint8_t Mission::checkIfBlockersInShootingLine(const WorldPoint & originLoc, Sho
         } else {
             if (pTarget && *pTarget) {
                 if (*pTarget != blockerObj)
-                    bfBlockerFound |= 6;
+                    bfBlockerFound |= kBMaskBlockerTargetObjectUpdated | kBMaskBlockerTargetPosUpdated;
                 else
-                    bfBlockerFound = 1;
+                    bfBlockerFound = kBMaskBlockerTargetInRange;
             } else
-                bfBlockerFound |= 6;
+                bfBlockerFound |= kBMaskBlockerTargetObjectUpdated | kBMaskBlockerTargetPosUpdated;
         }
     } else {
-        if (setBlocker) {
-            if (bfBlockerFound != 1 && pTarget)
-                *pTarget = NULL;
+        if (crits.setBlocker) {
+            if (bfBlockerFound != kBMaskBlockerTargetInRange && pTarget)
+                *pTarget = nullptr;
         }
     }
 
@@ -3034,7 +3040,11 @@ uint8_t Mission::getPathLengthBetween(PedInstance *pPed, ShootableMapObject* obj
     WorldPoint cur_xyz(pPed->position());
     cur_xyz.z += (pPed->sizeZ() >> 1);
     // TODO : it's not inRangeCPos that must be called but a method for path calculation
-    uint8_t res = checkIfBlockersInShootingLine(cur_xyz, &objectToReach, NULL, false, true, maxLength, length, pPed);
+    BlockerCriteria crits;
+    crits.checkTileOnly = true;
+    crits.maxr = maxLength;
+    crits.pOrigin = pPed;
+    uint8_t res = checkIfBlockersInShootingLine(cur_xyz, crits, &objectToReach, nullptr, length);
     return res == 1 ? 0 : 1;
 }
 

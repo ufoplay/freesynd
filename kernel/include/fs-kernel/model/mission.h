@@ -5,7 +5,7 @@
  *   Copyright (C) 2005  Joost Peters  <joostp@users.sourceforge.net>
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2010, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2010, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -140,9 +140,11 @@ public:
     };
 
     //! Bit mask for methods on checking on blockers
+    static const uint8_t kBMaskBlockerTargetInRange;
     static const uint8_t kBMaskBlockerTargetOutOfMap;
     static const uint8_t kBMaskBlockerTargetObjectUpdated;
     static const uint8_t kBMaskBlockerTargetPosUpdated;
+    static const uint8_t kBMaskBlockerBlockedByTile;
 
     Mission();
     virtual ~Mission();
@@ -274,25 +276,40 @@ public:
                              int newOffsetX, int newOffsetY, 
                              uint8_t expectedSurfaceType);
     bool getWalkableClosestByZ(TilePoint &mtp);
-    bool getShootableTile(TilePoint *pLocT);
     bool isTileSolid(int x, int y, int z, int ox, int oy, int oz);
 
-    //*************************************
-    // Methods for shooting verification
-    //*************************************
+    /**
+     * @name Shooting verification
+     */
+    ///@{
+    //! A list of criterias to search for a blocker
+    struct BlockerCriteria {
+        //! Set to true to get the blocker in return
+        bool setBlocker;
+        //! Check blockers only for map elements not objects.
+        bool checkTileOnly;
+        //! maximum distance to check for blockers
+        double maxr;
+        //! The object that is at the origin of the shoot
+        ShootableMapObject *pOrigin;
+        //! Constructor
+        BlockerCriteria() : setBlocker(false), checkTileOnly(false), maxr(-1.0), pOrigin(nullptr) {}
+    };
+
     //! Check if a tile is blocking the line between originLoc and pTargetPosW
     uint8_t checkBlockedByTile(const WorldPoint & originLoc, WorldPoint *pTargetPosW, bool updateLoc, double distanceMax, double *pFinalDest = NULL);
     //! Check if an object is blocking the line between originLoc and pTargetPosW
     MapObject * checkBlockedByObject(WorldPoint * originLoc, WorldPoint * pTargetPosW,
         double *dist, const ShootableMapObject *pOrigin);
     //! Check if tile or object blocks the line between originLoc and pTarget
-    uint8_t checkIfBlockersInShootingLine(const WorldPoint & originLoc, ShootableMapObject **pTarget,
-        WorldPoint *pTargetPosW = NULL, bool setBlocker = false,
-        bool checkTileOnly = false, double maxr = -1.0, double * distTo = NULL, const ShootableMapObject *pOrigin = NULL);
+    uint8_t checkIfBlockersInShootingLine(const WorldPoint & originLoc, const BlockerCriteria crits, 
+        ShootableMapObject **pTarget, WorldPoint *pTargetPosW = nullptr, double * distTo = nullptr);
     //! Returns the distance between a ped and a object if a path exists between the two
     uint8_t getPathLengthBetween(PedInstance *pPed, ShootableMapObject* objectToReach, double distanceMax, double *length);
     //! Returns all dynamic objects present at tile this tick.
     const std::vector<MapObject*>& getObjectsAtTile(const TilePoint & tile) const;
+    bool getShootableTile(TilePoint *pLocT);
+    ///@}
 
     //! map-tile surfaces : x + y * mmax_x_ + z * mmax_m_xy
     uint8_t *mtsurfaces_;

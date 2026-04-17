@@ -334,8 +334,10 @@ bool SquadSelection::isTargetInRange(fs_knl::Mission *pMission, fs_knl::Shootabl
             fs_knl::WorldPoint shooterPosW((*it)->position());
             fs_knl::WeaponInstance *pWeapon = (*it)->selectedWeapon();
 
-            uint8_t blockRes = pMission->checkIfBlockersInShootingLine(
-                shooterPosW, &pTarget, NULL, false, false, pWeapon->range(), NULL, (*it));
+            fs_knl::Mission::BlockerCriteria crits;
+            crits.maxr = pWeapon->range();
+            crits.pOrigin = (*it);
+            uint8_t blockRes = pMission->checkIfBlockersInShootingLine(shooterPosW, crits, &pTarget);
 
             if (blockRes == 1) {
                 return true;

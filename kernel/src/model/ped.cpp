@@ -6,7 +6,7 @@
  *   Copyright (C) 2006  Trent Waddington <qg@biodome.org>
  *   Copyright (C) 2006  Tarjei Knapstad <tarjei.knapstad@gmail.com>
  *   Copyright (C) 2010  Bohdan Stelmakh <chamel@users.sourceforge.net>
- *   Copyright (C) 2013, 2024-2025  Benoit Blancard <benblan@users.sourceforge.net>
+ *   Copyright (C) 2013, 2024-2026  Benoit Blancard <benblan@users.sourceforge.net>
  *
  *   This program is free software: you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as 
@@ -1112,12 +1112,14 @@ bool PedInstance::isFriendWith(PedInstance *p) {
 void PedInstance::verifyHostilesFound(Mission *m) {
     std::vector <ShootableMapObject *> rm_set;
     WorldPoint cur_xyz(pos_);
-    int check_rng = sight_range_;
+    fs_knl::Mission::BlockerCriteria crits;
+    crits.maxr = sight_range_;
 
     WeaponInstance *wi = selectedWeapon();
-    if (wi && wi->canShoot() && wi->range() > check_rng)
-        check_rng = wi->range();
+    if (wi && wi->canShoot() && wi->range() > crits.maxr)
+        crits.maxr = wi->range();
 
+    
     // removing destroyed, friends, objects out of shot/sight range
     for (Msmod_t::iterator it = hostiles_found_.begin();
         it != hostiles_found_.end(); ++it)
@@ -1128,8 +1130,7 @@ void PedInstance::verifyHostilesFound(Mission *m) {
             && isFriendWith((PedInstance *)(smo)))
             || (smo->nature() == MapObject::kNatureVehicle
             && ((Vehicle *)smo)->containsHostilesForPed(this, hostile_desc_))
-            || (m->checkIfBlockersInShootingLine(cur_xyz, &smo, NULL, false, false,
-            check_rng, &distTo) != 1))
+            || (m->checkIfBlockersInShootingLine(cur_xyz, crits, &smo, nullptr, &distTo) != 1))
         {
             rm_set.push_back(smo);
         }

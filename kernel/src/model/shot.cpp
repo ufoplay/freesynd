@@ -57,10 +57,13 @@ void InstantImpactShot::inflictDamage(Mission *pMission) {
         }
 
         // Verify if shot hit something or was blocked by a tile
+        Mission::BlockerCriteria crits;
+        crits.setBlocker = true;
+        crits.maxr = dmg_.pWeapon->range();
+        crits.pOrigin = dmg_.d_owner;
         ShootableMapObject *pTargetHit = NULL;
-        pMission->checkIfBlockersInShootingLine(
-            originLocW, &pTargetHit, &impactPosW, true, false, dmg_.pWeapon->range(), NULL, dmg_.d_owner);
-        /*printf("Impact %d apres checkIfBlockers %d %d %d\n", i, impactPosW.x, impactPosW.y, impactPosW.z);*/
+        uint8_t res = pMission->checkIfBlockersInShootingLine(originLocW, crits, &pTargetHit, &impactPosW);
+        //printf("Impact %d apres checkIfBlockers %d %d %d : %d\n", i, impactPosW.x, impactPosW.y, impactPosW.z, res);
 
         if (pTargetHit != NULL) {
             hitsByObject[pTargetHit] = hitsByObject[pTargetHit] + 1;
@@ -526,10 +529,15 @@ bool ProjectileShot::moveProjectile(uint32_t elapsed, Mission *pMission) {
         }
     }
 
+
+    Mission::BlockerCriteria crits;
+    crits.setBlocker = true;
     // maxr here is set to maximum that projectile can fly from its
     // current position
-    uint8_t block_mask = pMission->checkIfBlockersInShootingLine(
-        curPosW_, &pShootableHit_, &nextPosW, true, false, distanceMax_ - currentDistance_, NULL, dmg_.d_owner);
+    crits.maxr = distanceMax_ - currentDistance_;
+    crits.pOrigin = dmg_.d_owner;
+    uint8_t block_mask = pMission->checkIfBlockersInShootingLine(curPosW_, crits,
+                                                                    &pShootableHit_, &nextPosW);
 
     if (block_mask == 1) {
         // Projectile has reached initial target
