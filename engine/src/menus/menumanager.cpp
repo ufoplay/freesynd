@@ -26,6 +26,8 @@
 
 #include <cassert>
 
+#include "tracy/Tracy.hpp"
+
 #include "fs-utils/io/configfile.h"
 #include "fs-utils/io/file.h"
 #include "fs-utils/log/log.h"
@@ -268,6 +270,7 @@ FliMenu *MenuManager::getFliTransitionMenu() {
 }
 
 void MenuManager::handleTick(uint32_t elapsed) {
+    ZoneScoped;
     if (current_) {
         if (!current_->handleTick(elapsed)) {
             g_System.showError(fs_utl::Error::getError().c_str());
@@ -409,6 +412,7 @@ void MenuManager::copyFromBackground(Point2D pos, int width, int height) {
  * and if it needs to be refreshed.
  */
 void MenuManager::renderMenu() {
+    ZoneScoped;
     if (current_) {
         if (current_->doNeedBackground()) {
            pBackgroundTexture_->renderFullTextureStrech(fs_eng::kScreenWidth, fs_eng::kScreenHeight);

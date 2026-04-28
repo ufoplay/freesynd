@@ -213,6 +213,7 @@ int BaseApp::run() {
     running_ = true;
     uint32_t lasttick = system_->getTicks();
     while (running_) {
+        ZoneScopedN("Main Loop");
         uint32_t curtick = system_->getTicks();
         uint32_t diff_ticks = curtick - lasttick;
         menus_.updtSinceMouseDown(diff_ticks);

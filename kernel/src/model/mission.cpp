@@ -32,6 +32,8 @@
 #include <random>
 #include <algorithm>
 
+#include "tracy/Tracy.hpp"
+
 #include "fs-utils/log/log.h"
 #include "fs-engine/events/event.h"
 #include "fs-engine/gfx/tile.h"
@@ -281,6 +283,8 @@ void Mission::start(WeaponManager& weaponMgr) {
  * @param diff 
  */
 void Mission::handleTick(uint32_t elapsed, uint32_t diff) {
+    ZoneScoped;
+    
     buildDynamicSpatialGrid();
 
     for (auto it = sfx_objects_.begin(); it != sfx_objects_.end(); ) {
