@@ -323,6 +323,9 @@ protected:
     void buildDynamicSpatialGrid();
     //! Insert an object into all cells of a spatial grid that its bounding box overlaps
     void insertIntoSpatialGrid(std::vector<std::vector<MapObject*>>& grid, MapObject* obj);
+    //! If fp is undefined, mark it as pending and push raw tile coords onto the flood-fill queue.
+    //! x is a raw tile index; y and z are stride-multiplied (y*mmax_x_ and z*mmax_m_xy).
+    void enqueueIfUndefined(floodPointDesc *fp, int x, int y, int z, std::vector<WorldPoint>& queue);
 
     //! Selects the two best-ranked weapons from a list.
     std::pair<int, int> findTopTwoWeapons(const std::vector<Weapon*>& weapons);
