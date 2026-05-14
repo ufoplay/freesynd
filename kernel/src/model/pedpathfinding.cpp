@@ -90,16 +90,20 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
 #endif
 
     if(targetd->bfNodeDesc == m_fdNonWalkable) {
+#if _DEBUG
         std::string posAsStr;
         clippedDestPt.toString(&posAsStr);
         LOG(Log::k_FLG_GAME, "PedInstance", "initMovementToDestination", ("Ped %d : Movement to nonwalkable position %s", id_, posAsStr.c_str()));
+#endif
         return false;
     }
 
     if(based->bfNodeDesc == m_fdNonWalkable) {
+#if _DEBUG
         std::string posAsStr;
         position().toString(&posAsStr);
         LOG(Log::k_FLG_GAME, "PedInstance", "initMovementToDestination", ("Ped %d : Movement from nonwalkable position %s", id_, posAsStr.c_str()));
+#endif
         return false;
     }
 
@@ -1482,15 +1486,15 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                 sadd.coords.x = currentTile.tx;
                 sadd.coords.y = currentTile.ty + 1;
                 sadd.coords.z = currentTile.tz;
+                TilePoint point{currentTile.tx, currentTile.ty +1, currentTile.tz};
+                fs_eng::Tile *pTile = map()->getTileAt(point);
+                
                 sadd.pNode = &(mdpmirror[sadd.coords.x
                     + sadd.coords.y * m->mmax_x_
                     + sadd.coords.z * m->mmax_m_xy]);
                 if ((sadd.pNode->bfNodeDesc & ct) != 0) {
                     if (lvl_child == sadd.pNode->lvl) {
-                        unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                            + sadd.coords.y * m->mmax_x_
-                            + sadd.coords.z * m->mmax_m_xy];
-                        if (twd > 0x00 && twd < 0x05) {
+                        if (pTile->isStairs()) {
                             if (3 < dist) {
                                 toadd = sadd.coords;
                                 dist = 3;
@@ -1503,10 +1507,7 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                         }
                     }
                 } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                        + sadd.coords.y * m->mmax_x_
-                        + sadd.coords.z * m->mmax_m_xy];
-                    if (twd > 0x00 && twd < 0x05) {
+                    if (pTile->isStairs()) {
                         if (-1 < dist) {
                             nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
                             dist = -1;
@@ -1551,15 +1552,14 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                 sadd.coords.x = currentTile.tx + 1;
                 sadd.coords.y = currentTile.ty;
                 sadd.coords.z = currentTile.tz;
+                TilePoint point{currentTile.tx + 1, currentTile.ty, currentTile.tz};
+                fs_eng::Tile *pTile = map()->getTileAt(point);
                 sadd.pNode = &(mdpmirror[sadd.coords.x
                     + sadd.coords.y * m->mmax_x_
                     + sadd.coords.z * m->mmax_m_xy]);
                 if ((sadd.pNode->bfNodeDesc & ct) != 0) {
                     if (lvl_child== sadd.pNode->lvl) {
-                        unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                            + sadd.coords.y * m->mmax_x_
-                            + sadd.coords.z * m->mmax_m_xy];
-                        if (twd > 0x00 && twd < 0x05) {
+                        if (pTile->isStairs()) {
                             if (3 < dist) {
                                 toadd = sadd.coords;
                                 dist = 3;
@@ -1572,10 +1572,7 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                         }
                     }
                 } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                        + sadd.coords.y * m->mmax_x_
-                        + sadd.coords.z * m->mmax_m_xy];
-                    if (twd > 0x00 && twd < 0x05) {
+                    if (pTile->isStairs()) {
                         if (-1 < dist) {
                             nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
                             dist = -1;
@@ -1620,15 +1617,14 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                 sadd.coords.x = currentTile.tx;
                 sadd.coords.y = currentTile.ty - 1;
                 sadd.coords.z = currentTile.tz;
+                TilePoint point{currentTile.tx, currentTile.ty - 1, currentTile.tz};
+                fs_eng::Tile *pTile = map()->getTileAt(point);
                 sadd.pNode = &(mdpmirror[sadd.coords.x
                     + sadd.coords.y * m->mmax_x_
                     + sadd.coords.z * m->mmax_m_xy]);
                 if ((sadd.pNode->bfNodeDesc & ct) != 0) {
                     if (lvl_child == sadd.pNode->lvl) {
-                        unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                            + sadd.coords.y * m->mmax_x_
-                            + sadd.coords.z * m->mmax_m_xy];
-                        if (twd > 0x00 && twd < 0x05) {
+                        if (pTile->isStairs()) {
                             if (3 < dist) {
                                 toadd = sadd.coords;
                                 dist = 3;
@@ -1641,10 +1637,7 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                         }
                     }
                 } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                        + sadd.coords.y * m->mmax_x_
-                        + sadd.coords.z * m->mmax_m_xy];
-                    if (twd > 0x00 && twd < 0x05) {
+                    if (pTile->isStairs()) {
                         if (-1 < dist) {
                             nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
                             dist = -1;
@@ -1689,15 +1682,14 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                 sadd.coords.x = currentTile.tx - 1;
                 sadd.coords.y = currentTile.ty;
                 sadd.coords.z = currentTile.tz;
+                TilePoint point{currentTile.tx - 1, currentTile.ty, currentTile.tz};
+                fs_eng::Tile *pTile = map()->getTileAt(point);
                 sadd.pNode = &(mdpmirror[sadd.coords.x
                     + sadd.coords.y * m->mmax_x_
                     + sadd.coords.z * m->mmax_m_xy]);
                 if ((sadd.pNode->bfNodeDesc & ct) != 0) {
                     if (lvl_child == sadd.pNode->lvl) {
-                        unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                            + sadd.coords.y * m->mmax_x_
-                            + sadd.coords.z * m->mmax_m_xy];
-                        if (twd > 0x00 && twd < 0x05) {
+                        if (pTile->isStairs()) {
                             if (3 < dist) {
                                 toadd = sadd.coords;
                                 dist = 3;
@@ -1710,10 +1702,7 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
                         }
                     }
                 } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    unsigned char twd = m->mtsurfaces_[sadd.coords.x
-                        + sadd.coords.y * m->mmax_x_
-                        + sadd.coords.z * m->mmax_m_xy];
-                    if (twd > 0x00 && twd < 0x05) {
+                    if (pTile->isStairs()) {
                         if (-1 < dist) {
                             nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
                             dist = -1;
@@ -1775,20 +1764,16 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
             it != cdestpath.end(); ++it) {
         std::vector <TilePoint>::iterator fit = it + 1;
         bool modified = false;
-        unsigned char twd = m->mtsurfaces_[prvpn.tx
-            + prvpn.ty * m->mmax_x_
-            + prvpn.tz * m->mmax_m_xy];
-        unsigned char twdn = m->mtsurfaces_[it->tx
-            + it->ty * m->mmax_x_
-            + it->tz * m->mmax_m_xy];
+        fs_eng::Tile *pTile = map()->getTileAt(prvpn);
+        fs_eng::Tile *pTileN = map()->getTileAt(*it);
         char xf = prvpn.tx - it->tx;
         char yf = prvpn.ty - it->ty;
         char zf = prvpn.tz - it->tz;
-            if (twd > 0x0 && twd < 0x05) {
-                if (twdn > 0x0 && twdn < 0x05) {
+            if (pTile->isStairs()) {
+                if (pTileN->isStairs()) {
                     dest_path_.push_back(*it);
                 } else {
-                    switch (twd) {
+                    switch (pTile->type()) {
                         case fs_eng::Tile::kSlopeSN:
                             if (zf == -1) {
                                 if (xf == 0) {
@@ -1845,7 +1830,7 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
                             if (zf == 1)
                                 dest_path_.push_back(*it);
                             break;
-                        case 0x02:
+                        case fs_eng::Tile::kSlopeNS:
                             if (zf == -1) {
                                 if (xf == 0) {
                                     dest_path_.push_back(*it);
@@ -1901,7 +1886,7 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
                             if (zf == 1)
                                 dest_path_.push_back(*it);
                             break;
-                        case 0x03:
+                        case fs_eng::Tile::kSlopeEW:
                             if (zf == -1) {
                                 if (yf == 0) {
                                     dest_path_.push_back(*it);
@@ -1957,7 +1942,7 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
                             if (zf == 1)
                                 dest_path_.push_back(*it);
                             break;
-                        case 0x04:
+                        case fs_eng::Tile::kSlopeWE:
                             if (zf == -1) {
                                 if (yf == 0) {
                                     dest_path_.push_back(*it);
@@ -2016,9 +2001,9 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
                     }
                 }
             } else {
-                if (twdn > 0x0 && twdn < 0x05) {
-                    switch (twdn) {
-                        case 0x01:
+                if (pTileN->isStairs()) {
+                    switch (pTileN->type()) {
+                        case fs_eng::Tile::kSlopeSN:
                             if (zf == 1) {
                                 if (xf == 0) {
                                     dest_path_.push_back(*it);
@@ -2074,7 +2059,7 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
                             if (zf == -1)
                                 dest_path_.push_back(*it);
                             break;
-                        case 0x02:
+                        case fs_eng::Tile::kSlopeNS:
                             if (zf == 1) {
                                 if (xf == 0) {
                                     dest_path_.push_back(*it);
@@ -2130,7 +2115,7 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
                             if (zf == -1)
                                 dest_path_.push_back(*it);
                             break;
-                        case 0x03:
+                        case fs_eng::Tile::kSlopeEW:
                             if (zf == 1) {
                                 if (yf == 0) {
                                     dest_path_.push_back(*it);
@@ -2186,7 +2171,7 @@ void PedInstance::buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &
                             if (zf == -1)
                                 dest_path_.push_back(*it);
                             break;
-                        case 0x04:
+                        case fs_eng::Tile::kSlopeWE:
                             if (zf == 1) {
                                 if (yf == 0) {
                                     dest_path_.push_back(*it);

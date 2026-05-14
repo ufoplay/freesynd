@@ -300,8 +300,6 @@ public:
     bool getShootableTile(TilePoint *pLocT);
     ///@}
 
-    //! map-tile surfaces : x + y * mmax_x_ + z * mmax_m_xy
-    uint8_t *mtsurfaces_;
     // map-directions points
     floodPointDesc *mdpoints_;
     // for copy in pathfinding
@@ -395,6 +393,9 @@ protected:
      * The squad selected for the mission. It contains only active agents.
      */
     std::unique_ptr<Squad> squad_;
+
+    //! map-tile surfaces : x + y * mmax_x_ + z * mmax_m_xy
+    uint8_t *mtsurfaces_;
 };
 
 /** \brief Event sent when a mission has ended.
