@@ -50,31 +50,6 @@ Tile::Tile(int id, bool notAlpha, EType type, Point2D textLoc)
     textureLocation_ = textLoc;
 }
 
-/*! \brief
- *
- * @return uint8_t
- *
- */
-uint8_t Tile::getWalkData() {
-    // little patch to enable full surface description
-    // and eliminate unnecessary data
-    // 0x10 - non-surface/non-walkable, always above train stop
-    // 0x11, 0x12 - train entering surface
-    switch (id_) {
-    case 0x80 :
-        return 0x11;
-    case 0x81 :
-        return 0x12;
-    case 0x8F :
-        return 0x00;
-    case 0x93 :
-        return 0x00;
-    default:
-        // else return the type of the tile
-        return type_;
-    }
-}
-
 /*!
  * Returns a 8-bit bitmask encoding the valid entry/exit directions for this tile.
  * The bitmask is divided into two nibbles (4 bits each), the first for entries and

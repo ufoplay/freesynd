@@ -113,7 +113,8 @@ public:
                     pos.y % 256, pos.z % 128 );
     }
 
-    void offzOnStairs(uint8_t twd);
+    //! Correction Z coord if object is currently on a slope
+    void adjustPositionForSlope();
 
     int tileX() const { return pos_.tx; }
     int tileY() const { return pos_.ty; }

@@ -438,18 +438,19 @@ bool MapObject::isBlocker(WorldPoint * pStartPt, WorldPoint * pEndPt,
     return true;
 }
 
-void MapObject::offzOnStairs(uint8_t twd) {
-    switch (twd) {
-        case 0x01:
+void MapObject::adjustPositionForSlope() {
+    fs_eng::Tile *pTile = map()->getTileAt(pos_);
+    switch (pTile->type()) {
+        case fs_eng::Tile::kSlopeSN:
             pos_.oz = 127 - (pos_.oy >> 1);
             break;
-        case 0x02:
+        case fs_eng::Tile::kSlopeNS:
             pos_.oz = pos_.oy >> 1;
             break;
-        case 0x03:
+        case fs_eng::Tile::kSlopeEW:
             pos_.oz = pos_.ox >> 1;
             break;
-        case 0x04:
+        case fs_eng::Tile::kSlopeWE:
             pos_.oz = 127 - (pos_.ox >> 1);
             break;
         default:

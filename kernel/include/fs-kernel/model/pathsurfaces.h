@@ -26,6 +26,29 @@
 #include "fs-kernel/model/position.h"
 
 namespace fs_knl {
+    enum class SurfaceType : uint8_t
+    {
+        Empty    = 0x00,
+        Type01   = 0x01,
+        Type02   = 0x02,
+        Type03   = 0x03,
+        Type04   = 0x04,
+        Type05   = 0x05,
+        Type06   = 0x06,
+        Type07   = 0x07,
+        Type08   = 0x08,
+        Type09   = 0x09,
+        Type0C   = 0x0C,
+        Type10   = 0x10,
+        Type11   = 0x11,
+        Type12   = 0x12,
+        Type10A   = 0x13,
+        Type11A   = 0x14,
+        Type12A   = 0x15,
+        Type13   = 0x16,
+        TypeSolidFlat = 0x17,   ///< Surface is flat and can be walked on
+        Unknown
+    };
 
     class floodPointDesc {
     public:

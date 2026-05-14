@@ -911,9 +911,6 @@ WeaponInstance * PedInstance::dropWeapon(uint8_t index) {
  *
  */
 void PedInstance::dropAllWeapons() {
-    uint8_t twd = g_missionCtrl.mission()->mtsurfaces_[pos_.tx + g_missionCtrl.mission()->mmax_x_ * pos_.ty
-        + g_missionCtrl.mission()->mmax_m_xy * pos_.tz];
-
     while (weapons_.size()) {
         WeaponInstance *w = dropWeapon(0);
 
@@ -921,7 +918,7 @@ void PedInstance::dropAllWeapons() {
         int ox = rand() % 256;
         int oy = rand() % 256;
         w->setPosition(pos_.tx, pos_.ty, pos_.tz, ox, oy);
-        w->offzOnStairs(twd);
+        w->adjustPositionForSlope();
     }
 }
 

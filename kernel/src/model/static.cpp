@@ -893,20 +893,24 @@ void Semaphore::handleHit(DamageToInflict &d) {
         decreaseHealth(d.dvalue);
         if (isDead()) {
             animOffset_ = kSemaphoreDamagedOffset;
-            // To make this thing reach the ground need to get solid surface 0x0F
+            // When the semaphore is dead, it falls on the ground
             Mission * pMission = g_missionCtrl.mission();
-            int z = pos_.tz;
-            int indx = pos_.tx + pos_.ty * pMission->mmax_x_ + pos_.tz * pMission->mmax_m_xy;
+            
+            // In this case we use elapsed_left_bigger as the distance to the ground
+            // to animate the falling of the semaphore
             elapsed_left_bigger_ = 0;
-            while (z != 0) {
-                z--;
-                indx -= pMission->mmax_m_xy;
-                int twd = pMission->mtsurfaces_[indx];
-                if (twd == 0x0F) {
-                    elapsed_left_bigger_ = (pos_.tz - z) * 128 + pos_.oz;
+            TilePoint groundPoint = pos_;
+
+            // look for the first tile below that is a ground
+            while (groundPoint.tz >= 0) {
+                groundPoint.tz--;
+                if (pMission->isTileSolid(groundPoint)) {
+                    elapsed_left_bigger_ = (pos_.tz - groundPoint.tz - 1) * 128 + pos_.oz;
                     break;
                 }
             }
+            
+            
             deactivateBlocking();
         }
     }

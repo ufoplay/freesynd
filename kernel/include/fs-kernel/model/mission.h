@@ -108,18 +108,6 @@ private:
     int nbOfHits_;
 };
 
-enum class SurfaceType : uint8_t
-    {
-        Empty    = 0x00,
-        Type01   = 0x01,
-        Type02   = 0x02,
-        Type03   = 0x03,
-        Type04   = 0x04,
-        Type0C   = 0x0C,
-        Type10   = 0x10,
-        Unknown
-    };
-
 /*!
  * Contains information read from original mission data file.
  */
@@ -276,7 +264,8 @@ public:
                              int newOffsetX, int newOffsetY, 
                              uint8_t expectedSurfaceType);
     bool getWalkableClosestByZ(TilePoint &mtp);
-    bool isTileSolid(int x, int y, int z, int ox, int oy, int oz);
+    //! Return true if point is on a solid tile
+    bool isTileSolid(const TilePoint &point);
 
     /**
      * @name Shooting verification
@@ -324,6 +313,7 @@ public:
     int mmax_m_xy;
 
 protected:
+    void initSurface();
     SurfaceType surfaceAt(int x, int y, int z) const;
     bool sWalkable(uint8_t thisTile, uint8_t upperTile);
     bool isSurface(uint8_t thisTile);

@@ -532,45 +532,12 @@ bool Mission::setSurfaces() {
 
     clrSurfaces();
     int mmax_m_all = mmax_x_ * mmax_y_ * mmax_z_;
-    mtsurfaces_ = new uint8_t[mmax_m_all];
     mdpoints_ = new floodPointDesc[mmax_m_all];
     mdpoints_cp_ = new floodPointDesc[mmax_m_all];
-    if(mtsurfaces_ == NULL || mdpoints_ == NULL || mdpoints_cp_ == NULL) {
-        clrSurfaces();
-        FSERR(Log::k_FLG_GAME, "Mission", "setSurfaces", ("Memory allocation error\n"));
-        return false;
-    }
-    mmax_m_xy = mmax_x_ * mmax_y_;
-    memset((void *)mtsurfaces_, 0, mmax_m_all * sizeof(uint8_t));
     
-    for (int ix = 0; ix < mmax_x_; ++ix) {
-        for (int iy = 0; iy < mmax_y_; ++iy) {
-            for (int iz = 0; iz < mmax_z_; ++iz) {
-                mtsurfaces_[ix + iy * mmax_x_ + iz * mmax_m_xy] =
-                    p_map_->getTileAt(ix, iy, iz)->getWalkData();
-            }
-        }
-    }
-
-    // to make surfaces where large doors are located walkable
-    for (const auto & s : statics_) {
-        if (s->type() == Static::smt_LargeDoor) {
-            int indx = s->tileX() + s->tileY() * mmax_x_
-                + s->tileZ() * mmax_m_xy;
-            mtsurfaces_[indx] = 0x00;
-            if (s->orientation() == Static::kStaticOrientationNS) {
-                if (indx - 1 >= 0)
-                    mtsurfaces_[indx - 1] = 0x00;
-                if (indx + 1 < mmax_m_all)
-                    mtsurfaces_[indx + 1] = 0x00;
-            } else if (s->orientation() == Static::kStaticOrientationEW) {
-                if (indx - mmax_x_ >= 0)
-                    mtsurfaces_[indx - mmax_x_] = 0x00;
-                if (indx + mmax_x_ < mmax_m_all)
-                    mtsurfaces_[indx + mmax_x_] = 0x00;
-            }
-        }
-    }
+    mmax_m_xy = mmax_x_ * mmax_y_;
+    
+    initSurface();
 
     //printf("surface data size %i\n", sizeof(surfaceDesc) * mmax_m_all);
     //printf("flood data size %i\n", sizeof(floodPointDesc) * mmax_m_all);
@@ -2329,6 +2296,40 @@ void Mission::clrSurfaces() {
     dynamicSpatialGrid_.clear();
 }
 
+void Mission::initSurface() {
+    int mmax_m_all = mmax_x_ * mmax_y_ * mmax_z_;
+    mtsurfaces_ = new uint8_t[mmax_m_all];
+    
+    for (int ix = 0; ix < mmax_x_; ++ix) {
+        for (int iy = 0; iy < mmax_y_; ++iy) {
+            for (int iz = 0; iz < mmax_z_; ++iz) {
+                mtsurfaces_[ix + iy * mmax_x_ + iz * mmax_m_xy] =
+                    static_cast<uint8_t> (p_map_->getWalkData(ix, iy, iz));
+            }
+        }
+    }
+
+    // to make surfaces where large doors are located walkable
+    for (const auto & s : statics_) {
+        if (s->type() == Static::smt_LargeDoor) {
+            int indx = s->tileX() + s->tileY() * mmax_x_
+                + s->tileZ() * mmax_m_xy;
+            mtsurfaces_[indx] = static_cast<uint8_t> (SurfaceType::Empty);
+            if (s->orientation() == Static::kStaticOrientationNS) {
+                if (indx - 1 >= 0)
+                    mtsurfaces_[indx - 1] = static_cast<uint8_t> (SurfaceType::Empty);
+                if (indx + 1 < mmax_m_all)
+                    mtsurfaces_[indx + 1] = static_cast<uint8_t> (SurfaceType::Empty);
+            } else if (s->orientation() == Static::kStaticOrientationEW) {
+                if (indx - mmax_x_ >= 0)
+                    mtsurfaces_[indx - mmax_x_] = static_cast<uint8_t> (SurfaceType::Empty);
+                if (indx + mmax_x_ < mmax_m_all)
+                    mtsurfaces_[indx + mmax_x_] = static_cast<uint8_t> (SurfaceType::Empty);
+            }
+        }
+    }
+}
+
 bool Mission::findWalkableTileFromBase(TilePoint &basePt) {
     for (int z = mmax_z_ - 1; z >= 0; z--) {
         TilePoint candidate = p_map_->projectToZLevel(basePt, z);
@@ -3217,11 +3218,11 @@ void Mission::finalizeDefault(TilePoint &tempTile, TilePoint *pLocT) {
     }
 }
 
-bool Mission::isTileSolid(int x, int y, int z, int ox, int oy, int oz) {
-    bool solid = true;
-    uint8_t twd = mtsurfaces_[x + y * mmax_x_ + z * mmax_m_xy];
-    switch (twd) {
-        case 0x00:
+bool Mission::isTileSolid(const TilePoint &point) {
+    //uint8_t twd = mtsurfaces_[x + y * mmax_x_ + z * mmax_m_xy];
+    SurfaceType surface = surfaceAt(point.tx, point.ty, point.tz);
+    switch (surface) {
+        /*case 0x00:
         case 0x0C:
         case 0x10:
             solid = false;
@@ -3241,12 +3242,12 @@ bool Mission::isTileSolid(int x, int y, int z, int ox, int oy, int oz) {
         case 0x04:
             if (oz > (127 - (ox >> 1)))
                 solid = false;
-            break;
+            break;*/
+        case SurfaceType::TypeSolidFlat:
+            return true;
         default:
-            break;
+            return false;
     }
-
-    return solid;
 }
 
 /**

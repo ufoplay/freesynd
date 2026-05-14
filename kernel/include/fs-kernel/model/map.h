@@ -29,6 +29,7 @@
 #include "fs-engine/gfx/tilemanager.h"
 #include "fs-kernel/model/position.h"
 #include "fs-kernel/model/mapobject.h"
+#include "fs-kernel/model/pathsurfaces.h"
 
 namespace fs_knl {
 
@@ -137,6 +138,9 @@ public:
     int getTileIdAt(int tx, int ty, int tz);
 
     void patchMap(int x, int y, int z, uint8_t tileNum);
+
+    //!
+    SurfaceType getWalkData(int tx, int ty, int tz);
 
     /**
      * @name Road related methods

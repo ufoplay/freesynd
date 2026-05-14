@@ -2416,8 +2416,7 @@ bool PedInstance::doMove(uint32_t elapsed)
             }
         }
 
-        offzOnStairs(pMission->mtsurfaces_[pos_.tx + pos_.ty * pMission->mmax_x_
-            + pos_.tz * pMission->mmax_m_xy]);
+        adjustPositionForSlope();
     }
 #ifdef _DEBUG
     if (dest_path_.empty() && isMoving()) {
@@ -2791,8 +2790,7 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
             }
         }
     }
-    offzOnStairs(m->mtsurfaces_[pos_.tx + pos_.ty * m->mmax_x_
-        + pos_.tz * m->mmax_m_xy]);
+    adjustPositionForSlope();
     if (set_dist && dist != NULL)
         *dist = (int)dist_total;
 

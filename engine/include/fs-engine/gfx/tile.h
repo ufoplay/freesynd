@@ -124,7 +124,6 @@ public:
         return type_ == kRoadMark;
     }
 
-    uint8_t getWalkData();
     //! Returns a bitfield indicating possible connexions on edge of tile
     uint8_t getEdgeConnexionsForRoadTile();
 

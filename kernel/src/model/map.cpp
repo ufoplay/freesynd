@@ -303,6 +303,65 @@ void Map::patchMap(int x, int y, int z, uint8_t tileNum)
     a_tiles_[(y * maxTx_ + x) * maxTz_ + z] = tileManager_->getTile(tileNum);
 }
 
+/*!
+ *
+ * @return SurfaceType
+ *
+ */
+SurfaceType Map::getWalkData(int tx, int ty, int tz) {
+    // little patch to enable full surface description
+    // and eliminate unnecessary data
+    // 0x10 - non-surface/non-walkable, always above train stop
+    // 0x11, 0x12 - train entering surface
+    fs_eng::Tile *pTile = getTileAt(tx, ty, tz);
+    
+    switch (pTile->id()) {
+    case 0x80 :
+        return SurfaceType::Type11;
+    case 0x81 :
+        return SurfaceType::Type12;
+    case 0x8F :
+        return SurfaceType::Empty;
+    case 0x93 :
+        return SurfaceType::Empty;
+    }
+    
+    // else return the type of the tile
+    switch (pTile->type()) {
+    case fs_eng::Tile::kSlopeSN:
+        return SurfaceType::Type01;
+    case fs_eng::Tile::kSlopeNS:
+        return SurfaceType::Type02;
+    case fs_eng::Tile::kSlopeEW:
+        return SurfaceType::Type03;
+    case fs_eng::Tile::kSlopeWE:
+        return SurfaceType::Type04;
+    case fs_eng::Tile::kGround:
+        return SurfaceType::Type05;
+    case fs_eng::Tile::kRoadSideEW:
+        return SurfaceType::Type06;
+    case fs_eng::Tile::kRoadSideWE:
+        return SurfaceType::Type07;
+    case fs_eng::Tile::kRoadSideSN:
+        return SurfaceType::Type08;
+    case fs_eng::Tile::kRoadSideNS:
+        return SurfaceType::Type09;
+    case fs_eng::Tile::kWall:
+        return SurfaceType::Type10A;
+    case fs_eng::Tile::kRoadCurve:
+        return SurfaceType::Type11A;
+    case fs_eng::Tile::kHandrailLight:
+        return SurfaceType::Type0C;
+    case fs_eng::Tile::kRoof:
+        return SurfaceType::Type12A;
+    case fs_eng::Tile::kRoadPedCross:
+        return SurfaceType::Type13;
+    case fs_eng::Tile::kRoadMark:
+        return SurfaceType::TypeSolidFlat;
+    default:
+        return SurfaceType::Empty;
+    }
+}
 
 /**
  * Return true if tile at given position is traversable by a car.
