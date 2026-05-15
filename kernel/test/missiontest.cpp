@@ -124,7 +124,7 @@ void configureMission(const LevelData::MapInfos &mapInfos, fs_knl::Map *map, fs_
     pVehicle->setStartHealth(10);
     mission.addVehicle(pVehicle);
 
-    mission.setSurfaces();
+    mission.buildNavigationGraph();
 }
 
 // Helper function to set a tile as walkable

@@ -247,8 +247,9 @@ public:
     /*! Return the mission statistics. */
     MissionStats *stats() { return &stats_; }
 
-    bool setSurfaces();
-    void clrSurfaces();
+    //! Build the walkability graph used for pedestrian pathfinding.
+    bool buildNavigationGraph();
+    void clrNavigationGraph();
     bool findWalkableTileFromBase(TilePoint &mtp);
     TilePoint adjustPositionForSurface(const TilePoint &point, int tileIndex);
     TilePoint adjustForSlopeSN(const TilePoint &point, int tileIndex);
@@ -307,11 +308,11 @@ public:
     // initialized in set_map, used for in-class calculations
     // map maximum x,y,z values
     int mmax_x_, mmax_y_, mmax_z_;
-    // initialized in setSurfaces, used for in-class calculations
+    // initialized in buildNavigationGraph, used for in-class calculations
     int mmax_m_xy;
 
 protected:
-    void initSurface();
+    void buildSurfaces();
     SurfaceType surfaceAt(int x, int y, int z) const;
     bool sWalkable(uint8_t thisTile, uint8_t upperTile);
     bool isSurface(uint8_t thisTile);
@@ -323,9 +324,17 @@ protected:
     void buildDynamicSpatialGrid();
     //! Insert an object into all cells of a spatial grid that its bounding box overlaps
     void insertIntoSpatialGrid(std::vector<std::vector<MapObject*>>& grid, MapObject* obj);
-    //! If fp is undefined, mark it as pending and push raw tile coords onto the flood-fill queue.
-    //! x is a raw tile index; y and z are stride-multiplied (y*mmax_x_ and z*mmax_m_xy).
+
+    //! Run a flood fill of the walkability graph from a single seed tile.
+    void floodFillFromSeed(const TilePoint &seed);
+    /*! @brief fp is undefined, mark it as pending and push raw tile coords onto the flood-fill queue.
+     * x is a raw tile index; y and z are stride-multiplied (y*mmax_x_ and z*mmax_m_xy).*/
     void enqueueIfUndefined(floodPointDesc *fp, int x, int y, int z, std::vector<WorldPoint>& queue);
+    //! Classify a single tile during the flood-fill pass of buildNavigationGraph().
+    void classifyTile(int x, int y, int z,
+                      int xm, int xp, int ym, int yp, int zm, int zp,
+                      uint8_t this_s, int mmax_m_all,
+                      floodPointDesc* cfp, std::vector<WorldPoint>& vtodefine);
 
     //! Selects the two best-ranked weapons from a list.
     std::pair<int, int> findTopTwoWeapons(const std::vector<Weapon*>& weapons);
@@ -363,7 +372,7 @@ protected:
     /*!
      * Spatial grids for checkBlockedByObject() optimisation.
      * Index: tx + ty * mmax_x_ + tz * mmax_m_xy (same as mtsurfaces_).
-     * staticSpatialGrid_ is built once in setSurfaces(); statics never move.
+     * staticSpatialGrid_ is built once in buildNavigationGraph(); statics never move.
      * dynamicSpatialGrid_ is rebuilt each tick in handleTick().
      */
     std::vector<std::vector<MapObject*>> staticSpatialGrid_;

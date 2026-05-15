@@ -146,7 +146,7 @@ Mission *MissionManager::loadMission(int missionId, int paletteId)
         pMission_ = create_mission(level_data);
 
         if (pMission_) {
-            if (pMission_->setSurfaces()) {
+            if (pMission_->buildNavigationGraph()) {
                 if (mapManager_.loadPalette(paletteId)) {
                     return pMission_;
                 }   
