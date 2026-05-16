@@ -126,6 +126,7 @@ bool Mission::init(Map *pMap) {
 
     p_map_ = pMap;
     p_map_->mapDimensions(&mmax_x_, &mmax_y_, &mmax_z_);
+    mmax_m_xy = mmax_x_ * mmax_y_;
 
     if (p_minimap_) {
         delete p_minimap_;
@@ -526,42 +527,33 @@ bool Mission::isStairs(uint8_t thisTile) {
  * **Phase 2 – Flood fill** (`floodFillFromSeed` / `classifyTile`)\n
  * For each live pedestrian whose starting tile has not yet been classified, a
  * flood fill is seeded from that tile.  For every visited tile the fill records:
- * - whether the tile is walkable (`m_fdWalkable`) or not (`m_fdNonWalkable`),
- *   and whether it is safe ground (not a road or railway) via `m_fdSafeWalk`;
- * - reachable horizontal neighbours at the same level (`floodPointDesc::dirm`),
- *   one level up (`dirh`), and one level down (`dirl`), each as an 8-direction
+ * - whether the tile is walkable (`kWalkable`) or not (`kNonWalkable`),
+ *   and whether it is safe ground (not a road or railway) via `kSafeWalk`;
+ * - reachable horizontal neighbours at the same level (`FloodNode::dirsSame`),
+ *   one level up (`dirsAbove`), and one level down (`dirsBelow`), each as an 8-direction
  *   bitmask.
  *
  * Tiles whose surface type redirects traversal (type `0x00`/`0x10` fall back to
  * the tile below; types `0x11`/`0x12` are treated as the tile above) are
  * resolved before classification.  Tiles never reachable from any pedestrian
- * start position remain `m_fdNotDefined`.
+ * start position remain `kNone`.
  *
  * **Phase 3 – Static spatial grid**\n
  * Populates `staticSpatialGrid_` with all static map objects for
  * grid-accelerated collision and line-of-sight queries.  Done only once because
  * statics never move.
  *
- * @note Surface type `0x0D` is not handled correctly (see in-source TODO).
  * @return true (always; kept for historical compatibility).
  */
 bool Mission::buildNavigationGraph() {
-    // TODO: tiles walkdata type 0x0D are quiet special, and they
-    // are not handled correctly, these correction and adjustings
-    // can create additional speed drain, as such I didn't
-    // implemented them as needed. To make it possible a patch
-    // required to walkdata and a lot of changes which I don't
-    // want to do.
-    // 0x10 appear above walking tile where train stops
     LOG(Log::k_FLG_GAME, "Mission", "buildNavigationGraph", ("Starting surfaces creation"));
 
     clrNavigationGraph();
     int gridSize = mmax_x_ * mmax_y_ * mmax_z_;
-    mmax_m_xy = mmax_x_ * mmax_y_;
 
     mtsurfaces_ = new uint8_t[gridSize];
-    mdpoints_ = new floodPointDesc[gridSize];
-    mdpoints_cp_ = new floodPointDesc[gridSize];
+    mdpoints_ = new FloodNode[gridSize];
+    mdpoints_cp_ = new FloodNode[gridSize];
     
     buildSurfaces();
 
@@ -573,7 +565,7 @@ bool Mission::buildNavigationGraph() {
             continue;
         }
 
-        if (mdpoints_[getTileIndex(pPed->position())].bfNodeDesc == m_fdNotDefined) {
+        if (mdpoints_[getTileIndex(pPed->position())].flags == kNone) {
             floodFillFromSeed(pPed->position());
         }
     }
@@ -620,8 +612,7 @@ void Mission::buildSurfaces() {
     // to make surfaces where large doors are located walkable
     for (const auto & s : statics_) {
         if (s->type() == Static::smt_LargeDoor) {
-            int indx = s->tileX() + s->tileY() * mmax_x_
-                + s->tileZ() * mmax_m_xy;
+            int indx = getTileIndex(s->position());
             mtsurfaces_[indx] = static_cast<uint8_t> (SurfaceType::Empty);
             if (s->orientation() == Static::kStaticOrientationNS) {
                 if (indx - 1 >= 0)
@@ -644,16 +635,26 @@ void Mission::buildSurfaces() {
  * resolves surface redirections (0x00/0x10 → lower level, 0x11/0x12 →
  * upper level), and calls classifyTile() for each resolved node.
  * @param seedPt         raw tile coordinate
+ * @note Surface type `0x0D` is not handled correctly (see in-source TODO).
  */
 void Mission::floodFillFromSeed(const TilePoint &seedPt) {
     int mmax_m_all = mmax_x_ * mmax_y_ * mmax_z_;
     std::vector<WorldPoint> vtodefine;
-    mdpoints_[getTileIndex(seedPt)].bfNodeDesc = m_fdDefReq;
+    mdpoints_[getTileIndex(seedPt)].flags = kPending;
     WorldPoint seedWPt;
     seedWPt.x = seedPt.tx;
     seedWPt.y = seedPt.ty;
     seedWPt.z = seedPt.tz;
     vtodefine.push_back(seedWPt);
+
+    // TODO: tiles walkdata type 0x0D are quiet special, and they
+    // are not handled correctly, these correction and adjustings
+    // can create additional speed drain, as such I didn't
+    // implemented them as needed. To make it possible a patch
+    // required to walkdata and a lot of changes which I don't
+    // want to do.
+    // 0x10 appear above walking tile where train stops
+
     do {
         WorldPoint stodef = vtodefine.back();
         vtodefine.pop_back();
@@ -664,13 +665,13 @@ void Mission::floodFillFromSeed(const TilePoint &seedPt) {
             //x = 50;
         uint8_t this_s = mtsurfaces_[x + y + z];
         uint8_t upper_s = 0;
-        floodPointDesc *cfp = &(mdpoints_[x + y + z]);
+        FloodNode *cfp = &(mdpoints_[x + y + z]);
         int zm = z - mmax_m_xy;
         // if current is 0x00 or 0x10 tile we will use lower tile
         // to define it
         if (this_s == 0x00 || this_s == 0x10) {
             if (zm < 0) {
-                cfp->bfNodeDesc = m_fdNonWalkable;
+                cfp->flags = kNonWalkable;
                 continue;
             }
             z = zm;
@@ -685,7 +686,7 @@ void Mission::floodFillFromSeed(const TilePoint &seedPt) {
                 // we are defining tile above current
                 cfp = &(mdpoints_[x + y + zp_tmp]);
             } else
-                cfp->bfNodeDesc = m_fdNonWalkable;
+                cfp->flags = kNonWalkable;
         }
         int xm = x - 1;
         int ym = y - mmax_x_;
@@ -695,11 +696,11 @@ void Mission::floodFillFromSeed(const TilePoint &seedPt) {
         if (zp < mmax_m_all) {
             upper_s = mtsurfaces_[x + y + zp];
             if(!sWalkable(this_s, upper_s)) {
-                cfp->bfNodeDesc = m_fdNonWalkable;
+                cfp->flags = kNonWalkable;
                 continue;
             }
         } else {
-            cfp->bfNodeDesc = m_fdNonWalkable;
+            cfp->flags = kNonWalkable;
             continue;
         }
         classifyTile(x, y, z,
@@ -708,10 +709,10 @@ void Mission::floodFillFromSeed(const TilePoint &seedPt) {
     } while (vtodefine.size());
 }
 
-void Mission::enqueueIfUndefined(floodPointDesc *fp, int x, int y, int z,
+void Mission::enqueueIfUndefined(FloodNode *fp, int x, int y, int z,
                                   std::vector<WorldPoint>& queue) {
-    if (fp->bfNodeDesc == m_fdNotDefined) {
-        fp->bfNodeDesc = m_fdDefReq;
+    if (fp->flags == kNone) {
+        fp->flags = kPending;
         WorldPoint pt;
         pt.x = x;
         pt.y = y / mmax_x_;
@@ -721,7 +722,7 @@ void Mission::enqueueIfUndefined(floodPointDesc *fp, int x, int y, int z,
 }
 
 /**
- * Sets cfp->bfNodeDesc and the direction bitmasks (dirm/dirh/dirl) for
+ * Sets cfp->flags and the direction bitmasks (dirsSame/dirsAbove/dirsBelow) for
  * the tile at (x, y, z) and enqueues any reachable neighbours.
  * All coordinate parameters use the stride-multiplied convention:
  * y = tyRaw*mmax_x_, z = tzRaw*mmax_m_xy.
@@ -742,9 +743,9 @@ void Mission::enqueueIfUndefined(floodPointDesc *fp, int x, int y, int z,
 void Mission::classifyTile(int x, int y, int z,
                            int xm, int xp, int ym, int yp, int zm, int zp,
                            uint8_t this_s, int mmax_m_all,
-                           floodPointDesc* cfp, std::vector<WorldPoint>& vtodefine) {
+                           FloodNode* cfp, std::vector<WorldPoint>& vtodefine) {
     uint8_t upper_s = 0;
-    floodPointDesc* nxtfp = nullptr;
+    FloodNode* nxtfp = nullptr;
     unsigned char sdirm = 0x00;
     unsigned char sdirh = 0x00;
     unsigned char sdirl = 0x00;
@@ -752,13 +753,13 @@ void Mission::classifyTile(int x, int y, int z,
 
     switch (this_s) {
         case 0x00:
-            cfp->bfNodeDesc = m_fdNonWalkable;
+            cfp->flags = kNonWalkable;
             break;
         case 0x01:
-            cfp->bfNodeDesc = m_fdWalkable;
-            cfp->bfNodeDesc |= m_fdSafeWalk;
+            cfp->flags = kWalkable;
+            cfp->flags |= kSafeWalk;
             if (zm >= 0) {
-                mdpoints_[x + y + zm].bfNodeDesc = m_fdNonWalkable;
+                mdpoints_[x + y + zm].flags = kNonWalkable;
                 if (yp < mmax_m_xy) {
                     this_s = mtsurfaces_[x + yp + zm];
                     upper_s = mtsurfaces_[x + yp + z];
@@ -773,7 +774,7 @@ void Mission::classifyTile(int x, int y, int z,
                             nxtfp = &(mdpoints_[x + yp + zm]);
                             enqueueIfUndefined(nxtfp, x, yp, zm, vtodefine);
                         } else
-                            nxtfp->bfNodeDesc = m_fdNonWalkable;
+                            nxtfp->flags = kNonWalkable;
                     }
                 }
                 if (xm >= 0) {
@@ -816,7 +817,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirh |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, zp, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -833,7 +834,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -850,19 +851,19 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
-            cfp->dirm = sdirm;
-            cfp->dirh = sdirh;
-            cfp->dirl = sdirl;
+            cfp->dirsSame = sdirm;
+            cfp->dirsAbove = sdirh;
+            cfp->dirsBelow = sdirl;
 
             break;
         case 0x02:
-            cfp->bfNodeDesc = m_fdWalkable;
-            cfp->bfNodeDesc |= m_fdSafeWalk;
+            cfp->flags = kWalkable;
+            cfp->flags |= kSafeWalk;
             if (zm >= 0) {
-                mdpoints_[x + y + zm].bfNodeDesc = m_fdNonWalkable;
+                mdpoints_[x + y + zm].flags = kNonWalkable;
                 if (ym >= 0) {
                     this_s = mtsurfaces_[x + ym + zm];
                     upper_s = mtsurfaces_[x + ym + z];
@@ -876,7 +877,7 @@ void Mission::classifyTile(int x, int y, int z,
                             sdirl |= 0x10;
                             enqueueIfUndefined(nxtfp, x, ym, zm, vtodefine);
                         } else
-                            nxtfp->bfNodeDesc = m_fdNonWalkable;
+                            nxtfp->flags = kNonWalkable;
                     }
                 }
                 if (xm >= 0) {
@@ -919,7 +920,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirh |= 0x01;
                         enqueueIfUndefined(nxtfp, x, yp, zp, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -936,7 +937,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -953,19 +954,19 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
-            cfp->dirm = sdirm;
-            cfp->dirh = sdirh;
-            cfp->dirl = sdirl;
+            cfp->dirsSame = sdirm;
+            cfp->dirsAbove = sdirh;
+            cfp->dirsBelow = sdirl;
 
             break;
         case 0x03:
-            cfp->bfNodeDesc = m_fdWalkable;
-            cfp->bfNodeDesc |= m_fdSafeWalk;
+            cfp->flags = kWalkable;
+            cfp->flags |= kSafeWalk;
             if (zm >= 0) {
-                mdpoints_[x + y + zm].bfNodeDesc = m_fdNonWalkable;
+                mdpoints_[x + y + zm].flags = kNonWalkable;
                 if (xm >= 0) {
                     this_s = mtsurfaces_[xm + y + zm];
                     upper_s = mtsurfaces_[xm + y + z];
@@ -979,7 +980,7 @@ void Mission::classifyTile(int x, int y, int z,
                             sdirl |= 0x40;
                             enqueueIfUndefined(nxtfp, xm, y, zm, vtodefine);
                         } else
-                            nxtfp->bfNodeDesc = m_fdNonWalkable;
+                            nxtfp->flags = kNonWalkable;
                     }
                 }
                 if (ym >= 0) {
@@ -1022,7 +1023,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirh |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, zp, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -1039,7 +1040,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -1056,19 +1057,19 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x01;
                         enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
-            cfp->dirm = sdirm;
-            cfp->dirh = sdirh;
-            cfp->dirl = sdirl;
+            cfp->dirsSame = sdirm;
+            cfp->dirsAbove = sdirh;
+            cfp->dirsBelow = sdirl;
 
             break;
         case 0x04:
-            cfp->bfNodeDesc = m_fdWalkable;
-            cfp->bfNodeDesc |= m_fdSafeWalk;
+            cfp->flags = kWalkable;
+            cfp->flags |= kSafeWalk;
             if (zm >= 0) {
-                mdpoints_[x + y + zm].bfNodeDesc = m_fdNonWalkable;
+                mdpoints_[x + y + zm].flags = kNonWalkable;
                 if (xp < mmax_x_) {
                     this_s = mtsurfaces_[xp + y + zm];
                     upper_s = mtsurfaces_[xp + y + z];
@@ -1082,7 +1083,7 @@ void Mission::classifyTile(int x, int y, int z,
                             sdirl |= 0x04;
                             enqueueIfUndefined(nxtfp, xp, y, zm, vtodefine);
                         } else
-                            nxtfp->bfNodeDesc = m_fdNonWalkable;
+                            nxtfp->flags = kNonWalkable;
                     }
                 }
                 if (ym >= 0) {
@@ -1125,7 +1126,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirh |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, zp, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -1142,7 +1143,7 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
 
@@ -1159,12 +1160,12 @@ void Mission::classifyTile(int x, int y, int z,
                         sdirm |= 0x01;
                         enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
                     } else
-                        nxtfp->bfNodeDesc = m_fdNonWalkable;
+                        nxtfp->flags = kNonWalkable;
                 }
             }
-            cfp->dirm = sdirm;
-            cfp->dirh = sdirh;
-            cfp->dirl = sdirl;
+            cfp->dirsSame = sdirm;
+            cfp->dirsAbove = sdirh;
+            cfp->dirsBelow = sdirl;
 
             break;
         case 0x05:
@@ -1176,11 +1177,11 @@ void Mission::classifyTile(int x, int y, int z,
         case 0x0D:
         case 0x0E:
         case 0x0F:
-            cfp->bfNodeDesc = m_fdWalkable;
+            cfp->flags = kWalkable;
             if (!((this_s > 0x05 && this_s < 0x0A) || this_s == 0x0B
                 || this_s == 0x0F))
             {
-                cfp->bfNodeDesc |= m_fdSafeWalk;
+                cfp->flags |= kSafeWalk;
             }
             if (xm >= 0) {
                 this_s = mtsurfaces_[xm + y + z];
@@ -1397,21 +1398,21 @@ void Mission::classifyTile(int x, int y, int z,
                     }
                 }
             }
-            cfp->dirm = sdirm;
-            cfp->dirh = sdirh;
-            cfp->dirl = sdirl;
+            cfp->dirsSame = sdirm;
+            cfp->dirsAbove = sdirh;
+            cfp->dirsBelow = sdirl;
 
             break;
         case 0x0A:
         case 0x0C:
         case 0x10:
-            cfp->bfNodeDesc = m_fdNonWalkable;
+            cfp->flags = kNonWalkable;
             break;
         case 0x11:
-            cfp->bfNodeDesc = m_fdWalkable;
-            cfp->bfNodeDesc |= m_fdSafeWalk;
+            cfp->flags = kWalkable;
+            cfp->flags |= kSafeWalk;
             if (zm >= 0) {
-                mdpoints_[x + y + zm].bfNodeDesc = m_fdNonWalkable;
+                mdpoints_[x + y + zm].flags = kNonWalkable;
                 if (xm >= 0) {
                     this_s = mtsurfaces_[xm + y + zm];
                     upper_s = mtsurfaces_[xm + y + z];
@@ -1603,16 +1604,16 @@ void Mission::classifyTile(int x, int y, int z,
                     }
                 }
             }
-            cfp->dirm = sdirm;
-            cfp->dirh = sdirh;
-            cfp->dirl = sdirl;
+            cfp->dirsSame = sdirm;
+            cfp->dirsAbove = sdirh;
+            cfp->dirsBelow = sdirl;
 
             break;
         case 0x12:
-            cfp->bfNodeDesc = m_fdWalkable;
-            cfp->bfNodeDesc |= m_fdSafeWalk;
+            cfp->flags = kWalkable;
+            cfp->flags |= kSafeWalk;
             if (zm >= 0) {
-                mdpoints_[x + y + zm].bfNodeDesc = m_fdNonWalkable;
+                mdpoints_[x + y + zm].flags = kNonWalkable;
                 if (ym >= 0) {
                     this_s = mtsurfaces_[x + ym + zm];
                     upper_s = mtsurfaces_[x + ym + z];
@@ -1808,9 +1809,9 @@ void Mission::classifyTile(int x, int y, int z,
                 }
             }
 
-            cfp->dirm = sdirm;
-            cfp->dirh = sdirh;
-            cfp->dirl = sdirl;
+            cfp->dirsSame = sdirm;
+            cfp->dirsAbove = sdirh;
+            cfp->dirsBelow = sdirl;
 
             break;
     }
@@ -2074,7 +2075,7 @@ bool Mission::getWalkableClosestByZ(TilePoint &mtp) {
     do {
         if (inc_z < mmax_z_) {
             if ((mdpoints_[mtp.tx + mtp.ty * mmax_x_
-                + inc_z * mmax_m_xy].bfNodeDesc & m_fdWalkable) == m_fdWalkable)
+                + inc_z * mmax_m_xy].flags & kWalkable) == kWalkable)
             {
                 mtp.tz = inc_z;
                 found = true;
@@ -2084,7 +2085,7 @@ bool Mission::getWalkableClosestByZ(TilePoint &mtp) {
         }
         if (dec_z >= 0) {
             if ((mdpoints_[mtp.tx + mtp.ty * mmax_x_
-                + dec_z * mmax_m_xy].bfNodeDesc & m_fdWalkable) == m_fdWalkable)
+                + dec_z * mmax_m_xy].flags & kWalkable) == kWalkable)
             {
                 mtp.tz = dec_z;
                 found = true;
@@ -2747,7 +2748,7 @@ int Mission::getTileIndex(const TilePoint &point) const {
  * Checks if a tile at the given index is marked as walkable.
  */
 bool Mission::isTileWalkable(int tileIndex) const {
-    return (mdpoints_[tileIndex].bfNodeDesc & m_fdWalkable) == m_fdWalkable;
+    return (mdpoints_[tileIndex].flags & kWalkable) == kWalkable;
 }
 
 }

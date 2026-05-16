@@ -34,14 +34,14 @@
 
 namespace fs_knl {
 
-const uint8_t floodPointDesc::kBMaskDirNorth = 0x10;
-const uint8_t floodPointDesc::kBMaskDirNorthEast = 0x08;
-const uint8_t floodPointDesc::kBMaskDirEast = 0x04;
-const uint8_t floodPointDesc::kBMaskDirSouth = 0x01;
-const uint8_t floodPointDesc::kBMaskDirSouthEast = 0x02;
-const uint8_t floodPointDesc::kBMaskDirSouthWest = 0x80;
-const uint8_t floodPointDesc::kBMaskDirWest = 0x40;
-const uint8_t floodPointDesc::kBMaskDirNorthWest = 0x20;
+const uint8_t FloodNode::kBMaskDirNorth = 0x10;
+const uint8_t FloodNode::kBMaskDirNorthEast = 0x08;
+const uint8_t FloodNode::kBMaskDirEast = 0x04;
+const uint8_t FloodNode::kBMaskDirSouth = 0x01;
+const uint8_t FloodNode::kBMaskDirSouthEast = 0x02;
+const uint8_t FloodNode::kBMaskDirSouthWest = 0x80;
+const uint8_t FloodNode::kBMaskDirWest = 0x40;
+const uint8_t FloodNode::kBMaskDirNorthWest = 0x20;
 
 /*!
  * Sets a destination point for the ped to reach at given speed.
@@ -63,17 +63,17 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
     // NOTE: this is a "flood" algorithm, it expands until it reaches other's
     // flood point, then it removes unrelated points
 
-    floodPointDesc *targetd = &(m->mdpoints_[clippedDestPt.tx + clippedDestPt.ty * m->mmax_x_ + clippedDestPt.tz * m->mmax_m_xy]);
+    FloodNode *targetd = &(m->mdpoints_[clippedDestPt.tx + clippedDestPt.ty * m->mmax_x_ + clippedDestPt.tz * m->mmax_m_xy]);
 
-    floodPointDesc *based = &(m->mdpoints_[pos_.tx
+    FloodNode *based = &(m->mdpoints_[pos_.tx
         + pos_.ty * m->mmax_x_ + pos_.tz * m->mmax_m_xy]);
 
 #if 0
 #if _DEBUG
-    printf("target t %x, dirm %x ; base t %x, dirm %x\n", targetd->bfNodeDesc,
-        targetd->dirm, based->bfNodeDesc, based->dirm);
-    printf("target dirh %x, dirl %x ; base dirh %x, dirl %x\n", targetd->dirh,
-        targetd->dirl, based->dirh, based->dirl);
+    printf("target t %x, dirsSame %x ; base t %x, dirsSame %x\n", targetd->flags,
+        targetd->dirsSame, based->flags, based->dirsSame);
+    printf("target dirsAbove %x, dirsBelow %x ; base dirsAbove %x, dirsBelow %x\n", targetd->dirsAbove,
+        targetd->dirsBelow, based->dirsAbove, based->dirsBelow);
     printf("ttwd %X \n",m->mtsurfaces_[x + y * m->mmax_x_
         + z * m->mmax_m_xy].twd);
     printf("target pos: x %i; y %i; z %i, ox %i, oy %i\n",
@@ -89,7 +89,7 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
 #endif
 #endif
 
-    if(targetd->bfNodeDesc == m_fdNonWalkable) {
+    if(targetd->flags == kNonWalkable) {
 #if _DEBUG
         std::string posAsStr;
         clippedDestPt.toString(&posAsStr);
@@ -98,7 +98,7 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
         return false;
     }
 
-    if(based->bfNodeDesc == m_fdNonWalkable) {
+    if(based->flags == kNonWalkable) {
 #if _DEBUG
         std::string posAsStr;
         position().toString(&posAsStr);
@@ -113,9 +113,9 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
         return false;
     }
 
-    floodPointDesc *mdpmirror = m->mdpoints_cp_;
+    FloodNode *mdpmirror = m->mdpoints_cp_;
     memcpy((void *)mdpmirror, (void *)m->mdpoints_,
-        m->mmax_x_ * m->mmax_y_ * m->mmax_z_ * sizeof(floodPointDesc));
+        m->mmax_x_ * m->mmax_y_ * m->mmax_z_ * sizeof(FloodNode));
 
     if (!floodMap(m, clippedDestPt, mdpmirror)) {
         return false;
@@ -151,39 +151,39 @@ bool PedInstance::initMovementToDestination(Mission *m, const TilePoint &destina
 #endif
 }
 
-bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPointDesc *mdpmirror) {
+bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, FloodNode *mdpmirror) {
     unsigned char lt;
     unsigned short blvl = 0, tlvl = 0;
     // these are all tiles that belong to base and target
-    std::vector <toSetDesc> bv;
-    std::vector <toSetDesc> tv;
+    std::vector <FloodTile> bv;
+    std::vector <FloodTile> tv;
     bv.reserve(8192);
     tv.reserve(8192);
     // these are used for setting values through algorithm
-    toSetDesc sadd;
-    floodPointDesc *pfdp;
+    FloodTile sadd;
+    FloodNode *pfdp;
     // setup
     pfdp = &(mdpmirror[pos_.tx + pos_.ty * m->mmax_x_ + pos_.tz * m->mmax_m_xy]);
-    pfdp->bfNodeDesc |= m_fdBasePoint;
-    sadd.coords.x = pos_.tx;
-    sadd.coords.y = pos_.ty;
-    sadd.coords.z = pos_.tz;
+    pfdp->flags |= kBasePoint;
+    sadd.pos.x = pos_.tx;
+    sadd.pos.y = pos_.ty;
+    sadd.pos.z = pos_.tz;
     sadd.pNode = pfdp;
     bv.push_back(sadd);
     pfdp = &(mdpmirror[clippedDestPt.tx + clippedDestPt.ty * m->mmax_x_ + clippedDestPt.tz * m->mmax_m_xy]);
-    pfdp->bfNodeDesc |= (m_fdTargetPoint | m_fdConstant);
-    sadd.coords.x = clippedDestPt.tx;
-    sadd.coords.y = clippedDestPt.ty;
-    sadd.coords.z = clippedDestPt.tz;
+    pfdp->flags |= (kTargetPoint | kConstant);
+    sadd.pos.x = clippedDestPt.tx;
+    sadd.pos.y = clippedDestPt.ty;
+    sadd.pos.z = clippedDestPt.tz;
     sadd.pNode = pfdp;
     tv.push_back(sadd);
     // for setting lvls data
-    lvlNodesDesc ladd;
-    ladd.indxs = 0;
-    ladd.n = 1;
+    FloodLevelRange ladd;
+    ladd.startIdx = 0;
+    ladd.count = 1;
     // these are number of nodes per lvl and index start for "bv" and "tv"
-    std::vector <lvlNodesDesc> bn;
-    std::vector <lvlNodesDesc> tn;
+    std::vector <FloodLevelRange> bn;
+    std::vector <FloodLevelRange> tn;
     bn.reserve(512);
     tn.reserve(512);
     bn.push_back(ladd);
@@ -195,359 +195,359 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
     int x_check = 48, y_check = 23, z_check = 6;
 #endif
     do {
-        unsigned short mindx = bn[blvl].indxs + bn[blvl].n;
+        unsigned short mindx = bn[blvl].startIdx + bn[blvl].count;
         unsigned short nlvl = blvl + 1;
         unsigned int cindx = 0;
-        for (unsigned short i = bn[blvl].indxs; i < mindx; ++i) {
-            toSetDesc bref = bv[i];
-            cindx = bref.coords.x + bref.coords.y * m->mmax_x_
-                + bref.coords.z * m->mmax_m_xy;
-            if (bref.pNode->dirh != 0) {
-                if ((bref.pNode->dirh & 0x01) == 0x01) {
+        for (unsigned short i = bn[blvl].startIdx; i < mindx; ++i) {
+            FloodTile bref = bv[i];
+            cindx = bref.pos.x + bref.pos.y * m->mmax_x_
+                + bref.pos.z * m->mmax_m_xy;
+            if (bref.pNode->dirsAbove != 0) {
+                if ((bref.pNode->dirsAbove & 0x01) == 0x01) {
                     sadd.pNode = &(mdpmirror[cindx + m->mmax_x_ + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirh & 0x04) == 0x04) {
+                if ((bref.pNode->dirsAbove & 0x04) == 0x04) {
                     sadd.pNode = &(mdpmirror[cindx + 1 + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirh & 0x10) == 0x10) {
+                if ((bref.pNode->dirsAbove & 0x10) == 0x10) {
                     sadd.pNode = &(mdpmirror[cindx - m->mmax_x_ + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirh & 0x40) == 0x40) {
+                if ((bref.pNode->dirsAbove & 0x40) == 0x40) {
                     sadd.pNode = &(mdpmirror[cindx - 1 + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
             }
-            if (bref.pNode->dirl != 0) {
-                if ((bref.pNode->dirl & 0x01) == 0x01) {
+            if (bref.pNode->dirsBelow != 0) {
+                if ((bref.pNode->dirsBelow & 0x01) == 0x01) {
                     sadd.pNode = &(mdpmirror[cindx + m->mmax_x_ - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirl & 0x04) == 0x04) {
+                if ((bref.pNode->dirsBelow & 0x04) == 0x04) {
                     sadd.pNode = &(mdpmirror[cindx + 1 - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirl & 0x10) == 0x10) {
+                if ((bref.pNode->dirsBelow & 0x10) == 0x10) {
                     sadd.pNode = &(mdpmirror[cindx - m->mmax_x_ - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirl & 0x40) == 0x40) {
+                if ((bref.pNode->dirsBelow & 0x40) == 0x40) {
                     sadd.pNode = &(mdpmirror[cindx - 1 - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
             }
-            if (bref.pNode->dirm != 0) {
-                if ((bref.pNode->dirm & 0x01) == 0x01) {
+            if (bref.pNode->dirsSame != 0) {
+                if ((bref.pNode->dirsSame & 0x01) == 0x01) {
                     sadd.pNode = &(mdpmirror[cindx + m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x02) == 0x02) {
+                if ((bref.pNode->dirsSame & 0x02) == 0x02) {
                     sadd.pNode = &(mdpmirror[cindx + 1 + m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x04) == 0x04) {
+                if ((bref.pNode->dirsSame & 0x04) == 0x04) {
                     sadd.pNode = &(mdpmirror[cindx + 1]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x08) == 0x08) {
+                if ((bref.pNode->dirsSame & 0x08) == 0x08) {
                     sadd.pNode = &(mdpmirror[cindx + 1 - m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x10) == 0x10) {
+                if ((bref.pNode->dirsSame & 0x10) == 0x10) {
                     sadd.pNode = &(mdpmirror[cindx - m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x20) == 0x20) {
+                if ((bref.pNode->dirsSame & 0x20) == 0x20) {
                     sadd.pNode = &(mdpmirror[cindx - 1 - m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x40) == 0x40) {
+                if ((bref.pNode->dirsSame & 0x40) == 0x40) {
                     sadd.pNode = &(mdpmirror[cindx - 1]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x80) == 0x80) {
+                if ((bref.pNode->dirsSame & 0x80) == 0x80) {
                     sadd.pNode = &(mdpmirror[cindx - 1 + m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdBasePoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kBasePoint;
                         bv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdTargetPoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdBasePoint;
+                    } else if ((sadd.pNode->flags & kTargetPoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kBasePoint;
                         lnknr = false;
                     }
                 }
             }
         }
-        ladd.indxs = mindx;
-        ladd.n = bv.size() - mindx;
-        if (ladd.n > 0) {
+        ladd.startIdx = mindx;
+        ladd.count = bv.size() - mindx;
+        if (ladd.count > 0) {
             nodeset = true;
             bn.push_back(ladd);
             ++blvl;
@@ -558,358 +558,358 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
         if (!lnknr)
             break;
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-        mindx = tn[tlvl].indxs + tn[tlvl].n;
+        mindx = tn[tlvl].startIdx + tn[tlvl].count;
         nlvl = tlvl + 1;
-        for (unsigned short i = tn[tlvl].indxs; i < mindx; ++i) {
-            toSetDesc bref = tv[i];
-            cindx = bref.coords.x + bref.coords.y * m->mmax_x_
-                + bref.coords.z * m->mmax_m_xy;
-            if (bref.pNode->dirh != 0) {
-                if ((bref.pNode->dirh & 0x01) == 0x01) {
+        for (unsigned short i = tn[tlvl].startIdx; i < mindx; ++i) {
+            FloodTile bref = tv[i];
+            cindx = bref.pos.x + bref.pos.y * m->mmax_x_
+                + bref.pos.z * m->mmax_m_xy;
+            if (bref.pNode->dirsAbove != 0) {
+                if ((bref.pNode->dirsAbove & 0x01) == 0x01) {
                     sadd.pNode = &(mdpmirror[cindx + m->mmax_x_ + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirh & 0x04) == 0x04) {
+                if ((bref.pNode->dirsAbove & 0x04) == 0x04) {
                     sadd.pNode = &(mdpmirror[cindx + 1 + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirh & 0x10) == 0x10) {
+                if ((bref.pNode->dirsAbove & 0x10) == 0x10) {
                     sadd.pNode = &(mdpmirror[cindx - m->mmax_x_ + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirh & 0x40) == 0x40) {
+                if ((bref.pNode->dirsAbove & 0x40) == 0x40) {
                     sadd.pNode = &(mdpmirror[cindx - 1 + m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z + 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z + 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
             }
-            if (bref.pNode->dirl != 0) {
-                if ((bref.pNode->dirl & 0x01) == 0x01) {
+            if (bref.pNode->dirsBelow != 0) {
+                if ((bref.pNode->dirsBelow & 0x01) == 0x01) {
                     sadd.pNode = &(mdpmirror[cindx + m->mmax_x_ - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirl & 0x04) == 0x04) {
+                if ((bref.pNode->dirsBelow & 0x04) == 0x04) {
                     sadd.pNode = &(mdpmirror[cindx + 1 - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirl & 0x10) == 0x10) {
+                if ((bref.pNode->dirsBelow & 0x10) == 0x10) {
                     sadd.pNode = &(mdpmirror[cindx - m->mmax_x_ - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirl & 0x40) == 0x40) {
+                if ((bref.pNode->dirsBelow & 0x40) == 0x40) {
                     sadd.pNode = &(mdpmirror[cindx - 1 - m->mmax_m_xy]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z - 1;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z - 1;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
             }
-            if (bref.pNode->dirm != 0) {
-                if ((bref.pNode->dirm & 0x01) == 0x01) {
+            if (bref.pNode->dirsSame != 0) {
+                if ((bref.pNode->dirsSame & 0x01) == 0x01) {
                     sadd.pNode = &(mdpmirror[cindx + m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x02) == 0x02) {
+                if ((bref.pNode->dirsSame & 0x02) == 0x02) {
                     sadd.pNode = &(mdpmirror[cindx + 1 + m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x04) == 0x04) {
+                if ((bref.pNode->dirsSame & 0x04) == 0x04) {
                     sadd.pNode = &(mdpmirror[cindx + 1]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x08) == 0x08) {
+                if ((bref.pNode->dirsSame & 0x08) == 0x08) {
                     sadd.pNode = &(mdpmirror[cindx + 1 - m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x + 1;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x + 1;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x10) == 0x10) {
+                if ((bref.pNode->dirsSame & 0x10) == 0x10) {
                     sadd.pNode = &(mdpmirror[cindx - m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0) {
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0) {
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x20) == 0x20) {
+                if ((bref.pNode->dirsSame & 0x20) == 0x20) {
                     sadd.pNode = &(mdpmirror[cindx - 1 - m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y - 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y - 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x40) == 0x40) {
+                if ((bref.pNode->dirsSame & 0x40) == 0x40) {
                     sadd.pNode = &(mdpmirror[cindx - 1]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
-                if ((bref.pNode->dirm & 0x80) == 0x80) {
+                if ((bref.pNode->dirsSame & 0x80) == 0x80) {
                     sadd.pNode = &(mdpmirror[cindx - 1 + m->mmax_x_]);
-                    if ((sadd.pNode->bfNodeDesc & (m_fdWalkable | m_fdBasePoint | m_fdTargetPoint)) == m_fdWalkable) {
-                        sadd.coords.x = bref.coords.x - 1;
-                        sadd.coords.y = bref.coords.y + 1;
-                        sadd.coords.z = bref.coords.z;
+                    if ((sadd.pNode->flags & (kWalkable | kBasePoint | kTargetPoint)) == kWalkable) {
+                        sadd.pos.x = bref.pos.x - 1;
+                        sadd.pos.y = bref.pos.y + 1;
+                        sadd.pos.z = bref.pos.z;
 #ifdef FIND_DEFINED_TILE
-                        if (sadd.coords.x == x_check && sadd.coords.y == y_check
-                            && sadd.coords.z == z_check)
+                        if (sadd.pos.x == x_check && sadd.pos.y == y_check
+                            && sadd.pos.z == z_check)
                             assert(assertion_bool);
 #endif
-                        sadd.pNode->lvl = nlvl;
-                        sadd.pNode->bfNodeDesc |= m_fdTargetPoint;
+                        sadd.pNode->depth = nlvl;
+                        sadd.pNode->flags |= kTargetPoint;
                         tv.push_back(sadd);
-                    } else if ((sadd.pNode->bfNodeDesc & m_fdBasePoint) != 0){
-                        bref.pNode->bfNodeDesc |= m_fdLink;
-                        sadd.pNode->bfNodeDesc |= m_fdLink;
-                        lt = m_fdTargetPoint;
+                    } else if ((sadd.pNode->flags & kBasePoint) != 0){
+                        bref.pNode->flags |= kLink;
+                        sadd.pNode->flags |= kLink;
+                        lt = kTargetPoint;
                         lnknr = false;
                     }
                 }
             }
         }
-        ladd.indxs = mindx;
-        ladd.n = tv.size() - mindx;
-        if (ladd.n > 0) {
+        ladd.startIdx = mindx;
+        ladd.count = tv.size() - mindx;
+        if (ladd.count > 0) {
             nodeset = true;
             tn.push_back(ladd);
             ++tlvl;
@@ -928,23 +928,23 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
         tlvl--;
     // when link is set data of nlvl is useless, that is why it is removed
     if (nodeset) {
-        if (lt == m_fdBasePoint) {
-            unsigned short n = bn[blvl].n;
-            std::vector <toSetDesc>::iterator it = bv.begin() + bn[blvl].indxs;
+        if (lt == kBasePoint) {
+            unsigned short n = bn[blvl].count;
+            std::vector <FloodTile>::iterator it = bv.begin() + bn[blvl].startIdx;
             for (unsigned short i = 0; i < n; ++i) {
-                it->pNode->bfNodeDesc ^= m_fdBasePoint;
-                it->pNode->lvl = 0;
+                it->pNode->flags ^= kBasePoint;
+                it->pNode->depth = 0;
                 //bv.erase(it);
                 ++it;
             }
             //bn.pop_back();
             --blvl;
         } else {
-            unsigned short n = tn[tlvl].n;
-            std::vector <toSetDesc>::iterator it = tv.begin() + tn[tlvl].indxs;
+            unsigned short n = tn[tlvl].count;
+            std::vector <FloodTile>::iterator it = tv.begin() + tn[tlvl].startIdx;
             for (unsigned short i = 0; i < n; ++i) {
-                it->pNode->bfNodeDesc ^= m_fdTargetPoint;
-                it->pNode->lvl = 0;
+                it->pNode->flags ^= kTargetPoint;
+                it->pNode->depth = 0;
                 //tv.erase(it);
                 ++it;
             }
@@ -955,35 +955,35 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
 
     // level which created link have also non-link tiles they are useless
     if (blvl != 0) {
-        unsigned short n = bn[blvl].n;
+        unsigned short n = bn[blvl].count;
         unsigned short nr = 0;
-        std::vector <toSetDesc>::iterator it = bv.begin() + bn[blvl].indxs;
+        std::vector <FloodTile>::iterator it = bv.begin() + bn[blvl].startIdx;
         for (unsigned short i = 0; i < n; ++i) {
-            if ((it->pNode->bfNodeDesc & m_fdLink) == 0) {
-                it->pNode->bfNodeDesc ^= m_fdBasePoint;
-                it->pNode->lvl = 0;
+            if ((it->pNode->flags & kLink) == 0) {
+                it->pNode->flags ^= kBasePoint;
+                it->pNode->depth = 0;
                 //bv.erase(it);
                 ++nr;
             }
             ++it;
         }
-        bn[blvl].n -= nr;
+        bn[blvl].count -= nr;
     }
 
     if (tlvl != 0) {
-        unsigned short n = tn[tlvl].n;
+        unsigned short n = tn[tlvl].count;
         unsigned short nr = 0;
-        std::vector <toSetDesc>::iterator it = tv.begin() + tn[tlvl].indxs;
+        std::vector <FloodTile>::iterator it = tv.begin() + tn[tlvl].startIdx;
         for (unsigned short i = 0; i < n; ++i) {
-            if ((it->pNode->bfNodeDesc & m_fdLink) == 0) {
-                it->pNode->bfNodeDesc ^= m_fdTargetPoint;
-                it->pNode->lvl = 0;
+            if ((it->pNode->flags & kLink) == 0) {
+                it->pNode->flags ^= kTargetPoint;
+                it->pNode->depth = 0;
                 //tv.erase(it);
                 ++nr;
             }
             ++it;
         }
-        tn[tlvl].n -= nr;
+        tn[tlvl].count -= nr;
     }
 
     // tiles that have no childs are removed
@@ -994,137 +994,137 @@ bool PedInstance::floodMap(Mission *m, const TilePoint &clippedDestPt, floodPoin
     return true;
 }
 
-void PedInstance::removeTilesWithNoChildsFromBase(Mission *m, unsigned short blvl, std::vector <toSetDesc> &bv, std::vector <lvlNodesDesc> &bn, floodPointDesc *mdpmirror) {
+void PedInstance::removeTilesWithNoChildsFromBase(Mission *m, unsigned short blvl, std::vector <FloodTile> &bv, std::vector <FloodLevelRange> &bn, FloodNode *mdpmirror) {
     if (blvl > 1) {
-        floodPointDesc *pfdp;
+        FloodNode *pfdp;
         --blvl;
-        unsigned short indx = bn[blvl].indxs + bn[blvl].n;
+        unsigned short indx = bn[blvl].startIdx + bn[blvl].count;
         --indx;
         do {
-            toSetDesc &bref = bv[indx];
-            uint16_t lvl_child = (bref.pNode->lvl + 1);
+            FloodTile &bref = bv[indx];
+            uint16_t lvl_child = (bref.pNode->depth + 1);
             bool remv = true;
-            if (bref.pNode->dirh != 0) {
-                if ((bref.pNode->dirh & 0x01) == 0x01) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+            if (bref.pNode->dirsAbove != 0) {
+                if ((bref.pNode->dirsAbove & 0x01) == 0x01) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirh & 0x04) == 0x04) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsAbove & 0x04) == 0x04) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirh & 0x10) == 0x10) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsAbove & 0x10) == 0x10) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirh & 0x40) == 0x40) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-            }
-            if (bref.pNode->dirl != 0) {
-                if ((bref.pNode->dirl & 0x01) == 0x01) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-                if ((bref.pNode->dirl & 0x04) == 0x04) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-                if ((bref.pNode->dirl & 0x10) == 0x10) {
-                    pfdp = &(mdpmirror[(bref.coords.x)
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-                if ((bref.pNode->dirl & 0x40) == 0x40) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsAbove & 0x40) == 0x40) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
             }
-            if (bref.pNode->dirm != 0) {
-                if ((bref.pNode->dirm & 0x01) == 0x01) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+            if (bref.pNode->dirsBelow != 0) {
+                if ((bref.pNode->dirsBelow & 0x01) == 0x01) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x02) == 0x02) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsBelow & 0x04) == 0x04) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x04) == 0x04) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + bref.coords.y * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsBelow & 0x10) == 0x10) {
+                    pfdp = &(mdpmirror[(bref.pos.x)
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x08) == 0x08) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsBelow & 0x40) == 0x40) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x10) == 0x10) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+            }
+            if (bref.pNode->dirsSame != 0) {
+                if ((bref.pNode->dirsSame & 0x01) == 0x01) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x20) == 0x20) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsSame & 0x02) == 0x02) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x40) == 0x40) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + bref.coords.y * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsSame & 0x04) == 0x04) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + bref.pos.y * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x80) == 0x80) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsSame & 0x08) == 0x08) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x10) == 0x10) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x20) == 0x20) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x40) == 0x40) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + bref.pos.y * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x80) == 0x80) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
             }
             if (remv) {
-                bref.pNode->bfNodeDesc ^= m_fdBasePoint;
-                bref.pNode->lvl = 0;
+                bref.pNode->flags ^= kBasePoint;
+                bref.pNode->depth = 0;
                 //bv.erase(it);
             }
             --indx;
@@ -1132,137 +1132,137 @@ void PedInstance::removeTilesWithNoChildsFromBase(Mission *m, unsigned short blv
     }
 }
 
-void PedInstance::removeTilesWithNoChildsFromTarget(Mission *m, unsigned short tlvl, std::vector <toSetDesc> &tv, std::vector <lvlNodesDesc> &tn, floodPointDesc *mdpmirror) {
+void PedInstance::removeTilesWithNoChildsFromTarget(Mission *m, unsigned short tlvl, std::vector <FloodTile> &tv, std::vector <FloodLevelRange> &tn, FloodNode *mdpmirror) {
     if (tlvl > 1) {
         --tlvl;
-        unsigned short indx = tn[tlvl].indxs + tn[tlvl].n;
+        unsigned short indx = tn[tlvl].startIdx + tn[tlvl].count;
         --indx;
-        floodPointDesc *pfdp;
+        FloodNode *pfdp;
         do {
-            toSetDesc &bref = tv[indx];
-            uint16_t lvl_child = (bref.pNode->lvl + 1);
+            FloodTile &bref = tv[indx];
+            uint16_t lvl_child = (bref.pNode->depth + 1);
             bool remv = true;
-            if (bref.pNode->dirh != 0) {
-                if ((bref.pNode->dirh & 0x01) == 0x01) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+            if (bref.pNode->dirsAbove != 0) {
+                if ((bref.pNode->dirsAbove & 0x01) == 0x01) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirh & 0x04) == 0x04) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsAbove & 0x04) == 0x04) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirh & 0x10) == 0x10) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsAbove & 0x10) == 0x10) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirh & 0x40) == 0x40) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z + 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-            }
-            if (bref.pNode->dirl != 0) {
-                if ((bref.pNode->dirl & 0x01) == 0x01) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-                if ((bref.pNode->dirl & 0x04) == 0x04) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-                if ((bref.pNode->dirl & 0x10) == 0x10) {
-                    pfdp = &(mdpmirror[(bref.coords.x)
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
-                        remv = false;
-                }
-                if ((bref.pNode->dirl & 0x40) == 0x40) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + bref.coords.y * m->mmax_x_
-                        + (bref.coords.z - 1) * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsAbove & 0x40) == 0x40) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z + 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
             }
-            if (bref.pNode->dirm != 0) {
-                if ((bref.pNode->dirm & 0x01) == 0x01) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+            if (bref.pNode->dirsBelow != 0) {
+                if ((bref.pNode->dirsBelow & 0x01) == 0x01) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x02) == 0x02) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsBelow & 0x04) == 0x04) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x04) == 0x04) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + bref.coords.y * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsBelow & 0x10) == 0x10) {
+                    pfdp = &(mdpmirror[(bref.pos.x)
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x08) == 0x08) {
-                    pfdp = &(mdpmirror[(bref.coords.x + 1)
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsBelow & 0x40) == 0x40) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + bref.pos.y * m->mmax_x_
+                        + (bref.pos.z - 1) * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x10) == 0x10) {
-                    pfdp = &(mdpmirror[bref.coords.x
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+            }
+            if (bref.pNode->dirsSame != 0) {
+                if ((bref.pNode->dirsSame & 0x01) == 0x01) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x20) == 0x20) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + (bref.coords.y - 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsSame & 0x02) == 0x02) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x40) == 0x40) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + bref.coords.y * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsSame & 0x04) == 0x04) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + bref.pos.y * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
-                if ((bref.pNode->dirm & 0x80) == 0x80) {
-                    pfdp = &(mdpmirror[(bref.coords.x - 1)
-                        + (bref.coords.y + 1) * m->mmax_x_
-                        + bref.coords.z * m->mmax_m_xy]);
-                    if (lvl_child == pfdp->lvl)
+                if ((bref.pNode->dirsSame & 0x08) == 0x08) {
+                    pfdp = &(mdpmirror[(bref.pos.x + 1)
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x10) == 0x10) {
+                    pfdp = &(mdpmirror[bref.pos.x
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x20) == 0x20) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + (bref.pos.y - 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x40) == 0x40) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + bref.pos.y * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
+                        remv = false;
+                }
+                if ((bref.pNode->dirsSame & 0x80) == 0x80) {
+                    pfdp = &(mdpmirror[(bref.pos.x - 1)
+                        + (bref.pos.y + 1) * m->mmax_x_
+                        + bref.pos.z * m->mmax_m_xy]);
+                    if (lvl_child == pfdp->depth)
                         remv = false;
                 }
             }
             if (remv) {
-                bref.pNode->bfNodeDesc ^= m_fdTargetPoint;
-                bref.pNode->lvl = 0;
+                bref.pNode->flags ^= kTargetPoint;
+                bref.pNode->depth = 0;
                 //tv.erase(it);
             }
             --indx;
@@ -1270,12 +1270,12 @@ void PedInstance::removeTilesWithNoChildsFromTarget(Mission *m, unsigned short t
     }
 }
 
-void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<TilePoint> &pathToDestination) {
+void PedInstance::createPath(Mission *m, FloodNode *mdpmirror, std::vector<TilePoint> &pathToDestination) {
     TilePoint currentTile(pos_.tx, pos_.ty, pos_.tz);
-    unsigned char ct = m_fdBasePoint;
+    unsigned char ct = kBasePoint;
     bool tnr = true, np = true;
-    floodPointDesc *pfdp;
-    toSetDesc sadd;
+    FloodNode *pfdp;
+    FloodTile sadd;
 
     do {
         unsigned char nt = ct;
@@ -1283,464 +1283,464 @@ void PedInstance::createPath(Mission *m, floodPointDesc *mdpmirror, std::vector<
         WorldPoint toadd;
         pfdp = &(mdpmirror[currentTile.tx + currentTile.ty * m->mmax_x_
                     + currentTile.tz * m->mmax_m_xy]);
-        uint16_t lvl_child = ct == m_fdBasePoint ? pfdp->lvl + 1
-            : pfdp->lvl - 1;
-        if (pfdp->dirh != 0) {
-            if (pfdp->isDirectionUpContains(floodPointDesc::kBMaskDirSouth)) {
-                sadd.coords.x = currentTile.tx;
-                sadd.coords.y = currentTile.ty + 1;
-                sadd.coords.z = currentTile.tz + 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+        uint16_t lvl_child = ct == kBasePoint ? pfdp->depth + 1
+            : pfdp->depth - 1;
+        if (pfdp->dirsAbove != 0) {
+            if (pfdp->isDirectionUpContains(FloodNode::kBMaskDirSouth)) {
+                sadd.pos.x = currentTile.tx;
+                sadd.pos.y = currentTile.ty + 1;
+                sadd.pos.z = currentTile.tz + 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (3 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 3;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = 0;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionUpContains(floodPointDesc::kBMaskDirEast)) {
-                sadd.coords.x = currentTile.tx + 1;
-                sadd.coords.y = currentTile.ty;
-                sadd.coords.z = currentTile.tz + 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+            if (pfdp->isDirectionUpContains(FloodNode::kBMaskDirEast)) {
+                sadd.pos.x = currentTile.tx + 1;
+                sadd.pos.y = currentTile.ty;
+                sadd.pos.z = currentTile.tz + 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (3 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 3;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = 0;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionUpContains(floodPointDesc::kBMaskDirNorth)) {
-                sadd.coords.x = currentTile.tx;
-                sadd.coords.y = currentTile.ty - 1;
-                sadd.coords.z = currentTile.tz + 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+            if (pfdp->isDirectionUpContains(FloodNode::kBMaskDirNorth)) {
+                sadd.pos.x = currentTile.tx;
+                sadd.pos.y = currentTile.ty - 1;
+                sadd.pos.z = currentTile.tz + 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (3 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 3;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = 0;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionUpContains(floodPointDesc::kBMaskDirWest)) {
-                sadd.coords.x = currentTile.tx - 1;
-                sadd.coords.y = currentTile.ty;
-                sadd.coords.z = currentTile.tz + 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+            if (pfdp->isDirectionUpContains(FloodNode::kBMaskDirWest)) {
+                sadd.pos.x = currentTile.tx - 1;
+                sadd.pos.y = currentTile.ty;
+                sadd.pos.z = currentTile.tz + 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (3 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 3;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = 0;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
-                    tnr = false;
-            }
-        }
-        if (pfdp->dirl != 0) {
-            if (pfdp->isDirectionDownContains(floodPointDesc::kBMaskDirSouth)) {
-                sadd.coords.x = currentTile.tx;
-                sadd.coords.y = currentTile.ty + 1;
-                sadd.coords.z = currentTile.tz - 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
-                        if (3 < dist) {
-                            toadd = sadd.coords;
-                            dist = 3;
-                        }
-                    }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
-                        dist = 0;
-                        toadd = sadd.coords;
-                    }
-                }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
-                    tnr = false;
-            }
-            if (pfdp->isDirectionDownContains(floodPointDesc::kBMaskDirEast)) {
-                sadd.coords.x = currentTile.tx + 1;
-                sadd.coords.y = currentTile.ty;
-                sadd.coords.z = currentTile.tz - 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
-                        if (3 < dist) {
-                            toadd = sadd.coords;
-                            dist = 3;
-                        }
-                    }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
-                        dist = 0;
-                        toadd = sadd.coords;
-                    }
-                }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
-                    tnr = false;
-            }
-            if (pfdp->isDirectionDownContains(floodPointDesc::kBMaskDirNorth)) {
-                sadd.coords.x = currentTile.tx;
-                sadd.coords.y = currentTile.ty - 1;
-                sadd.coords.z = currentTile.tz - 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
-                        if (3 < dist) {
-                            toadd = sadd.coords;
-                            dist = 3;
-                        }
-                    }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
-                        dist = 0;
-                        toadd = sadd.coords;
-                    }
-                }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
-                    tnr = false;
-            }
-            if (pfdp->isDirectionDownContains(floodPointDesc::kBMaskDirWest)) {
-                sadd.coords.x = currentTile.tx - 1;
-                sadd.coords.y = currentTile.ty;
-                sadd.coords.z = currentTile.tz - 1;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
-                        if (3 < dist) {
-                            toadd = sadd.coords;
-                            dist = 3;
-                        }
-                    }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
-                    if (0 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
-                        dist = 0;
-                        toadd = sadd.coords;
-                    }
-                }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
         }
-        if (pfdp->dirm != 0) {
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirSouth)) {
-                sadd.coords.x = currentTile.tx;
-                sadd.coords.y = currentTile.ty + 1;
-                sadd.coords.z = currentTile.tz;
+        if (pfdp->dirsBelow != 0) {
+            if (pfdp->isDirectionDownContains(FloodNode::kBMaskDirSouth)) {
+                sadd.pos.x = currentTile.tx;
+                sadd.pos.y = currentTile.ty + 1;
+                sadd.pos.z = currentTile.tz - 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
+                        if (3 < dist) {
+                            toadd = sadd.pos;
+                            dist = 3;
+                        }
+                    }
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
+                    if (0 < dist) {
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
+                        dist = 0;
+                        toadd = sadd.pos;
+                    }
+                }
+                if ((sadd.pNode->flags & kConstant) != 0)
+                    tnr = false;
+            }
+            if (pfdp->isDirectionDownContains(FloodNode::kBMaskDirEast)) {
+                sadd.pos.x = currentTile.tx + 1;
+                sadd.pos.y = currentTile.ty;
+                sadd.pos.z = currentTile.tz - 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
+                        if (3 < dist) {
+                            toadd = sadd.pos;
+                            dist = 3;
+                        }
+                    }
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
+                    if (0 < dist) {
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
+                        dist = 0;
+                        toadd = sadd.pos;
+                    }
+                }
+                if ((sadd.pNode->flags & kConstant) != 0)
+                    tnr = false;
+            }
+            if (pfdp->isDirectionDownContains(FloodNode::kBMaskDirNorth)) {
+                sadd.pos.x = currentTile.tx;
+                sadd.pos.y = currentTile.ty - 1;
+                sadd.pos.z = currentTile.tz - 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
+                        if (3 < dist) {
+                            toadd = sadd.pos;
+                            dist = 3;
+                        }
+                    }
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
+                    if (0 < dist) {
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
+                        dist = 0;
+                        toadd = sadd.pos;
+                    }
+                }
+                if ((sadd.pNode->flags & kConstant) != 0)
+                    tnr = false;
+            }
+            if (pfdp->isDirectionDownContains(FloodNode::kBMaskDirWest)) {
+                sadd.pos.x = currentTile.tx - 1;
+                sadd.pos.y = currentTile.ty;
+                sadd.pos.z = currentTile.tz - 1;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
+                        if (3 < dist) {
+                            toadd = sadd.pos;
+                            dist = 3;
+                        }
+                    }
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
+                    if (0 < dist) {
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
+                        dist = 0;
+                        toadd = sadd.pos;
+                    }
+                }
+                if ((sadd.pNode->flags & kConstant) != 0)
+                    tnr = false;
+            }
+        }
+        if (pfdp->dirsSame != 0) {
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirSouth)) {
+                sadd.pos.x = currentTile.tx;
+                sadd.pos.y = currentTile.ty + 1;
+                sadd.pos.z = currentTile.tz;
                 TilePoint point{currentTile.tx, currentTile.ty +1, currentTile.tz};
                 fs_eng::Tile *pTile = map()->getTileAt(point);
                 
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (pTile->isStairs()) {
                             if (3 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 3;
                             }
                         } else {
                             if (1 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 1;
                             }
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (pTile->isStairs()) {
                         if (-1 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -1;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     } else {
                         if (-2 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -2;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirSouthEast)) {
-                sadd.coords.x = currentTile.tx + 1;
-                sadd.coords.y = currentTile.ty + 1;
-                sadd.coords.z = currentTile.tz;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirSouthEast)) {
+                sadd.pos.x = currentTile.tx + 1;
+                sadd.pos.y = currentTile.ty + 1;
+                sadd.pos.z = currentTile.tz;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (2 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 2;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (-1 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = -1;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirEast)) {
-                sadd.coords.x = currentTile.tx + 1;
-                sadd.coords.y = currentTile.ty;
-                sadd.coords.z = currentTile.tz;
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirEast)) {
+                sadd.pos.x = currentTile.tx + 1;
+                sadd.pos.y = currentTile.ty;
+                sadd.pos.z = currentTile.tz;
                 TilePoint point{currentTile.tx + 1, currentTile.ty, currentTile.tz};
                 fs_eng::Tile *pTile = map()->getTileAt(point);
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child== sadd.pNode->lvl) {
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child== sadd.pNode->depth) {
                         if (pTile->isStairs()) {
                             if (3 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 3;
                             }
                         } else {
                             if (1 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 1;
                             }
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (pTile->isStairs()) {
                         if (-1 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -1;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     } else {
                         if (-2 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -2;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirNorthEast)) {
-                sadd.coords.x = currentTile.tx + 1;
-                sadd.coords.y = currentTile.ty - 1;
-                sadd.coords.z = currentTile.tz;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirNorthEast)) {
+                sadd.pos.x = currentTile.tx + 1;
+                sadd.pos.y = currentTile.ty - 1;
+                sadd.pos.z = currentTile.tz;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (2 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 2;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (-1 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = -1;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirNorth)) {
-                sadd.coords.x = currentTile.tx;
-                sadd.coords.y = currentTile.ty - 1;
-                sadd.coords.z = currentTile.tz;
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirNorth)) {
+                sadd.pos.x = currentTile.tx;
+                sadd.pos.y = currentTile.ty - 1;
+                sadd.pos.z = currentTile.tz;
                 TilePoint point{currentTile.tx, currentTile.ty - 1, currentTile.tz};
                 fs_eng::Tile *pTile = map()->getTileAt(point);
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (pTile->isStairs()) {
                             if (3 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 3;
                             }
                         } else {
                             if (1 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 1;
                             }
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (pTile->isStairs()) {
                         if (-1 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -1;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     } else {
                         if (-2 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -2;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirNorthWest)) {
-                sadd.coords.x = currentTile.tx - 1;
-                sadd.coords.y = currentTile.ty - 1;
-                sadd.coords.z = currentTile.tz;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirNorthWest)) {
+                sadd.pos.x = currentTile.tx - 1;
+                sadd.pos.y = currentTile.ty - 1;
+                sadd.pos.z = currentTile.tz;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (2 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 2;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (-1 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = -1;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirWest)) {
-                sadd.coords.x = currentTile.tx - 1;
-                sadd.coords.y = currentTile.ty;
-                sadd.coords.z = currentTile.tz;
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirWest)) {
+                sadd.pos.x = currentTile.tx - 1;
+                sadd.pos.y = currentTile.ty;
+                sadd.pos.z = currentTile.tz;
                 TilePoint point{currentTile.tx - 1, currentTile.ty, currentTile.tz};
                 fs_eng::Tile *pTile = map()->getTileAt(point);
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (pTile->isStairs()) {
                             if (3 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 3;
                             }
                         } else {
                             if (1 < dist) {
-                                toadd = sadd.coords;
+                                toadd = sadd.pos;
                                 dist = 1;
                             }
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (pTile->isStairs()) {
                         if (-1 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -1;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     } else {
                         if (-2 < dist) {
-                            nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                            nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                             dist = -2;
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                         }
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
-            if (pfdp->isDirectionGroundContains(floodPointDesc::kBMaskDirSouthWest)) {
-                sadd.coords.x = currentTile.tx - 1;
-                sadd.coords.y = currentTile.ty + 1;
-                sadd.coords.z = currentTile.tz;
-                sadd.pNode = &(mdpmirror[sadd.coords.x
-                    + sadd.coords.y * m->mmax_x_
-                    + sadd.coords.z * m->mmax_m_xy]);
-                if ((sadd.pNode->bfNodeDesc & ct) != 0) {
-                    if (lvl_child == sadd.pNode->lvl) {
+            if (pfdp->isDirectionGroundContains(FloodNode::kBMaskDirSouthWest)) {
+                sadd.pos.x = currentTile.tx - 1;
+                sadd.pos.y = currentTile.ty + 1;
+                sadd.pos.z = currentTile.tz;
+                sadd.pNode = &(mdpmirror[sadd.pos.x
+                    + sadd.pos.y * m->mmax_x_
+                    + sadd.pos.z * m->mmax_m_xy]);
+                if ((sadd.pNode->flags & ct) != 0) {
+                    if (lvl_child == sadd.pNode->depth) {
                         if (2 < dist) {
-                            toadd = sadd.coords;
+                            toadd = sadd.pos;
                             dist = 2;
                         }
                     }
-                } else if(np && (sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint)) != 0) {
+                } else if(np && (sadd.pNode->flags & (kBasePoint | kTargetPoint)) != 0) {
                     if (-1 < dist) {
-                        nt = sadd.pNode->bfNodeDesc & (m_fdBasePoint | m_fdTargetPoint);
+                        nt = sadd.pNode->flags & (kBasePoint | kTargetPoint);
                         dist = -1;
-                        toadd = sadd.coords;
+                        toadd = sadd.pos;
                     }
                 }
-                if ((sadd.pNode->bfNodeDesc & m_fdConstant) != 0)
+                if ((sadd.pNode->flags & kConstant) != 0)
                     tnr = false;
             }
         }
@@ -2426,9 +2426,9 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
     int dir, int t_posx, int t_posy, int* dist, bool set_dist)
 {
     // TODO: better non-posiotional random walking
-    floodPointDesc *based = &(m->mdpoints_[pos_.tx
+    FloodNode *based = &(m->mdpoints_[pos_.tx
         + pos_.ty * m->mmax_x_ + pos_.tz * m->mmax_m_xy]);
-    if (based->bfNodeDesc == m_fdNonWalkable) {
+    if (based->flags == kNonWalkable) {
         printf("==== unwalk pos: x %i; y %i; z %i, ox %i, oy %i, oz %i\n",
             pos_.tx, pos_.ty, pos_.tz, pos_.ox, pos_.oy, pos_.oz);
         printf("moveToDir, Movement from nonwalkable postion\n");
@@ -2440,7 +2440,7 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
 
     // TODO: find safewalk tile and use normal pathfinding
     // to get there
-    if ((based->bfNodeDesc & m_fdSafeWalk) == 0)
+    if ((based->flags & kSafeWalk) == 0)
         check_safe_walk = false;
     bool move_to_pos = false;
     if (dir == -1) {
@@ -2502,7 +2502,7 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
 
         double posx = (double)(pos_.tx * 256 + pos_.ox);
         double posy = (double)(pos_.ty * 256 + pos_.oy);
-        floodPointDesc *fpd = &(m->mdpoints_[pos_.tx + pos_.ty * m->mmax_x_ +
+        FloodNode *fpd = &(m->mdpoints_[pos_.tx + pos_.ty * m->mmax_x_ +
             pos_.tz * m->mmax_m_xy]);
         double dist_passsed = 0;
         double dist_inc = sqrt(diffx * diffx + diffy * diffy);
@@ -2526,59 +2526,59 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
                 int32_t dec_z = 0;
                 if (tilenx - pos_.tx == 0) {
                     if (tileny - pos_.ty > 0) {
-                        if ((fpd->dirh & 0x01) == 0x01) {
+                        if ((fpd->dirsAbove & 0x01) == 0x01) {
                             ++pos_.tz;
                             --dec_z;
-                        } else if ((fpd->dirl & 0x01) == 0x01) {
+                        } else if ((fpd->dirsBelow & 0x01) == 0x01) {
                             --pos_.tz;
                             ++dec_z;
-                        } else if ((fpd->dirm & 0x01) != 0x01) {
+                        } else if ((fpd->dirsSame & 0x01) != 0x01) {
                             need_bounce = true;
                             break;
                         }
                     } else {
-                        if ((fpd->dirh & 0x10) == 0x10) {
+                        if ((fpd->dirsAbove & 0x10) == 0x10) {
                             ++pos_.tz;
                             --dec_z;
-                        } else if ((fpd->dirl & 0x10) == 0x10) {
+                        } else if ((fpd->dirsBelow & 0x10) == 0x10) {
                             --pos_.tz;
                             ++dec_z;
-                        } else if ((fpd->dirm & 0x10) != 0x10) {
+                        } else if ((fpd->dirsSame & 0x10) != 0x10) {
                             need_bounce = true;
                             break;
                         }
                     }
                 } else if (tileny - pos_.ty == 0) {
                     if (tilenx - pos_.tx > 0) {
-                        if ((fpd->dirh & 0x04) == 0x04) {
+                        if ((fpd->dirsAbove & 0x04) == 0x04) {
                             ++pos_.tz;
                             --dec_z;
-                        } else if ((fpd->dirl & 0x04) == 0x04) {
+                        } else if ((fpd->dirsBelow & 0x04) == 0x04) {
                             --pos_.tz;
                             ++dec_z;
-                        } else if ((fpd->dirm & 0x04) != 0x04) {
+                        } else if ((fpd->dirsSame & 0x04) != 0x04) {
                             need_bounce = true;
                             break;
                         }
                     } else {
-                        if ((fpd->dirh & 0x40) == 0x40) {
+                        if ((fpd->dirsAbove & 0x40) == 0x40) {
                             ++pos_.tz;
                             --dec_z;
-                        } else if ((fpd->dirl & 0x40) == 0x40) {
+                        } else if ((fpd->dirsBelow & 0x40) == 0x40) {
                             --pos_.tz;
                             ++dec_z;
-                        } else if ((fpd->dirm & 0x40) != 0x40) {
+                        } else if ((fpd->dirsSame & 0x40) != 0x40) {
                             need_bounce = true;
                             break;
                         }
                     }
                 } else if (tileny - pos_.ty > 0) {
                     if (tilenx - pos_.tx > 0) {
-                        if ((fpd->dirm & 0x02) != 0x02) {
+                        if ((fpd->dirsSame & 0x02) != 0x02) {
                             need_bounce = true;
                             break;
                         }
-                    } else {if ((fpd->dirm & 0x80) != 0x80) {
+                    } else {if ((fpd->dirsSame & 0x80) != 0x80) {
                             need_bounce = true;
                             break;
                         }
@@ -2586,11 +2586,11 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
                 } else {
                     // (tileny - pos_.ty < 0)
                     if (tilenx - pos_.tx > 0) {
-                        if ((fpd->dirm & 0x08) != 0x08) {
+                        if ((fpd->dirsSame & 0x08) != 0x08) {
                             need_bounce = true;
                             break;
                         }
-                    } else {if ((fpd->dirm & 0x20) != 0x20) {
+                    } else {if ((fpd->dirsSame & 0x20) != 0x20) {
                             need_bounce = true;
                             break;
                         }
@@ -2606,10 +2606,10 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
 #endif
 #endif
 
-                floodPointDesc *fpd_prv = fpd;
+                FloodNode *fpd_prv = fpd;
                 fpd = &(m->mdpoints_[tilenx + tileny * m->mmax_x_
                     + pos_.tz * m->mmax_m_xy]);
-                if (check_safe_walk && (fpd->bfNodeDesc & m_fdSafeWalk) == 0) {
+                if (check_safe_walk && (fpd->flags & kSafeWalk) == 0) {
                     pos_.tz += dec_z;
                     need_bounce = true;
                     break;
@@ -2625,9 +2625,9 @@ uint8_t PedInstance::moveToDir(Mission* m, uint32_t elapsed, DirMoveType &dir_mo
                         dir_move.on_new_tile = true;
                         // avoiding direction recovery where tile is same as
                         // the one that forced us to bounce
-                        if (fpd_prv->dirh != fpd->dirh
-                            || fpd_prv->dirm != fpd->dirm
-                            || fpd_prv->dirl != fpd->dirl)
+                        if (fpd_prv->dirsAbove != fpd->dirsAbove
+                            || fpd_prv->dirsSame != fpd->dirsSame
+                            || fpd_prv->dirsBelow != fpd->dirsBelow)
                         {
                             if (dir_move.dir_modifier < 3) {
                                 dir_move.dir_modifier = 0;

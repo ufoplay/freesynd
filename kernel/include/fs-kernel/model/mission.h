@@ -302,9 +302,9 @@ public:
     ///@}
 
     // map-directions points
-    floodPointDesc *mdpoints_;
+    FloodNode *mdpoints_;
     // for copy in pathfinding
-    floodPointDesc *mdpoints_cp_;
+    FloodNode *mdpoints_cp_;
     // initialized in set_map, used for in-class calculations
     // map maximum x,y,z values
     int mmax_x_, mmax_y_, mmax_z_;
@@ -329,12 +329,12 @@ protected:
     void floodFillFromSeed(const TilePoint &seed);
     /*! @brief fp is undefined, mark it as pending and push raw tile coords onto the flood-fill queue.
      * x is a raw tile index; y and z are stride-multiplied (y*mmax_x_ and z*mmax_m_xy).*/
-    void enqueueIfUndefined(floodPointDesc *fp, int x, int y, int z, std::vector<WorldPoint>& queue);
+    void enqueueIfUndefined(FloodNode *fp, int x, int y, int z, std::vector<WorldPoint>& queue);
     //! Classify a single tile during the flood-fill pass of buildNavigationGraph().
     void classifyTile(int x, int y, int z,
                       int xm, int xp, int ym, int yp, int zm, int zp,
                       uint8_t this_s, int mmax_m_all,
-                      floodPointDesc* cfp, std::vector<WorldPoint>& vtodefine);
+                      FloodNode* cfp, std::vector<WorldPoint>& vtodefine);
 
     //! Selects the two best-ranked weapons from a list.
     std::pair<int, int> findTopTwoWeapons(const std::vector<Weapon*>& weapons);
