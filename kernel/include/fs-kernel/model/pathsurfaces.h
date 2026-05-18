@@ -29,24 +29,24 @@ namespace fs_knl {
     enum class SurfaceType : uint8_t
     {
         Empty    = 0x00,
-        Type01   = 0x01,
-        Type02   = 0x02,
-        Type03   = 0x03,
-        Type04   = 0x04,
-        Type05   = 0x05,
+        kSlopeSN   = 0x01,
+        kSlopeNS   = 0x02,
+        kSlopeEW   = 0x03,
+        kSlopeWE   = 0x04,
+        kGround    = 0x05,
         Type06   = 0x06,
         Type07   = 0x07,
         Type08   = 0x08,
         Type09   = 0x09,
+        kWall    = 0x0A,
+        kRoadCurve = 0x0B,
         Type0C   = 0x0C,
-        Type10   = 0x10,
+        kRoof    = 0x0D,
+        kRoadPedCross = 0x0E,
+        kRoadMark = 0x0F,
+        kTrainStop = 0x10,
         Type11   = 0x11,
         Type12   = 0x12,
-        Type10A   = 0x13,
-        Type11A   = 0x14,
-        Type12A   = 0x15,
-        Type13   = 0x16,
-        TypeSolidFlat = 0x17,   ///< Surface is flat and can be walked on
         Unknown
     };
 

@@ -89,7 +89,7 @@ public:
         kRoof = 0x0D,
         kRoadPedCross = 0x0E,
         kRoadMark = 0x0F,
-        kUnknown = 0x10,   // non-surface/non-walkable, always above train stop
+        kTrainStop = 0x10,   // non-surface/non-walkable, always above train stop
         kNbTypes  = 0x11,
     };
 

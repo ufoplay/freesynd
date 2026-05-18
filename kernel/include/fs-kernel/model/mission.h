@@ -263,7 +263,7 @@ public:
     TilePoint projectOntoSlopeWE(const TilePoint &point, int lowerZ);
     TilePoint tryAdjacentTile(const TilePoint &point, int deltaX, int deltaY,
                              int newOffsetX, int newOffsetY, 
-                             uint8_t expectedSurfaceType);
+                             SurfaceType expectedSurfaceType);
     bool getWalkableClosestByZ(TilePoint &mtp);
     //! Return true if point is on a solid tile
     bool isTileSolid(const TilePoint &point);
@@ -314,9 +314,9 @@ public:
 protected:
     void buildSurfaces();
     SurfaceType surfaceAt(int x, int y, int z) const;
-    bool sWalkable(uint8_t thisTile, uint8_t upperTile);
-    bool isSurface(uint8_t thisTile);
-    bool isStairs(uint8_t thisTile);
+    bool sWalkable(SurfaceType thisTile, SurfaceType upperTile);
+    bool isSurface(SurfaceType thisTile);
+    bool isStairs(SurfaceType thisTile);
     int getTileIndex(const TilePoint &point) const;
     bool isTileWalkable(int tileIndex) const;
 
@@ -333,7 +333,7 @@ protected:
     //! Classify a single tile during the flood-fill pass of buildNavigationGraph().
     void classifyTile(int x, int y, int z,
                       int xm, int xp, int ym, int yp, int zm, int zp,
-                      uint8_t this_s, int mmax_m_all,
+                      SurfaceType this_s, int mmax_m_all,
                       FloodNode* cfp, std::vector<WorldPoint>& vtodefine);
 
     //! Selects the two best-ranked weapons from a list.
@@ -407,7 +407,7 @@ protected:
     std::unique_ptr<Squad> squad_;
 
     //! map-tile surfaces : x + y * mmax_x_ + z * mmax_m_xy
-    uint8_t *mtsurfaces_;
+    SurfaceType *mtsurfaces_;
 };
 
 /** \brief Event sent when a mission has ended.

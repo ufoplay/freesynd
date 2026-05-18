@@ -279,6 +279,9 @@ void MissionEditorMenu::setTileTypeName(fs_eng::Tile::EType tileType) {
     case fs_eng::Tile::kSlopeWE:
         typeAsStr = "SlopeWE";
         break;
+    case fs_eng::Tile::kGround:
+        typeAsStr = "Ground";
+        break;
     case fs_eng::Tile::kRoadSideEW:
         typeAsStr = "RoadSideEW";
         break;

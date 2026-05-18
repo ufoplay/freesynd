@@ -329,15 +329,15 @@ SurfaceType Map::getWalkData(int tx, int ty, int tz) {
     // else return the type of the tile
     switch (pTile->type()) {
     case fs_eng::Tile::kSlopeSN:
-        return SurfaceType::Type01;
+        return SurfaceType::kSlopeSN;
     case fs_eng::Tile::kSlopeNS:
-        return SurfaceType::Type02;
+        return SurfaceType::kSlopeNS;
     case fs_eng::Tile::kSlopeEW:
-        return SurfaceType::Type03;
+        return SurfaceType::kSlopeEW;
     case fs_eng::Tile::kSlopeWE:
-        return SurfaceType::Type04;
+        return SurfaceType::kSlopeWE;
     case fs_eng::Tile::kGround:
-        return SurfaceType::Type05;
+        return SurfaceType::kGround;
     case fs_eng::Tile::kRoadSideEW:
         return SurfaceType::Type06;
     case fs_eng::Tile::kRoadSideWE:
@@ -347,17 +347,17 @@ SurfaceType Map::getWalkData(int tx, int ty, int tz) {
     case fs_eng::Tile::kRoadSideNS:
         return SurfaceType::Type09;
     case fs_eng::Tile::kWall:
-        return SurfaceType::Type10A;
+        return SurfaceType::kWall;
     case fs_eng::Tile::kRoadCurve:
-        return SurfaceType::Type11A;
+        return SurfaceType::kRoadCurve;
     case fs_eng::Tile::kHandrailLight:
         return SurfaceType::Type0C;
     case fs_eng::Tile::kRoof:
-        return SurfaceType::Type12A;
+        return SurfaceType::kRoof;
     case fs_eng::Tile::kRoadPedCross:
-        return SurfaceType::Type13;
+        return SurfaceType::kRoadPedCross;
     case fs_eng::Tile::kRoadMark:
-        return SurfaceType::TypeSolidFlat;
+        return SurfaceType::kRoadMark;
     default:
         return SurfaceType::Empty;
     }

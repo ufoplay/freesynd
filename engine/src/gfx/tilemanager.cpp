@@ -226,7 +226,7 @@ Tile::EType TileManager::toTileType(uint8_t data)
     case 0x0F:
         return Tile::kRoadMark;
     case 0x10:
-        return Tile::kUnknown;
+        return Tile::kTrainStop;
     default:
         return Tile::kNone;
     }
