@@ -318,13 +318,15 @@ SurfaceType Map::getSurfaceTypeForTile(int tx, int ty, int tz) {
     case 0x81 :
         return SurfaceType::kTrainPlatformEW;
     case 0x8F :
-        return SurfaceType::Empty;
+        return SurfaceType::kEmpty;
     case 0x93 :
-        return SurfaceType::Empty;
+        return SurfaceType::kEmpty;
     }
     
     // else it's based on the type
     switch (pTile->type()) {
+    case fs_eng::Tile::kNone:
+        return SurfaceType::kEmpty;
     case fs_eng::Tile::kSlopeSN:
         return SurfaceType::kSlopeSN;
     case fs_eng::Tile::kSlopeNS:
@@ -339,21 +341,22 @@ SurfaceType Map::getSurfaceTypeForTile(int tx, int ty, int tz) {
     case fs_eng::Tile::kRoadSideWE:
     case fs_eng::Tile::kRoadSideSN:
     case fs_eng::Tile::kRoadSideNS:
-        return SurfaceType::kRoadSide;
-    case fs_eng::Tile::kWall:
-        return SurfaceType::kWall;
     case fs_eng::Tile::kRoadCurve:
-        return SurfaceType::kRoadCurve;
+    case fs_eng::Tile::kRoadMark:
+        return SurfaceType::kRoad;
+    case fs_eng::Tile::kWall:
+        return SurfaceType::kNonWalkable;
     case fs_eng::Tile::kHandrailLight:
         return SurfaceType::kHandrailLight;
     case fs_eng::Tile::kRoof:
         return SurfaceType::kRoof;
     case fs_eng::Tile::kRoadPedCross:
         return SurfaceType::kRoadPedCross;
-    case fs_eng::Tile::kRoadMark:
-        return SurfaceType::kRoadMark;
+    case fs_eng::Tile::kTrainStop:
+        return SurfaceType::kTrainStop;
     default:
-        return SurfaceType::Empty;
+        LOG(Log::k_FLG_GAME, "Map", "getSurfaceTypeForTile", ("Unknown tileType at %d, %d, %d", tx, ty, tz));
+        return SurfaceType::kUnknown;
     }
 }
 

@@ -894,8 +894,6 @@ void Semaphore::handleHit(DamageToInflict &d) {
         if (isDead()) {
             animOffset_ = kSemaphoreDamagedOffset;
             // When the semaphore is dead, it falls on the ground
-            Mission * pMission = g_missionCtrl.mission();
-            
             // In this case we use elapsed_left_bigger as the distance to the ground
             // to animate the falling of the semaphore
             elapsed_left_bigger_ = 0;
@@ -904,7 +902,7 @@ void Semaphore::handleHit(DamageToInflict &d) {
             // look for the first tile below that is a ground
             while (groundPoint.tz >= 0) {
                 groundPoint.tz--;
-                if (pMission->isTileSolid(groundPoint)) {
+                if (pMap_->getTileAt(groundPoint)->isRoadMark()) {
                     elapsed_left_bigger_ = (pos_.tz - groundPoint.tz - 1) * 128 + pos_.oz;
                     break;
                 }

@@ -312,8 +312,8 @@ void MissionEditorMenu::setTileTypeName(fs_eng::Tile::EType tileType) {
     case fs_eng::Tile::kRoadMark:
         typeAsStr = "RoadMark";
         break;
-    case fs_eng::Tile::kUnknown:
-        typeAsStr = "Unknown";
+    case fs_eng::Tile::kTrainStop:
+        typeAsStr = "TrainStop";
         break;
     default:
         typeAsStr = "Undefined";

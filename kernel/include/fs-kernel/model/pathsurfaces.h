@@ -33,23 +33,28 @@ namespace fs_knl {
      */
     enum class SurfaceType : uint8_t
     {
-        Empty    = 0x00,
+        kEmpty    = 0x00,
         kSlopeSN   = 0x01,
         kSlopeNS   = 0x02,
         kSlopeEW   = 0x03,
         kSlopeWE   = 0x04,
         kGround    = 0x05,
-        kRoadSide  = 0x06,
-        kWall    = 0x0A,
-        kRoadCurve = 0x0B,
+        kRoad  = 0x06,
         kHandrailLight   = 0x0C,
         kRoof    = 0x0D,
         kRoadPedCross = 0x0E,
-        kRoadMark = 0x0F,
         kTrainStop = 0x10,          //!< non-surface/non-walkable, always above train stop
         kTrainPlatformNS   = 0x11,  //!< train entering surface
         kTrainPlatformEW   = 0x12,  //!< 
-        Unknown
+        kNonWalkable,          //!< non-surface/non-walkable
+        kUnknown
+    };
+
+    class SurfaceUtils {
+    public:
+            static bool isStairs(SurfaceType surfaceType) {
+                return surfaceType >= SurfaceType::kSlopeSN && surfaceType <= SurfaceType::kSlopeWE;
+            }
     };
 
     /*!

@@ -265,8 +265,6 @@ public:
                              int newOffsetX, int newOffsetY, 
                              SurfaceType expectedSurfaceType);
     bool getWalkableClosestByZ(TilePoint &mtp);
-    //! Return true if point is on a solid tile
-    bool isTileSolid(const TilePoint &point);
 
     /**
      * @name Shooting verification
@@ -316,7 +314,6 @@ protected:
     SurfaceType surfaceAt(int x, int y, int z) const;
     bool sWalkable(SurfaceType thisTile, SurfaceType upperTile);
     bool isSurface(SurfaceType thisTile);
-    bool isStairs(SurfaceType thisTile);
     int getTileIndex(const TilePoint &point) const;
     bool isTileWalkable(int tileIndex) const;
 
