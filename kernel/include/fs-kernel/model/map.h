@@ -136,11 +136,8 @@ public:
     fs_eng::Tile * getTileAt(const TilePoint &tilePt);
     //! Return the id of the tile at given position
     int getTileIdAt(int tx, int ty, int tz);
-
-    void patchMap(int x, int y, int z, uint8_t tileNum);
-
-    //!
-    SurfaceType getWalkData(int tx, int ty, int tz);
+    //! Return the SurfaceType for the tile at given position
+    SurfaceType getSurfaceTypeForTile(int tx, int ty, int tz);
 
     /**
      * @name Road related methods
@@ -153,6 +150,8 @@ public:
     //! Return true if this points to a road tile and adjust the point in some cases
     bool adjustClickOnRoad(TilePoint &tilePt);
     ///@}
+
+    void patchMap(int x, int y, int z, uint8_t tileNum);
 
 protected:
     /*!  Every map has a unique ID which is used to identify the

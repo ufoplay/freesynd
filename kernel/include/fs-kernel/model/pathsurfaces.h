@@ -26,6 +26,11 @@
 #include "fs-kernel/model/position.h"
 
 namespace fs_knl {
+    /*!
+     * SurfaceType is an information used for pathfinding to help
+     * with dealing for each type of tile. Usually it's the same as Tile Type.
+     * But for some case, it's a different value.
+     */
     enum class SurfaceType : uint8_t
     {
         Empty    = 0x00,
@@ -34,19 +39,16 @@ namespace fs_knl {
         kSlopeEW   = 0x03,
         kSlopeWE   = 0x04,
         kGround    = 0x05,
-        Type06   = 0x06,
-        Type07   = 0x07,
-        Type08   = 0x08,
-        Type09   = 0x09,
+        kRoadSide  = 0x06,
         kWall    = 0x0A,
         kRoadCurve = 0x0B,
-        Type0C   = 0x0C,
+        kHandrailLight   = 0x0C,
         kRoof    = 0x0D,
         kRoadPedCross = 0x0E,
         kRoadMark = 0x0F,
-        kTrainStop = 0x10,
-        Type11   = 0x11,
-        Type12   = 0x12,
+        kTrainStop = 0x10,          //!< non-surface/non-walkable, always above train stop
+        kTrainPlatformNS   = 0x11,  //!< train entering surface
+        kTrainPlatformEW   = 0x12,  //!< 
         Unknown
     };
 
