@@ -2282,11 +2282,11 @@ MapObject * Mission::checkBlockedByObject(WorldPoint * pStartPt, WorldPoint * pE
  * \param distanceMax Maximum distance we cannot cross. If distanceMax is
  *   reached before pTargetPosW, then path is stopped.
  * \param pInitialDistance This is the distance between origin and initial target position
- * \return a bitmask indicating the type of result:
- *      - 0b(kBMaskBlockerTargetInRange) : target in range
- *      - 3b(8) : distanceMax is reached
- *      - 4b(kBMaskBlockerBlockedByTile): blocker tile, "pTargetLoc" is set
- *      - 5b(kBMaskBlockerTargetOutOfMap): out of visible reach
+ * \return a bitfield indicating the type of result:
+ *      - bit 0(kBMaskBlockerTargetInRange) : target in range
+ *      - bit 3(8) : distanceMax is reached
+ *      - bit 4(kBMaskBlockerBlockedByTile): blocker tile, "pTargetLoc" is set
+ *      - bit 5(kBMaskBlockerTargetOutOfMap): out of visible reach
  */
 uint8_t Mission::checkBlockedByTile(const WorldPoint & originPosW, WorldPoint *pTargetPosW,
                                   bool updateLoc, double distanceMax, double *pInitialDistance) {
@@ -2357,11 +2357,9 @@ uint8_t Mission::checkBlockedByTile(const WorldPoint & originPosW, WorldPoint *p
         int nx = (int)sx / 256;
         int ny = (int)sy / 256;
         int nz = (int)sz / 128;
-        SurfaceType surfType = mtsurfaces_[nx + ny * mmax_x_
-            + nz * mmax_m_xy];
-        if (oldx != nx || oldy != ny || oldz != nz
-            || (surfType >= SurfaceType::kSlopeSN && surfType <= SurfaceType::kSlopeWE))
-        {
+        SurfaceType surfType = mtsurfaces_[nx + ny * mmax_x_ + nz * mmax_m_xy];
+        
+        if (oldx != nx || oldy != ny || oldz != nz || SurfaceUtils::isStairs(surfType)) {
             if (!(surfType == SurfaceType::kEmpty || surfType == SurfaceType::kHandrailLight || surfType == SurfaceType::kTrainStop)) {
                 bool is_blocked = false;
                 int offz = (int)sz % 128;
@@ -2536,23 +2534,22 @@ uint8_t Mission::getPathLengthBetween(PedInstance *pPed, ShootableMapObject* obj
     return res == 1 ? 0 : 1;
 }
 
-constexpr bool isSolidSurface(SurfaceType type)
-{
-    return !(type == SurfaceType::kEmpty ||
-            type == SurfaceType::kHandrailLight ||
-            type == SurfaceType::kTrainStop);
-}
-
 SurfaceType Mission::surfaceAt(int x, int y, int z) const
 {
     if (x < 0 || y < 0 || z < 0 || x >= mmax_x_ || y >= mmax_y_ || z >= mmax_z_)
         return SurfaceType::kUnknown;
 
-    return static_cast<SurfaceType>(mtsurfaces_[x + y * mmax_x_ + z * mmax_m_xy]);
+    return mtsurfaces_[x + y * mmax_x_ + z * mmax_m_xy];
 }
 
 
-bool Mission::getShootableTile(TilePoint *pLocT) {
+/*!
+ * Finds the first tile visible tile that the player has clicked on.
+ * Starts with the highest tile and decrease the tz coord until reaching zero.
+ * @param basePt 
+ * @return 
+ */
+bool Mission::getAimedTargetOnGround(TilePoint &basePt) {
     bool gotIt = false;
     int bx, by, box, boy;
     int bz = mmax_z_;
@@ -2560,36 +2557,36 @@ bool Mission::getShootableTile(TilePoint *pLocT) {
     while (bz-- > 0 && !gotIt) {
         int bzm = bz - 1;
 
-        bx = pLocT->tx * 256 + pLocT->ox + 128 * bzm;
-        by = pLocT->ty * 256 + pLocT->oy + 128 * bzm;
+        bx = basePt.tx * 256 + basePt.ox + 128 * bzm;
+        by = basePt.ty * 256 + basePt.oy + 128 * bzm;
         box = bx % 256;
         boy = by % 256;
         bx /= 256;
         by /= 256;
 
-        const SurfaceType twd = surfaceAt(bx, by, bzm);
+        const SurfaceType surfaceType = surfaceAt(bx, by, bzm);
         int dx = 0, dy = 0;
 
-        if (twd == SurfaceType::kSlopeSN) {
+        if (surfaceType == SurfaceType::kSlopeSN) {
             dy = (boy * 2) / 3;
             dx = box - dy / 2;
             gotIt = (dx >= 0) || tryShiftX(bx, by, bzm, box, boy, -1, dx + 256, dy, SurfaceType::kSlopeSN);
-        } else if (twd == SurfaceType::kSlopeNS) {
+        } else if (surfaceType == SurfaceType::kSlopeNS) {
             dy = (boy - 128) * 2;
             dx = (box + dy / 2) - 128;
             if (dy >= 0)
                 gotIt = (dx >= 0 && dx < 256) || tryShiftX(bx, by, bzm, box, boy, (dx < 0) ? -1 : 1, (dx + ((dx < 0) ? 256 : -256)), dy, SurfaceType::kSlopeNS);
-        } else if (twd == SurfaceType::kSlopeEW) {
+        } else if (surfaceType == SurfaceType::kSlopeEW) {
             dx = (box - 128) * 2;
             dy = (boy + dx / 2) - 128;
             if (dx >= 0)
                 gotIt = (dy >= 0 && dy < 256) || tryShiftY(bx, by, bzm, box, boy, (dy < 0) ? -1 : 1, dx, (dy + ((dy < 0) ? 256 : -256)), SurfaceType::kSlopeEW);
-        } else if (twd == SurfaceType::kSlopeWE) {
+        } else if (surfaceType == SurfaceType::kSlopeWE) {
             dx = (box * 2) / 3;
             dy = boy - dx / 2;
             gotIt = (dy >= 0) || tryShiftY(bx, by, bzm, box, boy, -1, dx, dy + 256, SurfaceType::kSlopeWE);
         } else {
-            gotIt = isSolidSurface(twd);
+            gotIt = SurfaceUtils::isSolid(surfaceType);
         }
 
         if (!gotIt)
@@ -2598,7 +2595,7 @@ bool Mission::getShootableTile(TilePoint *pLocT) {
 
     if (gotIt) {
         TilePoint tempTile(bx, by, bz, box, boy);
-        finalizeTile(tempTile, pLocT);
+        finalizeTile(tempTile, basePt);
     }
 
     return gotIt;
@@ -2648,25 +2645,25 @@ bool Mission::tryNeighbourAdjustments(int &bx, int &by, int bzm, int &box, int &
     return check(-1, 0) || check(0, -1) || check(-1, -1);
 }
 
-void Mission::finalizeTile(TilePoint tempTile, TilePoint *pLocT) {
+void Mission::finalizeTile(TilePoint tempTile, TilePoint &pLocT) {
     SurfaceType twd = surfaceAt(tempTile.tx, tempTile.ty, tempTile.tz - 1);
 
     switch (twd)
     {
     case SurfaceType::kSlopeSN:
-        pLocT->oz = 127 - (tempTile.oy >> 1);
+        pLocT.oz = 127 - (tempTile.oy >> 1);
         --tempTile.tz;
         break;
     case SurfaceType::kSlopeNS:
-        pLocT->oz = tempTile.oy >> 1;
+        pLocT.oz = tempTile.oy >> 1;
         --tempTile.tz;
         break;
     case SurfaceType::kSlopeEW:
-        pLocT->oz = tempTile.ox >> 1;
+        pLocT.oz = tempTile.ox >> 1;
         --tempTile.tz;
         break;
     case SurfaceType::kSlopeWE:
-        pLocT->oz = 127 - (tempTile.ox >> 1);
+        pLocT.oz = 127 - (tempTile.ox >> 1);
         --tempTile.tz;
         break;
     default:
@@ -2674,30 +2671,30 @@ void Mission::finalizeTile(TilePoint tempTile, TilePoint *pLocT) {
         break;
     }
 
-    pLocT->tx = tempTile.tx;
-    pLocT->ty = tempTile.ty;
-    pLocT->tz = tempTile.tz;
-    pLocT->ox = tempTile.ox;
-    pLocT->oy = tempTile.oy;
+    pLocT.tx = tempTile.tx;
+    pLocT.ty = tempTile.ty;
+    pLocT.tz = tempTile.tz;
+    pLocT.ox = tempTile.ox;
+    pLocT.oy = tempTile.oy;
 
     assert(tempTile.tz >= 0);
 }
 
-void Mission::finalizeDefault(TilePoint &tempTile, TilePoint *pLocT) {
+void Mission::finalizeDefault(TilePoint &tempTile, TilePoint &pLocT) {
     SurfaceType twd = surfaceAt(tempTile.tx, tempTile.ty, tempTile.tz);
-    if (isSolidSurface(twd))
+    if (SurfaceUtils::isSolid(twd))
     {
-        pLocT->oz = (tempTile.ox > 192 || tempTile.oy > 192) ? (((tempTile.ox >= tempTile.oy) ? (256 - tempTile.ox) : (256 - tempTile.oy)) << 1) : 128;
-        tempTile.tx = (pLocT->tx * 256 + pLocT->ox + 128 * (tempTile.tz - 1) + pLocT->oz) / 256;
-        tempTile.ox = (pLocT->tx * 256 + pLocT->ox + 128 * (tempTile.tz - 1) + pLocT->oz) % 256;
-        tempTile.ty = (pLocT->ty * 256 + pLocT->oy + 128 * (tempTile.tz - 1) + pLocT->oz) / 256;
-        tempTile.oy = (pLocT->ty * 256 + pLocT->oy + 128 * (tempTile.tz - 1) + pLocT->oz) % 256;
-        tempTile.tz += pLocT->oz / 128;
-        pLocT->oz %= 128;
+        pLocT.oz = (tempTile.ox > 192 || tempTile.oy > 192) ? (((tempTile.ox >= tempTile.oy) ? (256 - tempTile.ox) : (256 - tempTile.oy)) << 1) : 128;
+        tempTile.tx = (pLocT.tx * 256 + pLocT.ox + 128 * (tempTile.tz - 1) + pLocT.oz) / 256;
+        tempTile.ox = (pLocT.tx * 256 + pLocT.ox + 128 * (tempTile.tz - 1) + pLocT.oz) % 256;
+        tempTile.ty = (pLocT.ty * 256 + pLocT.oy + 128 * (tempTile.tz - 1) + pLocT.oz) / 256;
+        tempTile.oy = (pLocT.ty * 256 + pLocT.oy + 128 * (tempTile.tz - 1) + pLocT.oz) % 256;
+        tempTile.tz += pLocT.oz / 128;
+        pLocT.oz %= 128;
     }
     else
     {
-        pLocT->oz = 0;
+        pLocT.oz = 0;
     }
 }
 

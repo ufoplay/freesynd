@@ -374,8 +374,9 @@ void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t st
 
     if (isPlayerShooting_) {
         // update direction for each shooting player
-        fs_knl::WorldPoint aimedAtLocW;
-        if (getAimedAt(point, &aimedAtLocW)) {
+        fs_knl::TilePoint mapPt = map_renderer_.getTilePointFromMouse(point);
+        if (getAimedAt(mapPt)) {
+            fs_knl::WorldPoint aimedAtLocW(mapPt);
             for (SquadSelection::Iterator it = selection_.begin(); it != selection_.end(); ++it) {
                 fs_knl::PedInstance *pAgent = *it;
                 if (pAgent->isUsingWeapon()) {
@@ -517,9 +518,9 @@ void GameplayMenu::handleClickOnMap(Point2D point, int button) {
             selection_.moveTo(mapPt, ctrl);
         }
     } else if (button == kMouseRightButton) {
-        fs_knl::WorldPoint aimedAtLocW;
-        if (getAimedAt(point, &aimedAtLocW)) {
+        if (getAimedAt(mapPt)) {
             isPlayerShooting_ = true;
+            fs_knl::WorldPoint aimedAtLocW(mapPt);
             selection_.shootAt(aimedAtLocW);
         }
     }
@@ -547,26 +548,24 @@ void GameplayMenu::handleClickOnMinimap(Point2D point) {
  * Set the point on the map the player is aiming at.
  * It depends on whether the player has clicked on a shootable target
  * or a point on the ground.
- * @param point mouse coord on screen
- * @param pLocWToSet Finale location
+ * @param basePt base tilepoint corresponding to the click on the map.
+ *  basePt will be updated with the final position.
  * @return True if location has been set.
  */
-bool GameplayMenu::getAimedAt(const Point2D &point, fs_knl::WorldPoint *pLocWToSet) {
+bool GameplayMenu::getAimedAt(fs_knl::TilePoint &basePt) {
     bool locationSet = false;
 
     if (target_) {
         //  Player has aimed an object
-        pLocWToSet->convertFromTilePoint(target_->position());
+        basePt = target_->position();
         // z is set to half the size of the object
-        pLocWToSet->z += target_->sizeZ() >> 1;
+        // TODO : check that the line below is correct as size may not be expressed as Tilepoint coords
+        basePt.oz += target_->sizeZ() >> 1;
         locationSet = true;
     } else {
         // Player is shooting on the ground
-        fs_knl::TilePoint mapLocT = map_renderer_.getTilePointFromMouse(point);
-        mapLocT.tz = 0;
-        if (mission_->getShootableTile(&mapLocT)) {
+        if (mission_->getAimedTargetOnGround(basePt)) {
             locationSet = true;
-            pLocWToSet->convertFromTilePoint(mapLocT);
         }
     }
 

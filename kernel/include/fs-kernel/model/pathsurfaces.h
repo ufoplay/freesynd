@@ -55,6 +55,12 @@ namespace fs_knl {
             static bool isStairs(SurfaceType surfaceType) {
                 return surfaceType >= SurfaceType::kSlopeSN && surfaceType <= SurfaceType::kSlopeWE;
             }
+
+            static bool isSolid(SurfaceType type) {
+                return !(type == SurfaceType::kEmpty ||
+                        type == SurfaceType::kHandrailLight ||
+                        type == SurfaceType::kTrainStop);
+            }
     };
 
     /*!

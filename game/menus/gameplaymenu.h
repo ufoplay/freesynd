@@ -121,8 +121,8 @@ protected:
     void updateSelectionForDeadAgent(fs_knl::PedInstance *p_ped);
     //! updates visual markers for our agents
     void highlightLeaderMarker();
-    //! Set pLocWToSet param with point on the map where player clicked to shoot
-    bool getAimedAt(const Point2D &point, fs_knl::WorldPoint *pLocWToSet);
+    //! Set basePt param with point on the map where player clicked to shoot
+    bool getAimedAt(fs_knl::TilePoint &basePt);
     void stopShootingEvent();
     //! Centers the minimap on the selection leader
     void centerMinimapOnLeader();

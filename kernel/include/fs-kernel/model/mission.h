@@ -296,7 +296,7 @@ public:
     uint8_t getPathLengthBetween(PedInstance *pPed, ShootableMapObject* objectToReach, double distanceMax, double *length);
     //! Returns all dynamic objects present at tile this tick.
     const std::vector<MapObject*>& getObjectsAtTile(const TilePoint & tile) const;
-    bool getShootableTile(TilePoint *pLocT);
+    bool getAimedTargetOnGround(TilePoint &basePt);
     ///@}
 
     // map-directions points
@@ -341,8 +341,8 @@ protected:
     bool tryShiftX(int &bx, int by, int bzm, int &box, int &boy, int shift, int newBox, int newBoy, SurfaceType expected);
     bool tryShiftY(int bx, int &by, int bzm, int &box, int &boy, int shift, int newBox, int newBoy, SurfaceType expected);
     bool tryNeighbourAdjustments(int &bx, int &by, int bzm, int &box, int &boy);
-    void finalizeTile(TilePoint tempTile, TilePoint *pLocT);
-    void finalizeDefault(TilePoint &tempTile, TilePoint *pLocT);
+    void finalizeTile(TilePoint tempTile, TilePoint &pLocT);
+    void finalizeDefault(TilePoint &tempTile, TilePoint &pLocT);
 
     //! At the end of the mission calculate all stats
     void updateStats();
