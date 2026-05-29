@@ -9,6 +9,7 @@ freesynd (0.10) unstable; urgency=low
   [ Fixed ]
   * Patched some wrong coordinates in mission Far East
   * Patched some wrong coordinates in mission Iraq. Closes: #73
+  * Disabled friendly fire. Closes: #69
   [ Removed ]
   * 
 
