@@ -251,19 +251,6 @@ public:
     bool buildNavigationGraph();
     void clrNavigationGraph();
     bool findWalkableTileFromBase(TilePoint &mtp);
-    TilePoint adjustPositionForSurface(const TilePoint &point, int tileIndex);
-    TilePoint adjustForSlopeSN(const TilePoint &point, int tileIndex);
-    TilePoint adjustForSlopeNS(const TilePoint &point, int tileIndex);
-    TilePoint adjustForSlopeEW(const TilePoint &point, int tileIndex);
-    TilePoint adjustForSlopeWE(const TilePoint &point, int tileIndex);
-    TilePoint tryProjectOntoLowerSlope(const TilePoint &point);
-    TilePoint projectOntoSlopeSN(const TilePoint &point, int lowerZ);
-    TilePoint projectOntoSlopeNS(const TilePoint &point, int lowerZ);
-    TilePoint projectOntoSlopeEW(const TilePoint &point, int lowerZ);
-    TilePoint projectOntoSlopeWE(const TilePoint &point, int lowerZ);
-    TilePoint tryAdjacentTile(const TilePoint &point, int deltaX, int deltaY,
-                             int newOffsetX, int newOffsetY, 
-                             SurfaceType expectedSurfaceType);
     bool getWalkableClosestByZ(TilePoint &mtp);
 
     /**
@@ -312,9 +299,9 @@ public:
 protected:
     void buildSurfaces();
     SurfaceType surfaceAt(int x, int y, int z) const;
-    bool sWalkable(SurfaceType thisTile, SurfaceType upperTile);
-    bool isSurface(SurfaceType thisTile);
     int getTileIndex(const TilePoint &point) const;
+    //! Return true if thisTile is walkable by Ped and that above tile is empty
+    bool isTraversable(SurfaceType thisTile, SurfaceType upperTile);
     bool isTileWalkable(int tileIndex) const;
 
     //! Build the spatial grid for dynamic objects (called at the start of each tick)
@@ -343,6 +330,20 @@ protected:
     bool tryNeighbourAdjustments(int &bx, int &by, int bzm, int &box, int &boy);
     void finalizeTile(TilePoint tempTile, TilePoint &pLocT);
     void finalizeDefault(TilePoint &tempTile, TilePoint &pLocT);
+
+    TilePoint adjustPositionForSurface(const TilePoint &point, int tileIndex);
+    TilePoint adjustForSlopeSN(const TilePoint &point);
+    TilePoint adjustForSlopeNS(const TilePoint &point);
+    TilePoint adjustForSlopeEW(const TilePoint &point);
+    TilePoint adjustForSlopeWE(const TilePoint &point);
+    TilePoint tryProjectOntoLowerSlope(const TilePoint &point);
+    TilePoint projectOntoSlopeSN(const TilePoint &point, int lowerZ);
+    TilePoint projectOntoSlopeNS(const TilePoint &point, int lowerZ);
+    TilePoint projectOntoSlopeEW(const TilePoint &point, int lowerZ);
+    TilePoint projectOntoSlopeWE(const TilePoint &point, int lowerZ);
+    TilePoint tryAdjacentTile(const TilePoint &point, int deltaX, int deltaY,
+                             int newOffsetX, int newOffsetY, 
+                             SurfaceType expectedSurfaceType);
 
     //! At the end of the mission calculate all stats
     void updateStats();

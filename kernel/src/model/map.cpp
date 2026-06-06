@@ -326,6 +326,7 @@ SurfaceType Map::getSurfaceTypeForTile(int tx, int ty, int tz) {
     // else it's based on the type
     switch (pTile->type()) {
     case fs_eng::Tile::kNone:
+    case fs_eng::Tile::kTrainStop:
         return SurfaceType::kEmpty;
     case fs_eng::Tile::kSlopeSN:
         return SurfaceType::kSlopeSN;
@@ -336,7 +337,9 @@ SurfaceType Map::getSurfaceTypeForTile(int tx, int ty, int tz) {
     case fs_eng::Tile::kSlopeWE:
         return SurfaceType::kSlopeWE;
     case fs_eng::Tile::kGround:
-        return SurfaceType::kGround;
+    case fs_eng::Tile::kRoof:
+    case fs_eng::Tile::kRoadPedCross:
+        return SurfaceType::kFloor;
     case fs_eng::Tile::kRoadSideEW:
     case fs_eng::Tile::kRoadSideWE:
     case fs_eng::Tile::kRoadSideSN:
@@ -348,12 +351,6 @@ SurfaceType Map::getSurfaceTypeForTile(int tx, int ty, int tz) {
         return SurfaceType::kNonWalkable;
     case fs_eng::Tile::kHandrailLight:
         return SurfaceType::kHandrailLight;
-    case fs_eng::Tile::kRoof:
-        return SurfaceType::kRoof;
-    case fs_eng::Tile::kRoadPedCross:
-        return SurfaceType::kRoadPedCross;
-    case fs_eng::Tile::kTrainStop:
-        return SurfaceType::kTrainStop;
     default:
         LOG(Log::k_FLG_GAME, "Map", "getSurfaceTypeForTile", ("Unknown tileType at %d, %d, %d", tx, ty, tz));
         return SurfaceType::kUnknown;

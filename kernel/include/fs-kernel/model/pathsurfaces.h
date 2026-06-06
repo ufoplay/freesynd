@@ -28,8 +28,7 @@
 namespace fs_knl {
     /*!
      * SurfaceType is an information used for pathfinding to help
-     * with dealing for each type of tile. Usually it's the same as Tile Type.
-     * But for some case, it's a different value.
+     * with dealing for each type of tile. 
      */
     enum class SurfaceType : uint8_t
     {
@@ -38,15 +37,12 @@ namespace fs_knl {
         kSlopeNS   = 0x02,
         kSlopeEW   = 0x03,
         kSlopeWE   = 0x04,
-        kGround    = 0x05,
-        kRoad  = 0x06,
+        kFloor    = 0x05,   //!< ex: ground or roof
+        kRoad  = 0x06,      //!< road are like floor but not safe for pedestrian
         kHandrailLight   = 0x0C,
-        kRoof    = 0x0D,
-        kRoadPedCross = 0x0E,
-        kTrainStop = 0x10,          //!< non-surface/non-walkable, always above train stop
         kTrainPlatformNS   = 0x11,  //!< train entering surface
         kTrainPlatformEW   = 0x12,  //!< 
-        kNonWalkable,          //!< non-surface/non-walkable
+        kNonWalkable,          //!< ex: walls
         kUnknown
     };
 
@@ -58,8 +54,13 @@ namespace fs_knl {
 
             static bool isSolid(SurfaceType type) {
                 return !(type == SurfaceType::kEmpty ||
-                        type == SurfaceType::kHandrailLight ||
-                        type == SurfaceType::kTrainStop);
+                        type == SurfaceType::kHandrailLight);
+            }
+
+            static bool isFlatSurface(SurfaceType type) {
+                return type == SurfaceType::kFloor ||
+                        type == SurfaceType::kRoad ||
+                        (type == SurfaceType::kTrainPlatformNS || type == SurfaceType::kTrainPlatformEW);
             }
     };
 
