@@ -897,6 +897,7 @@ WeaponInstance * PedInstance::dropWeapon(uint8_t index) {
     WeaponInstance *pWeapon = removeWeaponAtIndex(index);
 
     if(pWeapon) {
+        pWeapon->setMap(map());
         pWeapon->setDrawable(true);
         pWeapon->setPosition(pos_);
         g_missionCtrl.mission()->addWeaponToGround(pWeapon);
