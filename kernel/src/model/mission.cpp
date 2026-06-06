@@ -2544,58 +2544,53 @@ SurfaceType Mission::surfaceAt(int x, int y, int z) const
 
 
 /*!
- * Finds the first tile visible tile that the player has clicked on.
+ * Finds the first visible tile that the player has clicked on when shooting.
  * Starts with the highest tile and decrease the tz coord until reaching zero.
  * @param basePt 
  * @return 
  */
-bool Mission::getAimedTargetOnGround(TilePoint &basePt) {
+bool Mission::findShootableTileFromBase(TilePoint &basePt) {
     bool gotIt = false;
-    int bx, by, box, boy;
-    int bz = mmax_z_;
+    TilePoint candidate;
 
-    while (bz-- > 0 && !gotIt) {
-        int bzm = bz - 1;
+    printf("getAimedTargetOnGround : basePt.tz, oz = %d, %d\n", basePt.tz, basePt.oz);
 
-        bx = basePt.tx * 256 + basePt.ox + 128 * bzm;
-        by = basePt.ty * 256 + basePt.oy + 128 * bzm;
-        box = bx % 256;
-        boy = by % 256;
-        bx /= 256;
-        by /= 256;
+    for (int tz = mmax_z_; (tz > 0 && !gotIt); tz--) {
+        int bzm = tz - 1;
 
-        const SurfaceType surfaceType = surfaceAt(bx, by, bzm);
+        candidate = p_map_->projectToZLevel(basePt, tz);
+
+        const SurfaceType surfaceType = surfaceAt(candidate.tx, candidate.ty, bzm);
         int dx = 0, dy = 0;
 
         if (surfaceType == SurfaceType::kSlopeSN) {
-            dy = (boy * 2) / 3;
-            dx = box - dy / 2;
-            gotIt = (dx >= 0) || tryShiftX(bx, by, bzm, box, boy, -1, dx + 256, dy, SurfaceType::kSlopeSN);
+            dy = (candidate.oy * 2) / 3;
+            dx = candidate.ox - dy / 2;
+            gotIt = (dx >= 0) || tryShiftX(candidate.tx, candidate.ty, bzm, candidate.ox, candidate.oy, -1, dx + 256, dy, SurfaceType::kSlopeSN);
         } else if (surfaceType == SurfaceType::kSlopeNS) {
-            dy = (boy - 128) * 2;
-            dx = (box + dy / 2) - 128;
+            dy = (candidate.oy - 128) * 2;
+            dx = (candidate.ox + dy / 2) - 128;
             if (dy >= 0)
-                gotIt = (dx >= 0 && dx < 256) || tryShiftX(bx, by, bzm, box, boy, (dx < 0) ? -1 : 1, (dx + ((dx < 0) ? 256 : -256)), dy, SurfaceType::kSlopeNS);
+                gotIt = (dx >= 0 && dx < 256) || tryShiftX(candidate.tx, candidate.ty, bzm, candidate.ox, candidate.oy, (dx < 0) ? -1 : 1, (dx + ((dx < 0) ? 256 : -256)), dy, SurfaceType::kSlopeNS);
         } else if (surfaceType == SurfaceType::kSlopeEW) {
-            dx = (box - 128) * 2;
-            dy = (boy + dx / 2) - 128;
+            dx = (candidate.ox - 128) * 2;
+            dy = (candidate.oy + dx / 2) - 128;
             if (dx >= 0)
-                gotIt = (dy >= 0 && dy < 256) || tryShiftY(bx, by, bzm, box, boy, (dy < 0) ? -1 : 1, dx, (dy + ((dy < 0) ? 256 : -256)), SurfaceType::kSlopeEW);
+                gotIt = (dy >= 0 && dy < 256) || tryShiftY(candidate.tx, candidate.ty, bzm, candidate.ox, candidate.oy, (dy < 0) ? -1 : 1, dx, (dy + ((dy < 0) ? 256 : -256)), SurfaceType::kSlopeEW);
         } else if (surfaceType == SurfaceType::kSlopeWE) {
-            dx = (box * 2) / 3;
-            dy = boy - dx / 2;
-            gotIt = (dy >= 0) || tryShiftY(bx, by, bzm, box, boy, -1, dx, dy + 256, SurfaceType::kSlopeWE);
+            dx = (candidate.ox * 2) / 3;
+            dy = candidate.oy - dx / 2;
+            gotIt = (dy >= 0) || tryShiftY(candidate.tx, candidate.ty, bzm, candidate.ox, candidate.oy, -1, dx, dy + 256, SurfaceType::kSlopeWE);
         } else {
             gotIt = SurfaceUtils::isSolid(surfaceType);
         }
 
         if (!gotIt)
-            gotIt = tryNeighbourAdjustments(bx, by, bzm, box, boy);
+            gotIt = tryNeighbourAdjustments(candidate.tx, candidate.ty, bzm, candidate.ox, candidate.oy);
     }
 
     if (gotIt) {
-        TilePoint tempTile(bx, by, bz, box, boy);
-        finalizeTile(tempTile, basePt);
+        finalizeTile(candidate, basePt);
     }
 
     return gotIt;

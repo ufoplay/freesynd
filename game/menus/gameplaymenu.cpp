@@ -564,7 +564,7 @@ bool GameplayMenu::getAimedAt(fs_knl::TilePoint &basePt) {
         locationSet = true;
     } else {
         // Player is shooting on the ground
-        if (mission_->getAimedTargetOnGround(basePt)) {
+        if (mission_->findShootableTileFromBase(basePt)) {
             locationSet = true;
         }
     }

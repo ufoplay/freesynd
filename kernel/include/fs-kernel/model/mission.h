@@ -296,7 +296,7 @@ public:
     uint8_t getPathLengthBetween(PedInstance *pPed, ShootableMapObject* objectToReach, double distanceMax, double *length);
     //! Returns all dynamic objects present at tile this tick.
     const std::vector<MapObject*>& getObjectsAtTile(const TilePoint & tile) const;
-    bool getAimedTargetOnGround(TilePoint &basePt);
+    bool findShootableTileFromBase(TilePoint &basePt);
     ///@}
 
     // map-directions points
