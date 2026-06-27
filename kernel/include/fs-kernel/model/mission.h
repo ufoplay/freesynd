@@ -250,7 +250,8 @@ public:
     //! Build the walkability graph used for pedestrian pathfinding.
     bool buildNavigationGraph();
     void clrNavigationGraph();
-    bool findWalkableTileFromBase(TilePoint &mtp);
+    //! Return true if we can find a tile that is reachable by ped
+    bool findReachableTileFromBase(TilePoint &mtp);
     bool getWalkableClosestByZ(TilePoint &mtp);
 
     /**
@@ -300,9 +301,7 @@ protected:
     void buildSurfaces();
     SurfaceType surfaceAt(int x, int y, int z) const;
     int getTileIndex(const TilePoint &point) const;
-    //! Return true if thisTile is walkable by Ped and that above tile is empty
-    bool isTraversable(SurfaceType thisTile, SurfaceType upperTile);
-    bool isTileWalkable(int tileIndex) const;
+    bool isTileReachable(int tileIndex) const;
 
     //! Build the spatial grid for dynamic objects (called at the start of each tick)
     void buildDynamicSpatialGrid();

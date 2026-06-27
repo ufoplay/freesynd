@@ -62,6 +62,14 @@ namespace fs_knl {
                         type == SurfaceType::kRoad ||
                         (type == SurfaceType::kTrainPlatformNS || type == SurfaceType::kTrainPlatformEW);
             }
+
+            //! Return true if thisTile is walkable by Ped and if the tile above is empty
+            static bool isTraversable(SurfaceType thisTile, SurfaceType upperTile) {
+                // checking flat surface or stairs
+                return
+                    (isFlatSurface(thisTile) || isStairs(thisTile)) &&
+                    (upperTile == SurfaceType::kEmpty);
+            }
     };
 
     /*!

@@ -493,19 +493,6 @@ MapObject * Mission::findObjectWithNatureAtPos(int tilex, int tiley, int tilez,
     }
 }
 
-// Surface walkable
-bool Mission::isTraversable(SurfaceType thisTile, SurfaceType upperTile) {
-    return
-        (
-            // checking flat surface
-            ((thisTile == SurfaceType::kFloor ||
-                thisTile == SurfaceType::kRoad ||
-                (thisTile == SurfaceType::kTrainPlatformNS || thisTile == SurfaceType::kTrainPlatformEW)))
-            // or checking stairs
-            || (thisTile > SurfaceType::kEmpty && thisTile < SurfaceType::kFloor)
-        ) && (upperTile == SurfaceType::kEmpty);
-}
-
 /*!
  * Constructs the navigation data for the entire 3-D tile map in three phases:
  *
@@ -626,7 +613,7 @@ void Mission::buildSurfaces() {
  * Then it seeds the flood fill queue, iterates over reachable tiles,
  * resolves surface redirections (0x00/0x10 → lower level, 0x11/0x12 →
  * upper level), and calls classifyTile() for each resolved node.
- * @param seedPt         raw tile coordinate
+ * @param seedPt Starting point for the flooding
  * @note Surface type `0x0D` is not handled correctly (see in-source TODO).
  */
 void Mission::floodFillFromSeed(const TilePoint &seedPt) {
@@ -657,28 +644,28 @@ void Mission::floodFillFromSeed(const TilePoint &seedPt) {
             //x = 50;
         SurfaceType this_s = mtsurfaces_[x + y + z];
         SurfaceType upper_s = SurfaceType::kEmpty;
-        FloodNode *cfp = &(mdpoints_[x + y + z]);
+        FloodNode *pNode = &(mdpoints_[x + y + z]);
         int zm = z - mmax_m_xy;
-        // if current is 0x00 or 0x10 tile we will use lower tile
+        // if current is an Empty tile we will use lower tile
         // to define it
         if (this_s == SurfaceType::kEmpty) {
             if (zm < 0) {
-                cfp->flags = kNonWalkable;
+                pNode->flags = kNonWalkable;
                 continue;
             }
             z = zm;
             zm -= mmax_m_xy;
             upper_s = this_s;
             this_s = mtsurfaces_[x + y + z];
-            if (!isTraversable(this_s, upper_s))
+            if (!SurfaceUtils::isTraversable(this_s, upper_s))
                 continue;
         } else if (this_s == SurfaceType::kTrainPlatformNS || this_s == SurfaceType::kTrainPlatformEW) {
             int zp_tmp = z + mmax_m_xy;
             if (zp_tmp < mmax_m_all) {
                 // we are defining tile above current
-                cfp = &(mdpoints_[x + y + zp_tmp]);
+                pNode = &(mdpoints_[x + y + zp_tmp]);
             } else
-                cfp->flags = kNonWalkable;
+                pNode->flags = kNonWalkable;
         }
         int xm = x - 1;
         int ym = y - mmax_x_;
@@ -687,17 +674,17 @@ void Mission::floodFillFromSeed(const TilePoint &seedPt) {
         int zp = z + mmax_m_xy;
         if (zp < mmax_m_all) {
             upper_s = mtsurfaces_[x + y + zp];
-            if(!isTraversable(this_s, upper_s)) {
-                cfp->flags = kNonWalkable;
+            if(!SurfaceUtils::isTraversable(this_s, upper_s)) {
+                pNode->flags = kNonWalkable;
                 continue;
             }
         } else {
-            cfp->flags = kNonWalkable;
+            pNode->flags = kNonWalkable;
             continue;
         }
         classifyTile(x, y, z,
                      xm, xp, ym, yp, zm, zp,
-                     this_s, mmax_m_all, cfp, vtodefine);
+                     this_s, mmax_m_all, pNode, vtodefine);
     } while (vtodefine.size());
 }
 
@@ -752,13 +739,13 @@ void Mission::classifyTile(int x, int y, int z,
                 if (yp < mmax_m_xy) {
                     this_s = mtsurfaces_[x + yp + zm];
                     upper_s = mtsurfaces_[x + yp + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x01;
                         nxtfp = &(mdpoints_[x + yp + z]);
                         enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
                     } else if (this_s == SurfaceType::kSlopeSN) {
                         nxtfp = &(mdpoints_[x + yp + zm]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x01;
                             nxtfp = &(mdpoints_[x + yp + zm]);
                             enqueueIfUndefined(nxtfp, x, yp, zm, vtodefine);
@@ -769,7 +756,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (xm >= 0) {
                     this_s = mtsurfaces_[xm + y + zm];
                     upper_s = mtsurfaces_[xm + y + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[xm + y + z]);
                         sdirm |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
@@ -781,7 +768,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (xp < mmax_x_) {
                     this_s = mtsurfaces_[xp + y + zm];
                     upper_s = mtsurfaces_[xp + y + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[xp + y + z]);
                         sdirm |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
@@ -796,11 +783,11 @@ void Mission::classifyTile(int x, int y, int z,
                 nxtfp = &(mdpoints_[x + ym + zp]);
                 this_s = mtsurfaces_[x + ym + z];
                 upper_s = mtsurfaces_[x + ym + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     sdirh |= 0x10;
                     enqueueIfUndefined(nxtfp, x, ym, zp, vtodefine);
                 } else if(upper_s == SurfaceType::kSlopeSN && (zp + mmax_m_xy) < mmax_m_all) {
-                    if(isTraversable(upper_s, mtsurfaces_[
+                    if(SurfaceUtils::isTraversable(upper_s, mtsurfaces_[
                         x + ym + (zp + mmax_m_xy)]))
                     {
                         sdirh |= 0x10;
@@ -813,13 +800,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (xm >= 0) {
                 this_s = mtsurfaces_[xm + y + z];
                 upper_s = mtsurfaces_[xm + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[xm + y + zp]);
                     sdirh |= 0x40;
                     enqueueIfUndefined(nxtfp, xm, y, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeSN) {
                     nxtfp = &(mdpoints_[xm + y + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                     } else
@@ -830,13 +817,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (xp < mmax_x_) {
                 this_s = mtsurfaces_[xp + y + z];
                 upper_s = mtsurfaces_[xp + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[xp + y + zp]);
                     sdirh |= 0x04;
                     enqueueIfUndefined(nxtfp, xp, y, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeSN) {
                     nxtfp = &(mdpoints_[xp + y + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
                     } else
@@ -856,13 +843,13 @@ void Mission::classifyTile(int x, int y, int z,
                 if (ym >= 0) {
                     this_s = mtsurfaces_[x + ym + zm];
                     upper_s = mtsurfaces_[x + ym + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[x + ym + z]);
                         sdirm |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                     } else if (this_s == SurfaceType::kSlopeNS) {
                         nxtfp = &(mdpoints_[x + ym + zm]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x10;
                             enqueueIfUndefined(nxtfp, x, ym, zm, vtodefine);
                         } else
@@ -872,7 +859,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (xm >= 0) {
                     this_s = mtsurfaces_[xm + y + zm];
                     upper_s = mtsurfaces_[xm + y + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[xm + y + z]);
                         sdirm |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
@@ -884,7 +871,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (xp < mmax_x_) {
                     this_s = mtsurfaces_[xp + y + zm];
                     upper_s = mtsurfaces_[xp + y + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[xp + y + z]);
                         sdirm |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
@@ -899,11 +886,11 @@ void Mission::classifyTile(int x, int y, int z,
                 nxtfp = &(mdpoints_[x + yp + zp]);
                 this_s = mtsurfaces_[x + yp + z];
                 upper_s = mtsurfaces_[x + yp + zp];
-                if(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     sdirh |= 0x01;
                     enqueueIfUndefined(nxtfp, x, yp, zp, vtodefine);
                 } else if(upper_s == SurfaceType::kSlopeNS && (zp + mmax_m_xy) < mmax_m_all) {
-                    if(isTraversable(upper_s,  mtsurfaces_[
+                    if(SurfaceUtils::isTraversable(upper_s,  mtsurfaces_[
                         x + yp + (zp + mmax_m_xy)]))
                     {
                         sdirh |= 0x01;
@@ -916,13 +903,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (xm >= 0) {
                 this_s = mtsurfaces_[xm + y + z];
                 upper_s = mtsurfaces_[xm + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[xm + y + zp]);
                     sdirh |= 0x40;
                     enqueueIfUndefined(nxtfp, xm, y, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeNS) {
                     nxtfp = &(mdpoints_[xm + y + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                     } else
@@ -933,13 +920,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (xp < mmax_x_) {
                 this_s = mtsurfaces_[xp + y + z];
                 upper_s = mtsurfaces_[xp + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[xp + y + zp]);
                     sdirh |= 0x04;
                     enqueueIfUndefined(nxtfp, xp, y, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeNS) {
                     nxtfp = &(mdpoints_[xp + y + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
                     } else
@@ -959,13 +946,13 @@ void Mission::classifyTile(int x, int y, int z,
                 if (xm >= 0) {
                     this_s = mtsurfaces_[xm + y + zm];
                     upper_s = mtsurfaces_[xm + y + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[xm + y + z]);
                         sdirm |= 0x40;
                         enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                     } else if (this_s == SurfaceType::kSlopeEW) {
                         nxtfp = &(mdpoints_[xm + y + zm]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x40;
                             enqueueIfUndefined(nxtfp, xm, y, zm, vtodefine);
                         } else
@@ -975,7 +962,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (ym >= 0) {
                     this_s = mtsurfaces_[x + ym + zm];
                     upper_s = mtsurfaces_[x + ym + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[x + ym + z]);
                         sdirm |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
@@ -987,7 +974,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (yp < mmax_m_xy) {
                     this_s = mtsurfaces_[x + yp + zm];
                     upper_s = mtsurfaces_[x + yp + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[x + yp + z]);
                         sdirm |= 0x01;
                         enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
@@ -1002,11 +989,11 @@ void Mission::classifyTile(int x, int y, int z,
                 nxtfp = &(mdpoints_[xp + y + zp]);
                 this_s = mtsurfaces_[xp + y + z];
                 upper_s = mtsurfaces_[xp + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     sdirh |= 0x04;
                     enqueueIfUndefined(nxtfp, xp, y, zp, vtodefine);
                 } else if(upper_s == SurfaceType::kSlopeEW && (zp + mmax_m_xy) < mmax_m_all) {
-                    if(isTraversable(upper_s,
+                    if(SurfaceUtils::isTraversable(upper_s,
                         mtsurfaces_[xp + y + (zp + mmax_m_xy)]))
                     {
                         sdirh |= 0x04;
@@ -1019,13 +1006,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (ym >= 0) {
                 this_s = mtsurfaces_[x + ym + z];
                 upper_s = mtsurfaces_[x + ym + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[x + ym + zp]);
                     sdirh |= 0x10;
                     enqueueIfUndefined(nxtfp, x, ym, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeEW) {
                     nxtfp = &(mdpoints_[x + ym + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                     } else
@@ -1036,13 +1023,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (yp < mmax_m_xy) {
                 this_s = mtsurfaces_[x + yp + z];
                 upper_s = mtsurfaces_[x + yp + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[x + yp + zp]);
                     sdirh |= 0x01;
                     enqueueIfUndefined(nxtfp, x, yp, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeEW) {
                     nxtfp = &(mdpoints_[x + yp + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x01;
                         enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
                     } else
@@ -1062,13 +1049,13 @@ void Mission::classifyTile(int x, int y, int z,
                 if (xp < mmax_x_) {
                     this_s = mtsurfaces_[xp + y + zm];
                     upper_s = mtsurfaces_[xp + y + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[xp + y + z]);
                         sdirm |= 0x04;
                         enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
                     } else if (this_s == SurfaceType::kSlopeWE) {
                         nxtfp = &(mdpoints_[xp + y + zm]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x04;
                             enqueueIfUndefined(nxtfp, xp, y, zm, vtodefine);
                         } else
@@ -1078,7 +1065,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (ym >= 0) {
                     this_s = mtsurfaces_[x + ym + zm];
                     upper_s = mtsurfaces_[x + ym + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[x + ym + z]);
                         sdirm |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
@@ -1090,7 +1077,7 @@ void Mission::classifyTile(int x, int y, int z,
                 if (yp < mmax_m_xy) {
                     this_s = mtsurfaces_[x + yp + zm];
                     upper_s = mtsurfaces_[x + yp + z];
-                    if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                         nxtfp = &(mdpoints_[x + yp + z]);
                         sdirm |= 0x01;
                         enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
@@ -1105,11 +1092,11 @@ void Mission::classifyTile(int x, int y, int z,
                 nxtfp = &(mdpoints_[xm + y + zp]);
                 this_s = mtsurfaces_[xm + y + z];
                 upper_s = mtsurfaces_[xm + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     sdirh |= 0x40;
                     enqueueIfUndefined(nxtfp, xm, y, zp, vtodefine);
                 } else if(upper_s == SurfaceType::kSlopeWE && (zp + mmax_m_xy) < mmax_m_all) {
-                    if(isTraversable(upper_s, mtsurfaces_[
+                    if(SurfaceUtils::isTraversable(upper_s, mtsurfaces_[
                         xm + y + (zp + mmax_m_xy)]))
                     {
                         sdirh |= 0x40;
@@ -1122,13 +1109,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (ym >= 0) {
                 this_s = mtsurfaces_[x + ym + z];
                 upper_s = mtsurfaces_[x + ym + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[x + ym + zp]);
                     sdirh |= 0x10;
                     enqueueIfUndefined(nxtfp, x, ym, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeWE) {
                     nxtfp = &(mdpoints_[x + ym + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x10;
                         enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                     } else
@@ -1139,13 +1126,13 @@ void Mission::classifyTile(int x, int y, int z,
             if (yp < mmax_m_xy) {
                 this_s = mtsurfaces_[x + yp + z];
                 upper_s = mtsurfaces_[x + yp + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s)) {
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s)) {
                     nxtfp = &(mdpoints_[x + yp + zp]);
                     sdirh |= 0x01;
                     enqueueIfUndefined(nxtfp, x, yp, zp, vtodefine);
                 } else if (this_s == SurfaceType::kSlopeWE) {
                     nxtfp = &(mdpoints_[x + yp + z]);
-                    if (isTraversable(this_s, upper_s)) {
+                    if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                         sdirm |= 0x01;
                         enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
                     } else
@@ -1166,12 +1153,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (xm >= 0) {
                 this_s = mtsurfaces_[xm + y + z];
                 upper_s = mtsurfaces_[xm + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x20 | 0x40 | 0x80);
                     nxtfp = &(mdpoints_[xm + y + zp]);
                     enqueueIfUndefined(nxtfp, xm, y, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x20 | 0x80);
@@ -1187,7 +1174,7 @@ void Mission::classifyTile(int x, int y, int z,
                     if ((zp + mmax_m_xy) < mmax_m_all
                         && (upper_s == SurfaceType::kSlopeSN || upper_s == SurfaceType::kSlopeNS || upper_s == SurfaceType::kSlopeWE
                         || upper_s == SurfaceType::kTrainPlatformEW)) {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[xm + y + (zp + mmax_m_xy)]))
                         {
                             if (upper_s == SurfaceType::kTrainPlatformEW)
@@ -1205,12 +1192,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (xp < mmax_x_) {
                 this_s = mtsurfaces_[xp + y + z];
                 upper_s = mtsurfaces_[xp + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x02 | 0x04 | 0x08);
                     nxtfp = &(mdpoints_[xp + y + zp]);
                     enqueueIfUndefined(nxtfp, xp, y, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x02 | 0x08);
@@ -1227,7 +1214,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeSN || upper_s == SurfaceType::kSlopeNS
                         || upper_s == SurfaceType::kSlopeEW || upper_s == SurfaceType::kTrainPlatformNS))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[xp + y + (zp + mmax_m_xy)]))
                         {
                             if (upper_s == SurfaceType::kTrainPlatformNS)
@@ -1245,12 +1232,12 @@ void Mission::classifyTile(int x, int y, int z,
             if(ym >= 0) {
                 this_s = mtsurfaces_[x + ym + z];
                 upper_s = mtsurfaces_[x + ym + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x08 | 0x10 | 0x20);
                     nxtfp = &(mdpoints_[x + ym + zp]);
                     enqueueIfUndefined(nxtfp, x, ym, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x08 | 0x20);
@@ -1265,7 +1252,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeSN || upper_s == SurfaceType::kSlopeEW
                         || upper_s == SurfaceType::kSlopeWE || upper_s == SurfaceType::kTrainPlatformNS))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[x + ym + (zp + mmax_m_xy)]))
                         {
                             if (upper_s == SurfaceType::kTrainPlatformNS)
@@ -1283,12 +1270,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (yp < mmax_m_xy) {
                 this_s = mtsurfaces_[x + yp + z];
                 upper_s = mtsurfaces_[x + yp + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x80 | 0x01 | 0x02);
                     nxtfp = &(mdpoints_[x + yp + zp]);
                     enqueueIfUndefined(nxtfp, x, yp, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x80 | 0x02);
@@ -1305,7 +1292,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeNS || upper_s == SurfaceType::kSlopeEW
                         || upper_s == SurfaceType::kSlopeWE || upper_s == SurfaceType::kTrainPlatformEW))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[x + yp + (zp + mmax_m_xy)]))
                         {
                             if (upper_s == SurfaceType::kTrainPlatformEW)
@@ -1328,7 +1315,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xm + ym + zp]);
                     this_s = mtsurfaces_[xm + ym + z];
                     upper_s = mtsurfaces_[xm + ym + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x20);
@@ -1341,7 +1328,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xm + yp + zp]);
                     this_s = mtsurfaces_[xm + yp + z];
                     upper_s = mtsurfaces_[xm + yp + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x80);
@@ -1356,7 +1343,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xp + ym + zp]);
                     this_s = mtsurfaces_[xp + ym + z];
                     upper_s = mtsurfaces_[xp + ym + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x08);
@@ -1369,7 +1356,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xp + yp + zp]);
                     this_s = mtsurfaces_[xp + yp + z];
                     upper_s = mtsurfaces_[xp + yp + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x02);
@@ -1398,7 +1385,7 @@ void Mission::classifyTile(int x, int y, int z,
                     upper_s = mtsurfaces_[xm + y + z];
                     if (SurfaceUtils::isFlatSurface(this_s)) {
                         nxtfp = &(mdpoints_[xm + y + z]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x40;
                             enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                         }
@@ -1406,7 +1393,7 @@ void Mission::classifyTile(int x, int y, int z,
                         nxtfp = &(mdpoints_[xm + y + z]);
                         this_s = upper_s;
                         upper_s = mtsurfaces_[xm + y + zp];
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x40;
                             enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                         }
@@ -1417,7 +1404,7 @@ void Mission::classifyTile(int x, int y, int z,
                     upper_s = mtsurfaces_[x + ym + z];
                     if (SurfaceUtils::isFlatSurface(this_s)) {
                         nxtfp = &(mdpoints_[x + ym + z]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x10;
                             enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                         }
@@ -1425,7 +1412,7 @@ void Mission::classifyTile(int x, int y, int z,
                         nxtfp = &(mdpoints_[x + ym + z]);
                         this_s = upper_s;
                         upper_s = mtsurfaces_[x + ym + zp];
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x10;
                             enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                         }
@@ -1436,7 +1423,7 @@ void Mission::classifyTile(int x, int y, int z,
                     upper_s = mtsurfaces_[x + yp + z];
                     if (SurfaceUtils::isFlatSurface(this_s)) {
                         nxtfp = &(mdpoints_[x + yp + z]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x01;
                             enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
                         }
@@ -1444,7 +1431,7 @@ void Mission::classifyTile(int x, int y, int z,
                         nxtfp = &(mdpoints_[x + yp + z]);
                         this_s = upper_s;
                         upper_s = mtsurfaces_[x + yp + zp];
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x01;
                             enqueueIfUndefined(nxtfp, x, yp, z, vtodefine);
                         }
@@ -1455,12 +1442,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (xp < mmax_x_) {
                 this_s = mtsurfaces_[xp + y + z];
                 upper_s = mtsurfaces_[xp + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x02 | 0x04 | 0x08);
                     nxtfp = &(mdpoints_[xp + y + zp]);
                     enqueueIfUndefined(nxtfp, xp, y, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x02 | 0x08);
@@ -1475,7 +1462,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeSN || upper_s == SurfaceType::kSlopeNS
                         || upper_s == SurfaceType::kSlopeEW))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[xp + y + (zp + mmax_m_xy)]))
                         {
                             sdirm |= 0x04;
@@ -1490,12 +1477,12 @@ void Mission::classifyTile(int x, int y, int z,
             if(ym >= 0) {
                 this_s = mtsurfaces_[x + ym + z];
                 upper_s = mtsurfaces_[x + ym + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x08 | 0x10);
                     nxtfp = &(mdpoints_[x + ym + zp]);
                     enqueueIfUndefined(nxtfp, x, ym, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x08 | 0x20);
@@ -1508,7 +1495,7 @@ void Mission::classifyTile(int x, int y, int z,
                     sdirmr |= (0x08 | 0x20);
                     if ((zp + mmax_m_xy) < mmax_m_all
                         && (upper_s == SurfaceType::kSlopeSN || upper_s == SurfaceType::kSlopeEW || upper_s == SurfaceType::kSlopeWE)) {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[x + ym + (zp + mmax_m_xy)]))
                         {
                             sdirm |= 0x10;
@@ -1523,12 +1510,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (yp < mmax_m_xy) {
                 this_s = mtsurfaces_[x + yp + z];
                 upper_s = mtsurfaces_[x + yp + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x01 | 0x02);
                     nxtfp = &(mdpoints_[x + yp + zp]);
                     enqueueIfUndefined(nxtfp, x, yp, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x80 | 0x02);
@@ -1543,7 +1530,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeNS || upper_s == SurfaceType::kSlopeEW
                         || upper_s == SurfaceType::kSlopeWE))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[x + yp + (zp + mmax_m_xy)]))
                         {
                             sdirm |= 0x01;
@@ -1562,7 +1549,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xp + ym + zp]);
                     this_s = mtsurfaces_[xp + ym + z];
                     upper_s = mtsurfaces_[xp + ym + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x08);
@@ -1575,7 +1562,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xp + yp + zp]);
                     this_s = mtsurfaces_[xp + yp + z];
                     upper_s = mtsurfaces_[xp + yp + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x02);
@@ -1599,7 +1586,7 @@ void Mission::classifyTile(int x, int y, int z,
                     upper_s = mtsurfaces_[x + ym + z];
                     if (SurfaceUtils::isFlatSurface(this_s)) {
                         nxtfp = &(mdpoints_[x + ym + z]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x10;
                             enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                         }
@@ -1607,7 +1594,7 @@ void Mission::classifyTile(int x, int y, int z,
                         nxtfp = &(mdpoints_[x + ym + z]);
                         this_s = upper_s;
                         upper_s = mtsurfaces_[x + ym + zp];
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x10;
                             enqueueIfUndefined(nxtfp, x, ym, z, vtodefine);
                         }
@@ -1618,7 +1605,7 @@ void Mission::classifyTile(int x, int y, int z,
                     upper_s = mtsurfaces_[xm + y + z];
                     if (SurfaceUtils::isFlatSurface(this_s)) {
                         nxtfp = &(mdpoints_[xm + y + z]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x40;
                             enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                         }
@@ -1626,7 +1613,7 @@ void Mission::classifyTile(int x, int y, int z,
                         nxtfp = &(mdpoints_[xm + y + z]);
                         this_s = upper_s;
                         upper_s = mtsurfaces_[xm + y + zp];
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x40;
                             enqueueIfUndefined(nxtfp, xm, y, z, vtodefine);
                         }
@@ -1637,7 +1624,7 @@ void Mission::classifyTile(int x, int y, int z,
                     upper_s = mtsurfaces_[xp + y + z];
                     if (SurfaceUtils::isFlatSurface(this_s)) {
                         nxtfp = &(mdpoints_[xp + y + z]);
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x04;
                             enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
                         }
@@ -1645,7 +1632,7 @@ void Mission::classifyTile(int x, int y, int z,
                         nxtfp = &(mdpoints_[xp + y + z]);
                         this_s = upper_s;
                         upper_s = mtsurfaces_[xp + y + zp];
-                        if (isTraversable(this_s, upper_s)) {
+                        if (SurfaceUtils::isTraversable(this_s, upper_s)) {
                             sdirl |= 0x04;
                             enqueueIfUndefined(nxtfp, xp, y, z, vtodefine);
                         }
@@ -1656,12 +1643,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (xm >=0) {
                 this_s = mtsurfaces_[xm + y + z];
                 upper_s = mtsurfaces_[xm + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x40 | 0x80);
                     nxtfp = &(mdpoints_[xm + y + zp]);
                     enqueueIfUndefined(nxtfp, xm, y, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x20 | 0x80);
@@ -1676,7 +1663,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeSN || upper_s == SurfaceType::kSlopeNS
                         || upper_s == SurfaceType::kSlopeWE))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[xm + y + (zp + mmax_m_xy)]))
                         {
                             sdirm |= 0x40;
@@ -1691,12 +1678,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (xp < mmax_x_) {
                 this_s = mtsurfaces_[xp + y + z];
                 upper_s = mtsurfaces_[xp + y + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x02 | 0x04);
                     nxtfp = &(mdpoints_[xp + y + zp]);
                     enqueueIfUndefined(nxtfp, xp, y, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x02 | 0x08);
@@ -1713,7 +1700,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeSN || upper_s == SurfaceType::kSlopeNS
                         || upper_s == SurfaceType::kSlopeEW))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[xp + y + (zp + mmax_m_xy)]))
                         {
                             sdirm |= 0x04;
@@ -1728,12 +1715,12 @@ void Mission::classifyTile(int x, int y, int z,
             if (yp < mmax_m_xy) {
                 this_s = mtsurfaces_[x + yp + z];
                 upper_s = mtsurfaces_[x + yp + zp];
-                if (SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s, upper_s))
+                if (SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s, upper_s))
                 {
                     sdirm |= (0x80 | 0x01 | 0x02);
                     nxtfp = &(mdpoints_[x + yp + zp]);
                     enqueueIfUndefined(nxtfp, x, yp, zp, vtodefine);
-                } else if (SurfaceUtils::isStairs(this_s) && isTraversable(this_s,
+                } else if (SurfaceUtils::isStairs(this_s) && SurfaceUtils::isTraversable(this_s,
                     upper_s))
                 {
                     sdirmr |= (0x80 | 0x02);
@@ -1748,7 +1735,7 @@ void Mission::classifyTile(int x, int y, int z,
                         && (upper_s == SurfaceType::kSlopeNS || upper_s == SurfaceType::kSlopeEW
                         || upper_s == SurfaceType::kSlopeWE))
                     {
-                        if (isTraversable(upper_s,
+                        if (SurfaceUtils::isTraversable(upper_s,
                             mtsurfaces_[x + yp + (zp + mmax_m_xy)]))
                         {
                             sdirm |= 0x01;
@@ -1767,7 +1754,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xm + yp + zp]);
                     this_s = mtsurfaces_[xm + yp + z];
                     upper_s = mtsurfaces_[xm + yp + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x80);
@@ -1779,7 +1766,7 @@ void Mission::classifyTile(int x, int y, int z,
                     nxtfp = &(mdpoints_[xp + yp + zp]);
                     this_s = mtsurfaces_[xp + yp + z];
                     upper_s = mtsurfaces_[xp + yp + zp];
-                    if (!(SurfaceUtils::isFlatSurface(this_s) && isTraversable(this_s,
+                    if (!(SurfaceUtils::isFlatSurface(this_s) && SurfaceUtils::isTraversable(this_s,
                         upper_s)))
                     {
                         sdirm &= (0xFF ^ 0x02);
@@ -1800,7 +1787,7 @@ void Mission::classifyTile(int x, int y, int z,
     }
 }
 
-bool Mission::findWalkableTileFromBase(TilePoint &basePt) {
+bool Mission::findReachableTileFromBase(TilePoint &basePt) {
     for (int z = mmax_z_ - 1; z >= 0; z--) {
         TilePoint candidate = p_map_->projectToZLevel(basePt, z);
         
@@ -1813,8 +1800,8 @@ bool Mission::findWalkableTileFromBase(TilePoint &basePt) {
         
         int tileIndex = getTileIndex(candidate);
         
-        // Try to find walkable position at current Z level
-        if (isTileWalkable(tileIndex)) {
+        // Try to find reachable position at current Z level
+        if (isTileReachable(tileIndex)) {
             TilePoint adjusted = adjustPositionForSurface(candidate, tileIndex);
             if (adjusted.isValid()) {
                 basePt = adjusted;
@@ -1952,8 +1939,8 @@ TilePoint Mission::tryAdjacentTile(const TilePoint &point, int deltaX, int delta
     
     int adjacentIndex = adjacentTx + adjacentTy * mmax_x_ + point.tz * mmax_m_xy;
     
-    // Check if adjacent tile is walkable and has the same slope type
-    if (isTileWalkable(adjacentIndex) && 
+    // Check if adjacent tile is reachable and has the same slope type
+    if (isTileReachable(adjacentIndex) && 
         mtsurfaces_[adjacentIndex] == expectedSurfaceType) {
         return TilePoint(adjacentTx, adjacentTy, point.tz, newOffsetX, newOffsetY);
     }
@@ -1973,7 +1960,7 @@ TilePoint Mission::tryProjectOntoLowerSlope(const TilePoint &point) {
     
     int lowerIndex = point.tx + point.ty * mmax_x_ + lowerZ * mmax_m_xy;
     
-    if (!isTileWalkable(lowerIndex)) {
+    if (!isTileReachable(lowerIndex)) {
         return TilePoint::invalid();
     }
     
@@ -2717,9 +2704,9 @@ int Mission::getTileIndex(const TilePoint &point) const {
 }
 
 /**
- * Checks if a tile at the given index is marked as walkable.
+ * Checks if a tile at the given index is marked as reachable (ie walkable and with a path to it).
  */
-bool Mission::isTileWalkable(int tileIndex) const {
+bool Mission::isTileReachable(int tileIndex) const {
     return (mdpoints_[tileIndex].flags & kWalkable) == kWalkable;
 }
 
