@@ -35,8 +35,6 @@
 namespace fs_knl {
 
 void InstantImpactShot::inflictDamage(Mission *pMission) {
-    WorldPoint originLocW(dmg_.d_owner->position()); // origin of shooting
-    /*printf("Origin loc %d %d %d\n", originLocW.x, originLocW.y, originLocW.z);*/
     // get how much impacts does the weapon generate
     int nbImpacts = dmg_.pWeapon->getClass()->impactsPerAmmo();
 
@@ -49,11 +47,7 @@ void InstantImpactShot::inflictDamage(Mission *pMission) {
 
         if (nbImpacts > 1) {
             // When multiple impacts, they're spread
-            diffuseImpact(pMission, originLocW, &impactPosW);
-            /*if (impactPosW.z < originLocW.z) {
-                printf("Impact %d below Z\n", i);
-            }
-            printf("Impact %d apres diffuse %d %d %d\n", i, impactPosW.x, impactPosW.y, impactPosW.z);*/
+            diffuseImpact(pMission, dmg_.originLocW, &impactPosW);
         }
 
         // Verify if shot hit something or was blocked by a tile
@@ -62,8 +56,7 @@ void InstantImpactShot::inflictDamage(Mission *pMission) {
         crits.maxr = dmg_.pWeapon->range();
         crits.pOrigin = dmg_.d_owner;
         ShootableMapObject *pTargetHit = NULL;
-        uint8_t res = pMission->checkIfBlockersInShootingLine(originLocW, crits, &pTargetHit, &impactPosW);
-        //printf("Impact %d apres checkIfBlockers %d %d %d : %d\n", i, impactPosW.x, impactPosW.y, impactPosW.z, res);
+        pMission->checkIfBlockersInShootingLine(dmg_.originLocW, crits, &pTargetHit, &impactPosW);
 
         if (pTargetHit != NULL) {
             hitsByObject[pTargetHit] = hitsByObject[pTargetHit] + 1;

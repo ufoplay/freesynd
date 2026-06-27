@@ -2540,8 +2540,6 @@ bool Mission::findShootableTileFromBase(TilePoint &basePt) {
     bool gotIt = false;
     TilePoint candidate;
 
-    printf("getAimedTargetOnGround : basePt.tz, oz = %d, %d\n", basePt.tz, basePt.oz);
-
     for (int tz = mmax_z_; (tz > 0 && !gotIt); tz--) {
         int bzm = tz - 1;
 

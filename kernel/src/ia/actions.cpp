@@ -1045,11 +1045,10 @@ void ShootAction::fillDamageDesc(PedInstance *pShooter,
     dmg.d_owner = pShooter;
     dmg.aimedLocW = aimedAt_;
     dmg.originLocW.convertFromTilePoint(pShooter->position());
+    // the weapon is located at half the size of the shooter
+    dmg.originLocW.z += pShooter->sizeZ() >> 1;
 
     if (pWeapon->isInstanceOf(Weapon::Flamer)) {
-        // the weapon is located at half the size of the shooter
-        dmg.originLocW.z += pShooter->sizeZ() >> 1;
-
         switch(pShooter->getDiscreteDirection()) {
         case 0:
             dmg.originLocW.y += 200;

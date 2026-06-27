@@ -332,6 +332,7 @@ bool SquadSelection::isTargetInRange(fs_knl::Mission *pMission, fs_knl::Shootabl
     for (SquadSelection::Iterator it = begin(); it != end(); ++it) {
         if ((*it)->isArmed()) {
             fs_knl::WorldPoint shooterPosW((*it)->position());
+            shooterPosW.z += (*it)->sizeZ() >> 1;
             fs_knl::WeaponInstance *pWeapon = (*it)->selectedWeapon();
 
             fs_knl::Mission::BlockerCriteria crits;
