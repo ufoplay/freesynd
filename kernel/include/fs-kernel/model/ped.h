@@ -145,7 +145,6 @@ public:
 
     //! MapObject::state_
     enum pedActionStateMasks {
-        pa_smNone = 0x0,
         pa_smStanding = 0x0001,
         pa_smWalking = 0x0002,
         pa_smHit = 0x0004,

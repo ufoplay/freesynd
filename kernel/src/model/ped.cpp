@@ -48,6 +48,7 @@ const int PedInstance::kAgentMaxSpeedWithOverweight = 64;
 PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, int maxSpeed) :
     ShootableMovableMapObject(anId, pMap, MapObject::kNaturePed, maxSpeed),
     type_(pedType),
+    state_(PedInstance::pa_smStanding),
     desc_state_(PedInstance::pd_smUndefined),
     hostile_desc_(PedInstance::pd_smUndefined),
     obj_group_def_(PedInstance::og_dmUndefined),
@@ -60,7 +61,6 @@ PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, 
     intelligence_(IPAStim::Intelligence)
 {
     unblockPath();
-    state_ = PedInstance::pa_smNone;
     is_our_ = isOur;
 
     tm_before_check_ = 1000;
@@ -100,9 +100,6 @@ bool PedInstance::isInPanic() {
 bool PedInstance::switchActionStateTo(uint32_t as) {
     uint32_t prevState = state_;
     switch(as) {
-        case pa_smNone:
-            //printf("Ped has undefined state");
-            break;
         case pa_smStanding:
             state_ = pa_smStanding;
             break;
@@ -132,11 +129,7 @@ bool PedInstance::switchActionStateTo(uint32_t as) {
 bool PedInstance::switchActionStateFrom(uint32_t as) {
     uint32_t prevState = state_;
     switch(as) {
-        case pa_smNone:
-            //printf("Ped has undefined state");
-            break;
         case pa_smStanding:
-            //state_ &= pa_smAll ^ pa_smStanding;
             printf("switchActionStateFrom : Ped %d cannot leave standing state\n", id_);
             break;
         case pa_smWalking:
@@ -178,10 +171,6 @@ void PedInstance::synchDrawnAnimWithActionState(void) {
     } else if ((state_ & pa_smPutDown) != 0) {
         playPickupOrDropAnimation();
     }
-#ifdef _DEBUG
-    if (state_ ==  pa_smNone)
-        printf("synchDrawnAnimWithActionState : undefined state_ %d for ped %d\n", state_, id_);
-#endif
 }
 
 /*!

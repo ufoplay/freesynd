@@ -76,7 +76,7 @@ Action(aType) {
     pPrevious_ = NULL;
     isExclusive_ = exclusive;
     canExecInVehicle_ = canExecVehicle;
-    targetState_ = PedInstance::pa_smNone;
+    targetState_ = PedInstance::pa_smStanding;
     warnBehaviour_ = false;
 }
 
@@ -768,7 +768,7 @@ HitAction::HitAction(DamageToInflict &d) :
     damage_.originLocW = d.originLocW;
     damage_.pWeapon = d.pWeapon;
 
-    targetState_ = PedInstance::pa_smNone;
+    targetState_ = PedInstance::pa_smHit;
 }
 
 bool HitAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) {
