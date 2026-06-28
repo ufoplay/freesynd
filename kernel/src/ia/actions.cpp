@@ -775,6 +775,7 @@ bool HitAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) 
     if (status_ == kActStatusNotStarted) {
         setRunning();
         doStart(pMission, pPed);
+        pPed->goToState(PedInstance::pa_smHit);
         if (!isRunning()) {
             // not running means failed or waiting for next run
             return true;
@@ -815,7 +816,6 @@ void RecoilHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *p
     // Change direction due to impact
     pPed->setDirectionTowardPosition(damage_.originLocW);
     pPed->playHitAnimation();
-    pPed->goToState(PedInstance::pa_smHit);
     phase_ = kRecoilPhaseRecoil;
     setWaitingForAnimation();
 }
@@ -857,7 +857,6 @@ void LaserHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *pP
     // Change direction due to impact
     pPed->setDirectionTowardPosition(damage_.originLocW);
     pPed->playVaporizeAnimation();
-    pPed->goToState(PedInstance::pa_smHit);
     setWaitingForAnimation();
 }
 
@@ -897,7 +896,6 @@ void WalkBurnHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance 
     moveDirection_ = rand() % 256;
     pPed->setSpeedToMax();
     pPed->playWalkBurnAnimation();
-    pPed->goToState(PedInstance::pa_smWalkingBurning);
     phase_ = kBurnPhaseWalk;
 }
 
@@ -948,8 +946,7 @@ HitAction(d) {
  * \param pMission Mission data
  * \param pPed The ped executing the action.
  */
-void PersuadedHitAction::doStart([[maybe_unused]] Mission *pMission, [[maybe_unused]] PedInstance *pPed) {
-    pPed->goToState(PedInstance::pa_smHit);
+void PersuadedHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *pPed) {
     pPed->playPersuadedAnimation();
     g_SoundMgr.play(fs_eng::PERSUADE);
     setWaitingForAnimation();

@@ -2386,11 +2386,12 @@ bool PedInstance::doMove(uint32_t elapsed)
             updated = true;
         }
 
-        if ((state_ & pa_smFollowing) != 0) {
+        if (isFollowing()) {
             // TODO: too big elapsed makes ped move to close to target
             // possible solution will be to use movedir like movement
             // and calculate distance at every step, but it is
             // a high cpu consuming
+            // TODO : check if not redundunt with FollowAction ou FollowToShootAction
             if (!dest_path_.empty()) {
                 WorldPoint wpt(dest_path_.back());
                 double dist_cur = distanceToPosition(wpt);

@@ -150,14 +150,11 @@ public:
         pa_smWalking = 0x0002,
         pa_smHit = 0x0004,
         pa_smFiring = 0x0008,
-        pa_smFollowing = 0x0010,
         pa_smPickUp = 0x0020,
         pa_smPutDown = 0x0040,
         pa_smDying = 0x0100,
         // this object should be ignored in all Ai procedures
         pa_smUnavailable = 0x2000,
-        //! When a ped is walking and burning
-        pa_smWalkingBurning = 0x8000,
         pa_smAll = 0xFFFF
     };
 
@@ -369,6 +366,8 @@ public:
 
     void putInVehicle(Vehicle *v);
     void leaveVehicle();
+    //! Return true if this ped is currently following someone
+    bool isFollowing();
 
     /**
      * @name IPA Management

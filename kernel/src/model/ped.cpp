@@ -104,25 +104,16 @@ bool PedInstance::switchActionStateTo(uint32_t as) {
             //printf("Ped has undefined state");
             break;
         case pa_smStanding:
-            state_ &= (pa_smAll ^pa_smFollowing);
-            state_ |= pa_smStanding;
+            state_ = pa_smStanding;
             break;
         case pa_smWalking:
-            state_ &= (pa_smAll ^pa_smFollowing);
-            state_ |= pa_smWalking;
-            break;
-        case pa_smWalkingBurning:
-            state_ = pa_smWalkingBurning;
+            state_ = pa_smWalking;
             break;
         case pa_smHit:
             state_ = pa_smHit;
             break;
         case pa_smFiring:
             state_ |= pa_smFiring;
-            break;
-        case pa_smFollowing:
-            state_ &= (pa_smAll ^ (pa_smStanding | pa_smWalking));
-            state_ |= pa_smFollowing;
             break;
         case pa_smPickUp:
             state_ = pa_smPickUp;
@@ -164,15 +155,8 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
         case pa_smFiring:
             state_ &= pa_smAll ^ pa_smFiring;
             break;
-        case pa_smFollowing:
-            state_ &= pa_smAll ^ (pa_smFollowing | pa_smWalking);
-            state_ |= pa_smStanding;
-            break;
         case pa_smPickUp:
         case pa_smPutDown:
-            state_ = pa_smStanding;
-            break;
-        case pa_smWalkingBurning:
             state_ = pa_smStanding;
             break;
         case pa_smUnavailable:
@@ -188,7 +172,7 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
 void PedInstance::synchDrawnAnimWithActionState(void) {
     // TODO: complete
     if ((state_ & pa_smUnavailable) != 0) {
-    } else if ((state_ & (pa_smWalking | pa_smFollowing)) != 0) {
+    } else if ((state_ & (pa_smWalking)) != 0) {
         if ((state_ & pa_smFiring) != 0) {
         } else {
             playStandOrWalkAnimation();
@@ -910,6 +894,16 @@ void PedInstance::leaveVehicle() {
     setDrawable(true);
     setPosition(in_vehicle_->position());
     in_vehicle_ = nullptr;
+}
+
+bool PedInstance::isFollowing() {
+    if (currentAction_) {
+        Action::ActionType type = currentAction_->type();
+        return type == Action::ActionType::kActTypeFollow ||
+            type == Action::ActionType::kActTypeFollowToShoot;
+    }
+
+    return false;
 }
 
 /*!
