@@ -104,13 +104,11 @@ bool PedInstance::switchActionStateTo(uint32_t as) {
             //printf("Ped has undefined state");
             break;
         case pa_smStanding:
-            state_ &= (pa_smAll ^(pa_smFollowing
-                | pa_smInCar));
+            state_ &= (pa_smAll ^pa_smFollowing);
             state_ |= pa_smStanding;
             break;
         case pa_smWalking:
-            state_ &= (pa_smAll ^(pa_smFollowing
-                | pa_smInCar));
+            state_ &= (pa_smAll ^pa_smFollowing);
             state_ |= pa_smWalking;
             break;
         case pa_smWalkingBurning:
@@ -137,12 +135,6 @@ bool PedInstance::switchActionStateTo(uint32_t as) {
             break;
         case pa_smPutDown:
             state_ = pa_smPutDown;
-            break;
-        case pa_smBurning:
-            state_ = pa_smBurning;
-            break;
-        case pa_smInCar:
-            state_ = pa_smStanding | pa_smInCar;
             break;
         case pa_smDead:
             state_ = pa_smDead;
@@ -191,14 +183,8 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
         case pa_smPutDown:
             state_ = pa_smStanding;
             break;
-        case pa_smBurning:
-            state_ &= pa_smAll ^ pa_smBurning;
-            break;
         case pa_smWalkingBurning:
             state_ = pa_smStanding;
-            break;
-        case pa_smInCar:
-            state_ &= pa_smAll ^ (pa_smStanding | pa_smInCar);
             break;
         case pa_smDead:
             state_ = pa_smDead;
@@ -935,14 +921,12 @@ void PedInstance::putInVehicle(Vehicle * pVehicle)
 {
     setDrawable(false);
     in_vehicle_ = pVehicle;
-    switchActionStateTo(PedInstance::pa_smInCar);
 }
 
 void PedInstance::leaveVehicle() {
     setDrawable(true);
     setPosition(in_vehicle_->position());
-    in_vehicle_ = NULL;
-    switchActionStateFrom(state_ & PedInstance::pa_smInCar);
+    in_vehicle_ = nullptr;
 }
 
 /*!

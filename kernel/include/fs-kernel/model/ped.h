@@ -153,9 +153,7 @@ public:
         pa_smFollowing = 0x0010,
         pa_smPickUp = 0x0020,
         pa_smPutDown = 0x0040,
-        pa_smBurning = 0x0080,
         pa_smDying = 0x0100,
-        pa_smInCar = 0x0400,
         pa_smHitByPersuadotron = 0x0800,
         pa_smDead = 0x1000,
         // this object should be ignored in all Ai procedures
