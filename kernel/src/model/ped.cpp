@@ -121,12 +121,6 @@ bool PedInstance::switchActionStateTo(uint32_t as) {
         case pa_smPutDown:
             state_ = pa_smPutDown;
             break;
-        case pa_smDying:
-            state_ = pa_smDying;
-            break;
-        case pa_smUnavailable:
-            state_ = pa_smUnavailable;
-            break;
     }
 
     return prevState != state_;
@@ -159,9 +153,6 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
         case pa_smPutDown:
             state_ = pa_smStanding;
             break;
-        case pa_smUnavailable:
-            state_ = pa_smUnavailable;
-            break;
         default:
             state_ = pa_smStanding;
     }
@@ -171,8 +162,7 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
 
 void PedInstance::synchDrawnAnimWithActionState(void) {
     // TODO: complete
-    if ((state_ & pa_smUnavailable) != 0) {
-    } else if ((state_ & (pa_smWalking)) != 0) {
+    if ((state_ & (pa_smWalking)) != 0) {
         if ((state_ & pa_smFiring) != 0) {
         } else {
             playStandOrWalkAnimation();

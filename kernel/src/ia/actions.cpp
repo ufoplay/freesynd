@@ -817,7 +817,7 @@ void RecoilHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *p
     pPed->setDirectionTowardPosition(damage_.originLocW);
     pPed->playHitAnimation();
     phase_ = kRecoilPhaseRecoil;
-    setWaitingForAnimation();
+    waitForAnimation();
 }
 
 /*!
@@ -832,7 +832,7 @@ bool RecoilHitAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_unuse
             if (pPed->takeDamage(damage_)) {
                 pPed->playDyingAnimation();
                 phase_ = kRecoilPhaseDying;
-                setWaitingForAnimation();
+                waitForAnimation();
             } else {
                 pPed->leaveState(PedInstance::pa_smHit);
                 setSucceeded();
@@ -857,7 +857,7 @@ void LaserHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *pP
     // Change direction due to impact
     pPed->setDirectionTowardPosition(damage_.originLocW);
     pPed->playVaporizeAnimation();
-    setWaitingForAnimation();
+    waitForAnimation();
 }
 
 /*!
@@ -917,14 +917,14 @@ bool WalkBurnHitAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstan
             pPed->takeDamage(damage_);
             phase_ = kBurnPhaseDying;
             pPed->playDyingBurnAnimation();
-            setWaitingForAnimation();
+            waitForAnimation();
         }
     }
         break;
     case kBurnPhaseDying:
         phase_ = kBurnPhaseDead;
         pPed->playSmokeBurnAnimation();
-        setWaitingForAnimation();
+        waitForAnimation();
         break;
     case kBurnPhaseDead:
         pPed->handleDeath(damage_);
@@ -949,7 +949,7 @@ HitAction(d) {
 void PersuadedHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *pPed) {
     pPed->playPersuadedAnimation();
     g_SoundMgr.play(fs_eng::PERSUADE);
-    setWaitingForAnimation();
+    waitForAnimation();
 }
 
 /*!
@@ -1016,7 +1016,7 @@ bool ShootAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed
         // simulate the fact that the weapon needs to be reloaded
         // and the shooter's reactivity to that
         timeToWait_ = pPed->getTimeBetweenShoots(pWeapon_);
-        setWaitingForTime();
+        waitForTime();
     } else if (status_ == kActStatusWaitForTime) {
         timeToWait_ -= elapsed;
         if (timeToWait_ <= 0) {
@@ -1135,7 +1135,7 @@ void AutomaticShootAction::stop() {
         // simulate the fact that the weapon needs to be reloaded
         // and the shooter's reactivity to that
         timeToWait_ = pPed->getTimeBetweenShoots(pWeapon_);
-        setWaitingForTime();
+        waitForTime();
     }
 }
 

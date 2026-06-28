@@ -152,9 +152,6 @@ public:
         pa_smFiring = 0x0008,
         pa_smPickUp = 0x0020,
         pa_smPutDown = 0x0040,
-        pa_smDying = 0x0100,
-        // this object should be ignored in all Ai procedures
-        pa_smUnavailable = 0x2000,
         pa_smAll = 0xFFFF
     };
 

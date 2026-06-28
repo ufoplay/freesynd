@@ -130,9 +130,9 @@ public:
     //! Sets the status to Running
     void setRunning() { status_ = kActStatusRunning; }
     //! Sets the status to WaitForTime
-    void setWaitingForTime() { status_ = kActStatusWaitForTime; }
+    void waitForTime() { status_ = kActStatusWaitForTime; }
     //! Sets the status to WaitForAnimation
-    void setWaitingForAnimation() { status_ = kActStatusWaitForAnim; }
+    void waitForAnimation() { status_ = kActStatusWaitForAnim; }
     //! Sets the status to Succeeded
     void setSucceeded() { status_ = kActStatusSucceeded; }
     //! Sets the status to Failed
