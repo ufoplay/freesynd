@@ -602,6 +602,16 @@ public:
 protected:
     void doStart(Mission *pMission, PedInstance *pPed);
     bool doExecute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) override;
+
+protected:
+    //! The different phase of being hit by bullet
+    enum RecoilPhase {
+        kRecoilPhaseRecoil,
+        kRecoilPhaseDying
+    };
+
+    //! Keep track of current phase
+    RecoilPhase phase_;
 };
 
 /*!

@@ -117,12 +117,6 @@ bool PedInstance::switchActionStateTo(uint32_t as) {
         case pa_smHit:
             state_ = pa_smHit;
             break;
-        case pa_smHitByLaser:
-            state_ = pa_smHitByLaser;
-            break;
-        case pa_smHitByPersuadotron:
-            state_ = pa_smHitByPersuadotron;
-            break;
         case pa_smFiring:
             state_ |= pa_smFiring;
             break;
@@ -165,8 +159,6 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
             state_ |= pa_smStanding;
             break;
         case pa_smHit:
-        case pa_smHitByLaser:
-        case pa_smHitByPersuadotron:
             state_ = pa_smStanding;
             break;
         case pa_smFiring:
@@ -954,26 +946,19 @@ void PedInstance::handleDeath(const DamageToInflict &damage) {
     
     switch (damage.dtype) {
         case kDmgTypeBullet:
-            //setDrawnAnim(PedInstance::ad_DieAnim);
             dropAllWeapons();
             break;
-        /*case kDmgTypeLaser:
+        case kDmgTypeLaser:
             if (is_our_) {
-                setDrawnAnim(PedInstance::ad_DeadAgentAnim);
-            } else {
-                setDrawnAnim(PedInstance::ad_NoAnimation);
+                dropAllWeapons();
             }
-            break;*/
+            break;
         case kDmgTypeExplosion:
         case kDmgTypeBurn:
+            // weapons are dropped only if ped had enough protection or don't die by suicide
             if (hasMinimumVersionOfMod(Mod::MOD_CHEST, Mod::MOD_V2) &&
                 damage.d_owner != this) {
-                //setDrawnAnim(PedInstance::ad_DieAnim);
                 dropAllWeapons();
-            } else {
-                // was burning because not enough protected or suicide
-                // so die burning
-                //setDrawnAnim(PedInstance::ad_DieBurnAnim);
             }
             break;
         default:
@@ -986,6 +971,14 @@ void PedInstance::handleDeath(const DamageToInflict &damage) {
     if (isOurAgent()) {
         EventManager::fire<AgentDiedEvent>(this);
     }
+}
+
+bool PedInstance::isHitByBullet() {
+    if (isState(pa_smHit)) {
+        return dynamic_cast<RecoilHitAction *>(currentAction_) != nullptr;
+    }
+
+    return false;
 }
 
 void PedInstance::addEnemyGroupDef(uint32_t eg_id, uint32_t eg_def) {

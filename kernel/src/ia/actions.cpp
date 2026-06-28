@@ -816,6 +816,7 @@ void RecoilHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *p
     pPed->setDirectionTowardPosition(damage_.originLocW);
     pPed->playHitAnimation();
     pPed->goToState(PedInstance::pa_smHit);
+    phase_ = kRecoilPhaseRecoil;
     setWaitingForAnimation();
 }
 
@@ -827,16 +828,16 @@ void RecoilHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *p
  */
 bool RecoilHitAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_unused]] Mission *pMission, PedInstance *pPed) {
     if (isRunning()) {
-        if (pPed->isState(PedInstance::pa_smHit)) {
+        if (phase_ == kRecoilPhaseRecoil) {
             if (pPed->takeDamage(damage_)) {
                 pPed->playDyingAnimation();
-                pPed->goToState(PedInstance::pa_smDying);
+                phase_ = kRecoilPhaseDying;
                 setWaitingForAnimation();
             } else {
                 pPed->leaveState(PedInstance::pa_smHit);
                 setSucceeded();
             }
-        } else if (pPed->isState(PedInstance::pa_smDying)) {
+        } else if (phase_ == kRecoilPhaseDying) {
             pPed->handleDeath(damage_);
             pPed->playDeadAnimation();
             setSucceeded();
@@ -856,7 +857,7 @@ void LaserHitAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *pP
     // Change direction due to impact
     pPed->setDirectionTowardPosition(damage_.originLocW);
     pPed->playVaporizeAnimation();
-    pPed->goToState(PedInstance::pa_smHitByLaser);
+    pPed->goToState(PedInstance::pa_smHit);
     setWaitingForAnimation();
 }
 
@@ -948,7 +949,7 @@ HitAction(d) {
  * \param pPed The ped executing the action.
  */
 void PersuadedHitAction::doStart([[maybe_unused]] Mission *pMission, [[maybe_unused]] PedInstance *pPed) {
-    pPed->goToState(PedInstance::pa_smHitByPersuadotron);
+    pPed->goToState(PedInstance::pa_smHit);
     pPed->playPersuadedAnimation();
     g_SoundMgr.play(fs_eng::PERSUADE);
     setWaitingForAnimation();
@@ -964,7 +965,7 @@ bool PersuadedHitAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_un
     if (status_ == kActStatusRunning) {
         PedInstance *pAgent = static_cast<PedInstance *>(damage_.d_owner);
         pPed->handlePersuadedBy(pAgent);
-        pPed->leaveState(PedInstance::pa_smHitByPersuadotron);
+        pPed->leaveState(PedInstance::pa_smHit);
         setSucceeded();
     }
     return true;

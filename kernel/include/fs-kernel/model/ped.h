@@ -154,11 +154,8 @@ public:
         pa_smPickUp = 0x0020,
         pa_smPutDown = 0x0040,
         pa_smDying = 0x0100,
-        pa_smHitByPersuadotron = 0x0800,
         // this object should be ignored in all Ai procedures
         pa_smUnavailable = 0x2000,
-        //! When a ped is hit by a laser
-        pa_smHitByLaser = 0x4000,
         //! When a ped is walking and burning
         pa_smWalkingBurning = 0x8000,
         pa_smAll = 0xFFFF
@@ -174,6 +171,8 @@ public:
     void setAnimations(uint16_t baseSpriteAnimationId);
 
     void draw(const Point2D &screenPos) override;
+
+    void drawSelectorAnim(const Point2D &screenPos);
 
     void playStandOrWalkAnimation();
     void playStandAndShootAnimation();
@@ -204,7 +203,6 @@ public:
     bool switchActionStateFrom(uint32_t as);
     void synchDrawnAnimWithActionState(void);
 
-    void drawSelectorAnim(const Point2D &screenPos);
     //! Set state for ped (replace switchActionStateTo)
     void goToState(uint32_t as);
     //! Quit state for ped (replace switchActionStateFrom)
@@ -337,6 +335,8 @@ public:
     void handleHit(DamageToInflict &d) override;
     //! Method when a Ped is dead
     void handleDeath(const DamageToInflict &damage);
+    //! Return true if Ped is currently being hit by bullet
+    bool isHitByBullet();
     ///@}
 
     /**

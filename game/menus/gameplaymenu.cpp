@@ -812,7 +812,7 @@ void GameplayMenu::updateMissionHint(uint32_t elapsed) {
         if (pLeader->wePickupWeapon()) {
             hint_ = getMessage("HINT_PICKUP_WEAPON");
         }
-        if (pLeader->isState(fs_knl::PedInstance::pa_smHit)) {
+        if (pLeader->isHitByBullet()) {
             hint_ = getMessage("HINT_HIT_BY_BULLET");
         }
         hintColor_ = 14;
