@@ -155,14 +155,12 @@ public:
         pa_smPutDown = 0x0040,
         pa_smDying = 0x0100,
         pa_smHitByPersuadotron = 0x0800,
-        pa_smDead = 0x1000,
         // this object should be ignored in all Ai procedures
         pa_smUnavailable = 0x2000,
         //! When a ped is hit by a laser
         pa_smHitByLaser = 0x4000,
         //! When a ped is walking and burning
         pa_smWalkingBurning = 0x8000,
-        pa_smCheckExcluded = pa_smDead | pa_smUnavailable,
         pa_smAll = 0xFFFF
     };
 

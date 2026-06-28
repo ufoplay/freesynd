@@ -136,9 +136,6 @@ bool PedInstance::switchActionStateTo(uint32_t as) {
         case pa_smPutDown:
             state_ = pa_smPutDown;
             break;
-        case pa_smDead:
-            state_ = pa_smDead;
-            break;
         case pa_smDying:
             state_ = pa_smDying;
             break;
@@ -185,12 +182,6 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
             break;
         case pa_smWalkingBurning:
             state_ = pa_smStanding;
-            break;
-        case pa_smDead:
-            state_ = pa_smDead;
-#ifdef _DEBUG
-            printf("It's alive!\n");
-#endif
             break;
         case pa_smUnavailable:
             state_ = pa_smUnavailable;
@@ -960,8 +951,7 @@ void PedInstance::handleHit(DamageToInflict &d) {
  */
 void PedInstance::handleDeath(const DamageToInflict &damage) {
     clearDestination();
-    switchActionStateTo(PedInstance::pa_smDead);
-
+    
     switch (damage.dtype) {
         case kDmgTypeBullet:
             //setDrawnAnim(PedInstance::ad_DieAnim);
