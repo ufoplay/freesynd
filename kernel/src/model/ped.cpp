@@ -130,7 +130,6 @@ bool PedInstance::switchActionStateFrom(uint32_t as) {
     uint32_t prevState = state_;
     switch(as) {
         case pa_smStanding:
-            printf("switchActionStateFrom : Ped %d cannot leave standing state\n", id_);
             break;
         case pa_smWalking:
             state_ &= pa_smAll ^ pa_smWalking;
@@ -166,10 +165,6 @@ void PedInstance::synchDrawnAnimWithActionState(void) {
         } else {
             playStandOrWalkAnimation();
         }
-    } else if ((state_ & pa_smPickUp) != 0) {
-        playPickupOrDropAnimation();
-    } else if ((state_ & pa_smPutDown) != 0) {
-        playPickupOrDropAnimation();
     }
 }
 

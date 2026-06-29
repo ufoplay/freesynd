@@ -529,7 +529,8 @@ PutdownWeaponAction::PutdownWeaponAction(uint8_t weaponIdx) : MovementAction(kAc
 }
 
 void PutdownWeaponAction::doStart([[maybe_unused]] Mission *pMission, [[maybe_unused]] PedInstance *pPed) {
-    status_ = kActStatusWaitForAnim;
+    pPed->playPickupOrDropAnimation();
+    waitForAnimation();
 }
 
 /*!
@@ -564,7 +565,8 @@ void PickupWeaponAction::doStart([[maybe_unused]] Mission *pMission, PedInstance
         setFailed();
     } else {
         // the animation must run first then the object will be picked up
-        status_ = kActStatusWaitForAnim;
+        pPed->playPickupOrDropAnimation();
+        waitForAnimation();
     }
 }
 
