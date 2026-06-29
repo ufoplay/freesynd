@@ -24,7 +24,7 @@
 TEST_CASE( "PedAction", "[kernel][ped]" ) {
     fs_knl::PedInstance cut(1, nullptr, fs_knl::PedInstance::kPedTypeAgent, true, 128);
     cut.setStartHealth(10);
-    cut.switchActionStateTo(fs_knl::PedInstance::pa_smStanding);
+    cut.goToState(fs_knl::PedInstance::kPedActionStateStanding);
 
     SECTION( "can take hit action") {
         // Reject cause health is zero
@@ -35,7 +35,7 @@ TEST_CASE( "PedAction", "[kernel][ped]" ) {
         REQUIRE( cut.canTakeAction(fs_knl::Action::kActTypeHit) );
 
         // Reject cause state is already hit
-        cut.switchActionStateTo(fs_knl::PedInstance::pa_smHit);
+        cut.goToState(fs_knl::PedInstance::kPedActionStateHit);
         REQUIRE_FALSE( cut.canTakeAction(fs_knl::Action::kActTypeHit) );
     }
 }

@@ -31,7 +31,7 @@ namespace fs_knl {
  */
 bool PedInstance::canTakeAction(Action::ActionType type) {
     if (type == Action::kActTypeHit) {
-        if (isAlive() && !isState(pa_smHit)) {
+        if (isAlive() && !isState(kPedActionStateHit)) {
             return true;
         }
     }

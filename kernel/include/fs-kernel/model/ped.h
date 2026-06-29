@@ -110,6 +110,17 @@ public:
         kPedTypeCriminal = 0x10
     } ;
 
+    //! This is the list of possible state for a PedInstance
+    enum PedActionState {
+        kPedActionStateStanding = 0x0001,
+        kPedActionStateWalking = 0x0002,
+        kPedActionStateHit = 0x0004,
+        kPedActionStateFiring = 0x0008,
+        kPedActionStatePickUp = 0x0020,
+        kPedActionStatePutDown = 0x0040,
+        pa_smAll = 0xFFFF
+    };
+
     PedInstance(uint16_t id, Map *pMap, PedType type, bool isOur, int maxSpeed);
     ~PedInstance();
 
@@ -142,17 +153,6 @@ public:
     void setPanicImmuned() { panicImmuned_ = true; }
     //! Return true if the ped is currently in panic
     bool isInPanic();
-
-    //! MapObject::state_
-    enum pedActionStateMasks {
-        pa_smStanding = 0x0001,
-        pa_smWalking = 0x0002,
-        pa_smHit = 0x0004,
-        pa_smFiring = 0x0008,
-        pa_smPickUp = 0x0020,
-        pa_smPutDown = 0x0040,
-        pa_smAll = 0xFFFF
-    };
 
     /**
      * @name Animation
@@ -192,13 +192,12 @@ public:
      * @name State management
      */
     ///@{
-    bool switchActionStateTo(uint32_t as);
-    bool switchActionStateFrom(uint32_t as);
+    //! set animation based on current state
     void synchDrawnAnimWithActionState(void);
 
-    //! Set state for ped (replace switchActionStateTo)
+    //! Set state for ped
     void goToState(uint32_t as);
-    //! Quit state for ped (replace switchActionStateFrom)
+    //! Quit state for ped
     void leaveState(uint32_t as);
     //! Return is current state is equal to given state
     bool isState(uint32_t as);

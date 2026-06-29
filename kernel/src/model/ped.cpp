@@ -48,7 +48,7 @@ const int PedInstance::kAgentMaxSpeedWithOverweight = 64;
 PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, int maxSpeed) :
     ShootableMovableMapObject(anId, pMap, MapObject::kNaturePed, maxSpeed),
     type_(pedType),
-    state_(PedInstance::pa_smStanding),
+    state_(PedInstance::kPedActionStateStanding),
     desc_state_(PedInstance::pd_smUndefined),
     hostile_desc_(PedInstance::pd_smUndefined),
     obj_group_def_(PedInstance::og_dmUndefined),
@@ -97,70 +97,14 @@ bool PedInstance::isInPanic() {
     return false;
 }
 
-bool PedInstance::switchActionStateTo(uint32_t as) {
-    uint32_t prevState = state_;
-    switch(as) {
-        case pa_smStanding:
-            state_ = pa_smStanding;
-            break;
-        case pa_smWalking:
-            state_ = pa_smWalking;
-            break;
-        case pa_smHit:
-            state_ = pa_smHit;
-            break;
-        case pa_smFiring:
-            state_ |= pa_smFiring;
-            break;
-        case pa_smPickUp:
-            state_ = pa_smPickUp;
-            break;
-        case pa_smPutDown:
-            state_ = pa_smPutDown;
-            break;
-    }
-
-    return prevState != state_;
-}
-
-/*!
- * \return true if state has changed.
- */
-bool PedInstance::switchActionStateFrom(uint32_t as) {
-    uint32_t prevState = state_;
-    switch(as) {
-        case pa_smStanding:
-            break;
-        case pa_smWalking:
-            state_ &= pa_smAll ^ pa_smWalking;
-            state_ |= pa_smStanding;
-            break;
-        case pa_smHit:
-            state_ = pa_smStanding;
-            break;
-        case pa_smFiring:
-            state_ &= pa_smAll ^ pa_smFiring;
-            break;
-        case pa_smPickUp:
-        case pa_smPutDown:
-            state_ = pa_smStanding;
-            break;
-        default:
-            state_ = pa_smStanding;
-    }
-
-    return prevState != state_;
-}
-
 void PedInstance::synchDrawnAnimWithActionState(void) {
-    // TODO: complete
-    if ((state_ & (pa_smWalking)) != 0) {
-        if ((state_ & pa_smFiring) != 0) {
+    if ((state_ & (kPedActionStateWalking)) != 0) {
+        if ((state_ & kPedActionStateFiring) != 0) {
         } else {
             playStandOrWalkAnimation();
         }
-    } else if ((state_ & pa_smStanding) != 0) {
-        if ((state_ & pa_smFiring) != 0) {
+    } else if ((state_ & kPedActionStateStanding) != 0) {
+        if ((state_ & kPedActionStateFiring) != 0) {
             playStandAndShootAnimation();
         } else {
             playStandOrWalkAnimation();
@@ -174,7 +118,29 @@ void PedInstance::synchDrawnAnimWithActionState(void) {
  * \param as new state
  */
 void PedInstance::goToState(uint32_t as) {
-    if(switchActionStateTo(as)) {
+    uint32_t prevState = state_;
+    switch(as) {
+        case kPedActionStateStanding:
+            state_ = kPedActionStateStanding;
+            break;
+        case kPedActionStateWalking:
+            state_ = kPedActionStateWalking;
+            break;
+        case kPedActionStateHit:
+            state_ = kPedActionStateHit;
+            break;
+        case kPedActionStateFiring:
+            state_ |= kPedActionStateFiring;
+            break;
+        case kPedActionStatePickUp:
+            state_ = kPedActionStatePickUp;
+            break;
+        case kPedActionStatePutDown:
+            state_ = kPedActionStatePutDown;
+            break;
+    }
+
+    if(prevState != state_) {
         synchDrawnAnimWithActionState();
     }
 }
@@ -185,7 +151,29 @@ void PedInstance::goToState(uint32_t as) {
  * \param as new state
  */
 void PedInstance::leaveState(uint32_t as) {
-    if (switchActionStateFrom(as)) {
+    uint32_t prevState = state_;
+    switch(as) {
+        case kPedActionStateStanding:
+            break;
+        case kPedActionStateWalking:
+            state_ &= pa_smAll ^ kPedActionStateWalking;
+            state_ |= kPedActionStateStanding;
+            break;
+        case kPedActionStateHit:
+            state_ = kPedActionStateStanding;
+            break;
+        case kPedActionStateFiring:
+            state_ &= pa_smAll ^ kPedActionStateFiring;
+            break;
+        case kPedActionStatePickUp:
+        case kPedActionStatePutDown:
+            state_ = kPedActionStateStanding;
+            break;
+        default:
+            state_ = kPedActionStateStanding;
+    }
+
+    if (prevState != state_) {
         synchDrawnAnimWithActionState();
     }
 }
@@ -851,7 +839,7 @@ void PedInstance::dropAllWeapons() {
 }
 
 bool PedInstance::wePickupWeapon() {
-    return (state_ & pa_smPickUp) != 0;
+    return (state_ & kPedActionStatePickUp) != 0;
 }
 
 Vehicle *PedInstance::inVehicle() const {
@@ -915,18 +903,28 @@ void PedInstance::handleDeath(const DamageToInflict &damage) {
     switch (damage.dtype) {
         case kDmgTypeBullet:
             dropAllWeapons();
+            if (damage.d_owner == this) {
+                // It's a suicide by bullet so fall down
+                playDyingAnimation();
+            } else {
+                playDeadAnimation();
+            }
             break;
         case kDmgTypeLaser:
             if (is_our_) {
+                playDeadAgentAnimation();
                 dropAllWeapons();
+            } else {
+                setDrawable(false);
             }
             break;
         case kDmgTypeExplosion:
         case kDmgTypeBurn:
             // weapons are dropped only if ped had enough protection or don't die by suicide
-            if (hasMinimumVersionOfMod(Mod::MOD_CHEST, Mod::MOD_V2) &&
-                damage.d_owner != this) {
+            if (hasMinimumVersionOfMod(Mod::MOD_CHEST, Mod::MOD_V2) && damage.d_owner != this) {
                 dropAllWeapons();
+            } else {
+                playDeadBurnAnimation();
             }
             break;
         default:
@@ -942,7 +940,7 @@ void PedInstance::handleDeath(const DamageToInflict &damage) {
 }
 
 bool PedInstance::isHitByBullet() {
-    if (isState(pa_smHit)) {
+    if (isState(kPedActionStateHit)) {
         return dynamic_cast<RecoilHitAction *>(currentAction_) != nullptr;
     }
 

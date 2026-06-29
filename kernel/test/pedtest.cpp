@@ -32,8 +32,8 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
     cut.setStartHealth(10, true);
 
     SECTION( "State management") {
-        cut.switchActionStateTo(fs_knl::PedInstance::pa_smWalking);
-        REQUIRE( cut.isState(fs_knl::PedInstance::pa_smWalking) );
+        cut.goToState(fs_knl::PedInstance::kPedActionStateWalking);
+        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateWalking) );
     }
 
     SECTION("Mods") {

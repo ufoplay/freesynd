@@ -78,7 +78,7 @@ PedInstance *PedManager::loadInstance(const LevelData::People & gamdata, uint16_
         newped->setHealth(-1);
     } else {
         newped->setHealth(hp);
-        newped->goToState(PedInstance::pa_smStanding);
+        newped->goToState(PedInstance::kPedActionStatePutDown);
     }
     // this is tile based Z we get, realword Z is in gamdata,
     // for correct calculations of viewpoint, target hit etc.
