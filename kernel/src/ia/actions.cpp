@@ -473,7 +473,17 @@ MovementAction(kActTypeFollowToShoot) {
 }
 
 /*!
- * If the ped's has no weapon, don't follow.
+ * Saves the target current position in the targetLastPos_ field.
+ */
+void FollowToShootAction::updateLastTargetPos() {
+    targetLastPosW_.convertFromTilePoint(pTarget_->position());
+}
+
+/*!
+ * Init Action :
+ * - If the ped's has no weapon, action fails
+ * - If the target is close enough, action fails
+ * - else init movement towards target
  * \param pMission Mission data
  * \param pPed The ped executing the action.
  */
@@ -485,7 +495,16 @@ void FollowToShootAction::doStart([[maybe_unused]] Mission *pMission, PedInstanc
         followDistance_ = (pPed->selectedWeapon()->range() / 3 ) *2;
     }
 
-    targetLastPosW_.reset();
+    updateLastTargetPos();
+    // If target is close enough, then we can stop the action without changing the state -> so fail.
+    if (pPed->isCloseTo(pTarget_, followDistance_)) {
+        setFailed();
+    } else {
+        // Else, start moving towards the target
+        if (!pPed->initMovementToDestination(pMission, pTarget_->position())) {
+            setFailed();
+        }
+    }
 }
 
 bool FollowToShootAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) {
@@ -496,26 +515,26 @@ bool FollowToShootAction::doExecute(uint32_t elapsed, Mission *pMission, PedInst
         pPed->clearDestination();
         setFailed();
     } else {
-        // target has moved: we check if target is not too far to give time to ped
-        // to walk away else animation is buggy
-        if (!pTarget_->isCloseTo(targetLastPosW_, 128)) {
-            // resetting target position
-            targetLastPosW_.convertFromTilePoint(pTarget_->position());
-            if (!pPed->initMovementToDestination(pMission, pTarget_->position())) {
-                setFailed();
-                return true;
-            }
-        }
-
         WorldPoint pedPosW(pPed->position());
+        WorldPoint targetNewPosW(pTarget_->position());
         // Ped stops walking if the target is in range of fire (ie close enough and not
         // hiding behing something)
         if (pPed->isCloseTo(pTarget_, followDistance_) &&
-            pMission->checkBlockedByTile(pedPosW, &targetLastPosW_, true, followDistance_) == 1) {
+            pMission->checkBlockedByTile(pedPosW, &targetNewPosW, true, followDistance_) == 1) {
             // We reached the target so stop moving
             setSucceeded();
             pPed->clearDestination();
         } else {
+            // If target has moved significantly since last time, then update path to it
+            if (!pTarget_->isCloseTo(targetLastPosW_, 256)) {
+                updateLastTargetPos();
+                pPed->clearDestination();
+                if (!pPed->initMovementToDestination(pMission, pTarget_->position())) {
+                    setFailed();
+                    return true;
+                }
+            }
+            // move towards target
             updated = pPed->doMove(elapsed);
         }
 

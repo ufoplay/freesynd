@@ -396,6 +396,8 @@ protected:
     void doStart(Mission *pMission, PedInstance *pPed);
     bool doExecute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) override;
 
+    void updateLastTargetPos();
+
 protected:
     /*! The ped to follow.*/
     PedInstance *pTarget_;
