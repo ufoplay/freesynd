@@ -36,6 +36,19 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
         REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateWalking) );
     }
 
+    SECTION( "Firing state combines with current standing/walking state") {
+        cut.goToState(fs_knl::PedInstance::kPedActionStateWalking);
+        cut.goToState(fs_knl::PedInstance::kPedActionStateFiring);
+        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateWalkingFiring) );
+
+        // Stopping while firing keeps firing active
+        cut.leaveState(fs_knl::PedInstance::kPedActionStateWalking);
+        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateStandingFiring) );
+
+        cut.leaveState(fs_knl::PedInstance::kPedActionStateFiring);
+        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateStanding) );
+    }
+
     SECTION("Mods") {
         SECTION ("Speed should be default with no mods and no load") {
             cut.setSpeedToMax();

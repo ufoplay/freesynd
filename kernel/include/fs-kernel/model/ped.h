@@ -112,13 +112,16 @@ public:
 
     //! This is the list of possible state for a PedInstance
     enum PedActionState {
-        kPedActionStateStanding = 0x0001,
-        kPedActionStateWalking = 0x0002,
-        kPedActionStateHit = 0x0004,
-        kPedActionStateFiring = 0x0008,
-        kPedActionStatePickUp = 0x0020,
-        kPedActionStatePutDown = 0x0040,
-        pa_smAll = 0xFFFF
+        kPedActionStateStanding,
+        kPedActionStateStandingFiring,
+        kPedActionStateWalking,
+        kPedActionStateWalkingFiring,
+        kPedActionStateHit,
+        kPedActionStatePickUp,
+        kPedActionStatePutDown,
+        //! Pseudo-state: only used as a parameter to goToState()/leaveState() to
+        //! start/stop firing from the current state ; never stored as-is in state_.
+        kPedActionStateFiring
     };
 
     PedInstance(uint16_t id, Map *pMap, PedType type, bool isOur, int maxSpeed);

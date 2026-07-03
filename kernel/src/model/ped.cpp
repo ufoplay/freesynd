@@ -98,17 +98,20 @@ bool PedInstance::isInPanic() {
 }
 
 void PedInstance::synchDrawnAnimWithActionState(void) {
-    if ((state_ & (kPedActionStateWalking)) != 0) {
-        if ((state_ & kPedActionStateFiring) != 0) {
-        } else {
+    switch (state_) {
+        case kPedActionStateStanding:
+        case kPedActionStateWalking:
             playStandOrWalkAnimation();
-        }
-    } else if ((state_ & kPedActionStateStanding) != 0) {
-        if ((state_ & kPedActionStateFiring) != 0) {
+            break;
+        case kPedActionStateStandingFiring:
             playStandAndShootAnimation();
-        } else {
-            playStandOrWalkAnimation();
-        }
+            break;
+        case kPedActionStateWalkingFiring:
+            playWalkAndShootAnimation();
+            break;
+        default:
+            // Hit/PickUp/PutDown animations are triggered explicitly by their action.
+            break;
     }
 }
 
@@ -124,13 +127,15 @@ void PedInstance::goToState(uint32_t as) {
             state_ = kPedActionStateStanding;
             break;
         case kPedActionStateWalking:
-            state_ = kPedActionStateWalking;
+            state_ = (state_ == kPedActionStateStandingFiring) ?
+                kPedActionStateWalkingFiring : kPedActionStateWalking;
             break;
         case kPedActionStateHit:
             state_ = kPedActionStateHit;
             break;
         case kPedActionStateFiring:
-            state_ |= kPedActionStateFiring;
+            state_ = (state_ == kPedActionStateWalking) ?
+                kPedActionStateWalkingFiring : kPedActionStateStandingFiring;
             break;
         case kPedActionStatePickUp:
             state_ = kPedActionStatePickUp;
@@ -156,14 +161,15 @@ void PedInstance::leaveState(uint32_t as) {
         case kPedActionStateStanding:
             break;
         case kPedActionStateWalking:
-            state_ &= pa_smAll ^ kPedActionStateWalking;
-            state_ |= kPedActionStateStanding;
+            state_ = (state_ == kPedActionStateWalkingFiring) ?
+                kPedActionStateStandingFiring : kPedActionStateStanding;
             break;
         case kPedActionStateHit:
             state_ = kPedActionStateStanding;
             break;
         case kPedActionStateFiring:
-            state_ &= pa_smAll ^ kPedActionStateFiring;
+            state_ = (state_ == kPedActionStateWalkingFiring) ?
+                kPedActionStateWalking : kPedActionStateStanding;
             break;
         case kPedActionStatePickUp:
         case kPedActionStatePutDown:
@@ -179,9 +185,9 @@ void PedInstance::leaveState(uint32_t as) {
 }
 
 /*!
- * @brief 
- * @param aState 
- * @return 
+ * @brief Return true if the ped is currently in the given state.
+ * @param aState The state to test.
+ * @return True if the ped's current state is exactly aState.
  */
 bool PedInstance::isState(uint32_t aState) {
     return (state_ & aState) != 0;
@@ -839,7 +845,7 @@ void PedInstance::dropAllWeapons() {
 }
 
 bool PedInstance::wePickupWeapon() {
-    return (state_ & kPedActionStatePickUp) != 0;
+    return state_ == kPedActionStatePickUp;
 }
 
 Vehicle *PedInstance::inVehicle() const {
