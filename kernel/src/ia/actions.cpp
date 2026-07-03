@@ -106,7 +106,7 @@ bool MovementAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *p
             return false;
         } else {
             // action has started correctly -> change state
-            pPed->goToState(targetState_);
+            pPed->goToState(static_cast<PedInstance::PedActionState>(targetState_));
         }
     }
 
@@ -116,7 +116,7 @@ bool MovementAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *p
     }
 
     if (isFinished()) {
-        pPed->leaveState(targetState_);
+        pPed->leaveState(static_cast<PedInstance::PedActionState>(targetState_));
     }
 
     return update;
@@ -132,7 +132,7 @@ bool MovementAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *p
  */
 bool MovementAction::suspend(PedInstance *pPed) {
     if (status_ != kActStatusNotStarted) {
-        pPed->leaveState(targetState_);
+        pPed->leaveState(static_cast<PedInstance::PedActionState>(targetState_));
         savedStatus_ = status_;
         status_ = kActStatusSuspended;
     }
@@ -142,7 +142,7 @@ bool MovementAction::suspend(PedInstance *pPed) {
 
 void MovementAction::resume([[maybe_unused]] Mission *pMission, PedInstance *pPed) {
     status_ = savedStatus_;
-    pPed->goToState(targetState_);
+    pPed->goToState(static_cast<PedInstance::PedActionState>(targetState_));
 }
 
 /*!
@@ -439,7 +439,7 @@ bool FollowAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *p
             if (pPed->isCloseTo(pTarget_, kFollowDistance)) {
                 // We reached the target so stop moving temporarily
                 pPed->clearDestination();
-                pPed->leaveState(targetState_);
+                pPed->leaveState(static_cast<PedInstance::PedActionState>(targetState_));
             } else {
                 updated = pPed->doMove(elapsed);
             }
@@ -452,7 +452,7 @@ bool FollowAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *p
             updateLastTargetPos();
             if (pPed->initMovementToDestination(pMission, targetLastPos_)) {
                 targetState_ = PedInstance::kPedActionStateWalking;
-                pPed->goToState(targetState_);
+                pPed->goToState(static_cast<PedInstance::PedActionState>(targetState_));
             } else {
                 setFailed();
             }

@@ -120,8 +120,8 @@ void PedInstance::synchDrawnAnimWithActionState(void) {
  * Update corresponding animation.
  * \param as new state
  */
-void PedInstance::goToState(uint32_t as) {
-    uint32_t prevState = state_;
+void PedInstance::goToState(PedActionState as) {
+    PedActionState prevState = state_;
     switch(as) {
         case kPedActionStateStanding:
             state_ = kPedActionStateStanding;
@@ -143,6 +143,10 @@ void PedInstance::goToState(uint32_t as) {
         case kPedActionStatePutDown:
             state_ = kPedActionStatePutDown;
             break;
+        case kPedActionStateStandingFiring:
+        case kPedActionStateWalkingFiring:
+            // Not valid targets: reached only through kPedActionStateFiring.
+            break;
     }
 
     if(prevState != state_) {
@@ -155,8 +159,8 @@ void PedInstance::goToState(uint32_t as) {
  * Update corresponding animation.
  * \param as new state
  */
-void PedInstance::leaveState(uint32_t as) {
-    uint32_t prevState = state_;
+void PedInstance::leaveState(PedActionState as) {
+    PedActionState prevState = state_;
     switch(as) {
         case kPedActionStateStanding:
             break;
@@ -189,8 +193,8 @@ void PedInstance::leaveState(uint32_t as) {
  * @param aState The state to test.
  * @return True if the ped's current state is exactly aState.
  */
-bool PedInstance::isState(uint32_t aState) {
-    return (state_ & aState) != 0;
+bool PedInstance::isState(PedActionState aState) {
+    return state_ == aState;
 }
 
 void PedInstance::setAnimations(uint16_t baseSpriteAnimationId) {

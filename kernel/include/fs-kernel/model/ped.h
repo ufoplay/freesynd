@@ -199,11 +199,11 @@ public:
     void synchDrawnAnimWithActionState(void);
 
     //! Set state for ped
-    void goToState(uint32_t as);
+    void goToState(PedActionState as);
     //! Quit state for ped
-    void leaveState(uint32_t as);
+    void leaveState(PedActionState as);
     //! Return is current state is equal to given state
-    bool isState(uint32_t as);
+    bool isState(PedActionState as);
     ///@}
 
     /**
@@ -656,7 +656,7 @@ protected:
     //! The list of animations for the ped
     PedAnimations animations_;
     //! State of the ped
-    uint32_t state_;
+    PedActionState state_;
     // (pedDescStateMasks)
     uint32_t desc_state_;
     // this inherits definition from desc_state_
