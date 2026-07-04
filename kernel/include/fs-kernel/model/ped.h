@@ -289,17 +289,14 @@ public:
         bool set_dist = false);
     ///@}
 
-    //*************************************
-    // Weapon management
-    //*************************************
-    WeaponInstance * dropWeapon(uint8_t index);
-    void dropAllWeapons();
-    bool wePickupWeapon();
-
     /**
-     * @name Shooting management
+     * @name Weapon & Shooting management
      */
     ///@{
+    WeaponInstance * dropWeapon(uint8_t index);
+    void dropAllWeapons();
+    bool pickupWeapon();
+
     //! Return true if ped is currently using a weapon (ie there's an active action)
     bool isUsingWeapon() { return pUseWeaponAction_ != NULL; }
     //! Make the ped stop using weapon
@@ -314,8 +311,7 @@ public:
     int getTimeBetweenShoots(WeaponInstance *pWeapon);
 
     //! Return true if ped has activated his energy shield
-    bool isEnergyShieldActivated() { return fs_utl::isBitsOnWithMask(desc_state_, pd_smShieldProtected); }
-    void setEnergyActivated(bool status);
+    bool isEnergyShieldActivated();
     ///@}
 
     /**

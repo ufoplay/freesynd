@@ -529,12 +529,14 @@ void PedInstance::commitSuicide() {
     }
 }
 
-void PedInstance::setEnergyActivated(bool isActivated) {
-    if (isActivated) {
-        fs_utl::setBitsWithMask(&desc_state_, pd_smShieldProtected);
-    } else {
-        desc_state_ &= pd_smAll ^ pd_smShieldProtected;
-    }
+/*!
+ * Energy Shield is activated when it is selected.
+ * @return true if energy shield is activated
+ */
+bool PedInstance::isEnergyShieldActivated() {
+    WeaponInstance *pWeapon = selectedWeapon();
+
+    return pWeapon && pWeapon->isInstanceOf(Weapon::EnergyShield);
 }
 
 bool isOnScreen(int scrollX, int scrollY, int x, int y) {
@@ -848,7 +850,7 @@ void PedInstance::dropAllWeapons() {
     }
 }
 
-bool PedInstance::wePickupWeapon() {
+bool PedInstance::pickupWeapon() {
     return state_ == kPedActionStatePickUp;
 }
 

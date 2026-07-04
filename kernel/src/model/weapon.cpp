@@ -361,6 +361,7 @@ void WeaponInstance::activate() {
     activated_ = true;
     if (isInstanceOf(Weapon::EnergyShield) && pOwner_ != nullptr) {
         shieldTimeUsed_ = 0;
+        playSound();
     }
 }
 

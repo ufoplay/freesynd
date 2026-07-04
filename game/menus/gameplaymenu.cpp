@@ -809,7 +809,7 @@ void GameplayMenu::updateMissionHint(uint32_t elapsed) {
         } else {
             hint_ = getMessage("HINT_OBSERVING");
         }
-        if (pLeader->wePickupWeapon()) {
+        if (pLeader->isState(fs_knl::PedInstance::kPedActionStatePickUp)) {
             hint_ = getMessage("HINT_PICKUP_WEAPON");
         }
         if (pLeader->isHitByBullet()) {
