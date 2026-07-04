@@ -339,7 +339,7 @@ public:
      */
     ///@{
     //! Return true if ped is persuaded
-    bool isPersuaded() { return fs_utl::isBitsOnWithMask(desc_state_, pd_smControlled); }
+    bool isPersuaded() { return owner_ != nullptr; }
     //! Returns true if this ped can persuade that ped
     bool canPersuade(PedInstance *pOtherPed, const int persuadotronRange);
     //! Return owner of persuaded
@@ -347,7 +347,7 @@ public:
     //! Adds given ped to the list of persuaded peds by this agent
     void addPersuaded(PedInstance *p);
     //! Removes given ped to the list of persuaded peds by this agent
-    void rmvPersuaded(PedInstance *p);
+    void removePersuaded(PedInstance *p);
     //! Method called when an agent persuads this ped
     void handlePersuadedBy(PedInstance *pAgent);
     //! Change the owner of the ped

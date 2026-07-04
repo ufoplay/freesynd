@@ -1373,7 +1373,11 @@ void PedInstance::addPersuaded(PedInstance *p) {
     }
 }
 
-void PedInstance::rmvPersuaded(PedInstance *p) {
+/*!
+ * Removes the given ped p from the list of persuaded peds
+ * @param p The PedInstance to remove
+ */
+void PedInstance::removePersuaded(PedInstance *p) {
     std::set <PedInstance *>::iterator it =  persuadedSet_.find(p);
     if (it != persuadedSet_.end())
         persuadedSet_.erase(it);
@@ -1388,7 +1392,7 @@ void PedInstance::rmvPersuaded(PedInstance *p) {
  */
 void PedInstance::updatePersuadedRelations(Squad *pSquad) {
     if (isPersuaded()) {
-        owner_->rmvPersuaded(this);
+        owner_->removePersuaded(this);
         owner_ = NULL;
     } else if (isOurAgent()) {
         // our agent is dead, assign all persuaded to another living agent

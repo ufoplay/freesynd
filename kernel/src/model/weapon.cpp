@@ -302,6 +302,11 @@ void WeaponInstance::doUpdateState(uint32_t elapsed) {
             DamageToInflict dmg;
             fire(g_missionCtrl.mission(), dmg, elapsed);
         }
+    } else if (isInstanceOf(Weapon::EnergyShield) && activated_) {
+        if (consumeAmmoForEnergyShield(elapsed)) {
+            // no more ammo
+            deactivate();
+        }
     }
 }
 
@@ -354,6 +359,9 @@ void WeaponInstance::playSound() {
 
 void WeaponInstance::activate() {
     activated_ = true;
+    if (isInstanceOf(Weapon::EnergyShield) && pOwner_ != nullptr) {
+        shieldTimeUsed_ = 0;
+    }
 }
 
 void WeaponInstance::deactivate() {
@@ -423,11 +431,6 @@ void WeaponInstance::fire(Mission *pMission, DamageToInflict &dmg, uint32_t elap
         deactivate();
         Explosion::createExplosion(pMission, this,
             (double)pWeaponClass_->rangeDmg(), pWeaponClass_->damagePerShot());
-    } else if (isInstanceOf(Weapon::EnergyShield)) {
-        pOwner_->setEnergyActivated(true);
-        shieldTimeUsed_ = 0;
-        // return now because ammo is decreased in UseEnergyShieldAction
-        return;
     } else {
         // For other weapons, damage are done immediatly because projectile speed
         // is too high to draw them

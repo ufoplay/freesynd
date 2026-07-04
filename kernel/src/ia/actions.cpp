@@ -1188,39 +1188,45 @@ bool UseMedikitAction::execute(uint32_t elapsed, Mission *pMission, PedInstance 
 }
 
 /*!
- * Execute the Use medikit action.
+ * Execute the Use energy shield action.
+ * Activates the shield on first call, then keeps ticking it while it stays
+ * the ped's selected weapon. Ammo consumption is handled by the weapon
+ * itself in WeaponInstance::doUpdateState().
  * \param elapsed Time since last frame.
  * \param pMission Mission data
  * \param pPed The ped executing the action.
  * \return true to redraw
  */
-bool UseEnergyShieldAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) {
+bool UseEnergyShieldAction::execute(uint32_t elapsed, [[maybe_unused]] Mission *pMission, PedInstance *pPed) {
     if (status_ == kActStatusNotStarted) {
-        status_ = kActStatusRunning;
-
         if (!pWeapon_->isInstanceOf(Weapon::EnergyShield)) {
             setFailed();
             return false;
-        } else {
-            //pWeapon_->playSound();
-            DamageToInflict dmg;
-            pWeapon_->fire(pMission, dmg, elapsed);
         }
-    } else if (status_ == kActStatusRunning) {
-        if (pWeapon_->consumeAmmoForEnergyShield(elapsed)) {
-            // no more ammo
-            pPed->setEnergyActivated(false);
-            setSucceeded();
-        }
+        status_ = kActStatusRunning;
+        pWeapon_->activate();
+        return true;
+    }
+
+    if (pPed->selectedWeapon() != pWeapon_) {
+        // weapon has been switched away from: stop it immediately
+        pWeapon_->deactivate();
+        setSucceeded();
+        return true;
+    }
+
+    pWeapon_->animate(elapsed);
+    if (pWeapon_->ammoRemaining() == 0) {
+        // no more ammo; weapon already deactivated itself in doUpdateState()
+        setSucceeded();
     }
 
     return true;
 }
 
 void UseEnergyShieldAction::stop() {
-    if (status_ == kActStatusRunning) {
-        PedInstance *pPed = pWeapon_->owner();
-        pPed->setEnergyActivated(false);
+    if (isRunning()) {
+        pWeapon_->deactivate();
         setSucceeded();
     }
 }
