@@ -10,6 +10,7 @@ freesynd (0.10) unstable; urgency=low
   * Patched some wrong coordinates in mission Far East
   * Patched some wrong coordinates in mission Iraq. Closes: #73
   * Disabled friendly fire. Closes: #69
+  * Enemy walking animation freeze when shooting. Closes: #78
   [ Removed ]
   * 
 
