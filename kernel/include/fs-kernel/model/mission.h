@@ -240,6 +240,11 @@ public:
      */
     void removeArmedPed(PedInstance *pPed);
 
+    //! Return true if ped has escaped the map
+    bool hasEscaped(fs_knl::PedInstance *pPed);
+    //! Indicate that the ped has escaped
+    void escape(fs_knl::PedInstance *pPed);
+
     //! Search for an object of given nature and given position
     MapObject * findObjectWithNatureAtPos(int tilex, int tiley, int tilez,
         MapObject::ObjectNature nature, size_t *searchIndex);
@@ -376,7 +381,10 @@ protected:
     std::vector<std::vector<MapObject*>> dynamicSpatialGrid_;
 
     std::vector <ObjectiveDesc *> objectives_;
-    //std::vector <ObjectiveDesc> sub_objectives_;
+    /*!
+     * Stores peds that have escaped and checked for objective success.
+     */
+    std::vector <PedInstance *> escapedPeds_;
     uint16_t cur_objective_;
     /*!
      * Mission status.

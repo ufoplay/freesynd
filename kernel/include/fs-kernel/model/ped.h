@@ -146,10 +146,7 @@ public:
 
     //! Returns the ped's behaviour
     Behaviour & behaviour() { return behaviour_; }
-    //! Return true if ped has escaped the map
-    bool hasEscaped() { return fs_utl::isBitsOnWithMask(desc_state_, pd_smEscaped); }
-    //! Indicate that the ped has escaped
-    void escape() { fs_utl::setBitsWithMask(&desc_state_, pd_smEscaped); }
+    
     //! Return true if a ped can go in panic mode
     bool isImmunedToPanic();
     //! Tells the ped not to panic

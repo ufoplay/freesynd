@@ -389,9 +389,9 @@ bool TriggerAction::doExecute([[maybe_unused]] uint32_t elapsed, Mission *pMissi
  * \param pMission Mission data
  * \param pPed The ped executing the action.
  */
-bool EscapeAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_unused]] Mission *pMission, PedInstance *pPed) {
+bool EscapeAction::doExecute([[maybe_unused]] uint32_t elapsed, Mission *pMission, PedInstance *pPed) {
     setSucceeded();
-    pPed->escape();
+    pMission->escape(pPed);
     return true;
 }
 

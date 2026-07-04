@@ -103,7 +103,10 @@ Mission::~Mission()
 
     for (unsigned int i = 0; i < objectives_.size(); i++)
         delete objectives_[i];
+    
     armedPedsVec_.clear();
+    escapedPeds_.clear();
+    
     clrNavigationGraph();
 
     if (p_minimap_) {
@@ -265,6 +268,7 @@ void Mission::start(WeaponManager& weaponMgr) {
     stats_.init(squad_->size());
 
     cur_objective_ = 0;
+    escapedPeds_.clear();
 
     // Get available weapons
     std::vector<Weapon*> availableWeapons;
@@ -363,6 +367,25 @@ void Mission::checkObjectives() {
             }
         }
     }
+}
+
+
+/*!
+ * 
+ * @param pPed 
+ * @return 
+ */
+bool Mission::hasEscaped(fs_knl::PedInstance *pPed) {
+    auto it = find(escapedPeds_.begin(), escapedPeds_.end(), pPed);
+    return it != escapedPeds_.end();
+}
+
+/*!
+ * @brief 
+ * @param pPed 
+ */
+void Mission::escape(fs_knl::PedInstance *pPed) {
+    escapedPeds_.push_back(pPed);
 }
 
 /*!

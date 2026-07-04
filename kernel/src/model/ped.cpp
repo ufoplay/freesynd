@@ -1337,7 +1337,6 @@ bool PedInstance::canPersuade(PedInstance *pOtherPed, const int persuadotronRang
  */
 void PedInstance::handlePersuadedBy(PedInstance *pAgent) {
     pAgent->addPersuaded(this);
-    fs_utl::setBitsWithMask(&desc_state_, pd_smControlled);
     setObjGroupID(pAgent->objGroupID());
     owner_ = pAgent;
     setPanicImmuned();

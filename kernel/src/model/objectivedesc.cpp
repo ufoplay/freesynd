@@ -94,12 +94,12 @@ ObjAssassinate::ObjAssassinate(MapObject * pMapObject) : TargetObjective(pMapObj
  * \param evt
  * \param pMission
  */
-void ObjAssassinate::doEvaluate([[maybe_unused]] Mission *pMission) {
+void ObjAssassinate::doEvaluate(Mission *pMission) {
     PedInstance *p = static_cast<PedInstance *>(p_target_);
     if (p->isDead()) {
         // Target is dead -> objective is completed
         endObjective(true);
-    } else if (p->hasEscaped()) {
+    } else if (pMission->hasEscaped(p)) {
         endObjective(false);
     }
 }
