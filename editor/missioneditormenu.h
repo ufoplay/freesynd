@@ -27,6 +27,7 @@
 #include "fs-engine/menus/menu.h"
 #include "fs-engine/menus/menumanager.h"
 #include "editormaprenderer.h"
+#include "fs-kernel/model/ped.h"
 
 /*!
  * The mission editor menu allows the display of a mission and map.
@@ -59,10 +60,14 @@ protected:
     void updateCursorFromTarget(Point2D point);
 
     void selectCurrentTile(const fs_knl::TilePoint &tilePt);
+    void selectHoveredObject();
 
     void drawCurrentTileSelector();
+    void drawObjectPanel();
 
     void setTileTypeName(fs_eng::Tile::EType tileType);
+
+    void getPedTypeAsString(fs_knl::PedInstance::PedType type, string &destStr );
 
 protected:
     fs_knl::Mission *mission_;
@@ -80,7 +85,8 @@ protected:
     std::string tileDesc_;
     std::string tileTypeDesc_;
     std::string locationDesc_;
-    std::string targetDesc_;
+    std::string targetNatureAndId_;
+    std::string targetPedType_;
     std::string targetLocDescXYZ_;
     std::string targetLocDescOXYZ_;
     std::string maxZDesc_;

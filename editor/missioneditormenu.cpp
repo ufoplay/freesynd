@@ -68,6 +68,7 @@ bool MissionEditorMenu::handleBeforeShow() {
 void MissionEditorMenu::handleRender() {
     mapRenderer_.render();
     g_System.drawFillRect({0,0}, 129, fs_eng::kScreenHeight, menu_manager_->kMenuColorBlack);
+    drawObjectPanel();
     drawCurrentTileSelector();
 }
 
@@ -237,11 +238,7 @@ void MissionEditorMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32
 
 void MissionEditorMenu::handleClickOnMap(Point2D point, [[maybe_unused]] int button) {
     if (targetHovered_) {
-        targetDesc_ = std::format("{} ({})", targetHovered_->natureName(), targetHovered_->id());
-        targetLocDescXYZ_ = std::format("At {}, {}, {}", 
-                                    targetHovered_->position().tx, targetHovered_->position().ty, targetHovered_->position().tz);
-        targetLocDescOXYZ_ = std::format("- {}, {}, {}", 
-                                    targetHovered_->position().ox, targetHovered_->position().oy, targetHovered_->position().oz);
+        selectHoveredObject();
         selectCurrentTile(targetHovered_->position());
     } else {
         /*fs_knl::TilePoint mapPt = mission_->map()->screenToTilePoint(displayOriginPt_.x + point.x - 129,
@@ -321,6 +318,42 @@ void MissionEditorMenu::setTileTypeName(fs_eng::Tile::EType tileType) {
         break;
     }
     tileTypeDesc_ = std::format("is {}", typeAsStr);
+}
+
+void MissionEditorMenu::getPedTypeAsString(fs_knl::PedInstance::PedType pedType, string &destStr ) {
+    switch (pedType) {
+    case fs_knl::PedInstance::kPedTypeAgent:
+        destStr = "Agent";
+        break;
+    case fs_knl::PedInstance::kPedTypePolice:
+        destStr = "Police";
+        break;
+    case fs_knl::PedInstance::kPedTypeGuard:
+        destStr = "Guard";
+        break;
+    case fs_knl::PedInstance::kPedTypeCriminal:
+        destStr = "Criminal";
+        break;
+    case fs_knl::PedInstance::kPedTypeCivilian:
+        destStr = "Civilian";
+        break;
+    }
+}
+
+void MissionEditorMenu::selectHoveredObject() {
+    targetSelected_ = targetHovered_;
+    targetNatureAndId_ = std::format("{} ({})", targetHovered_->natureName(), targetHovered_->id());
+    if (targetSelected_->is(fs_knl::MapObject::kNaturePed)) {
+        fs_knl::PedInstance *pPed = dynamic_cast<fs_knl::PedInstance *>(targetSelected_);
+        string pedType;
+        getPedTypeAsString(pPed->type(), pedType);
+        targetPedType_ = std::format("is {}", pedType.c_str());
+    }
+    
+    targetLocDescXYZ_ = std::format(" At: {}, {}, {}", 
+                                targetHovered_->position().tx, targetHovered_->position().ty, targetHovered_->position().tz);
+    targetLocDescOXYZ_ = std::format("off: {}, {}, {}", 
+                                targetHovered_->position().ox, targetHovered_->position().oy, targetHovered_->position().oz);
 }
 
 void MissionEditorMenu::selectCurrentTile(const fs_knl::TilePoint &tilePt) {
@@ -413,14 +446,25 @@ void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
     }
 }
 
+void MissionEditorMenu::drawObjectPanel() {
+    if (targetSelected_) {
+        // Draw the target
+        if (targetSelected_->is(fs_knl::MapObject::kNaturePed)) {
+            fs_knl::PedInstance *pPed = dynamic_cast<fs_knl::PedInstance *>(targetSelected_);
+            gameFont()->drawText(10, 105, targetPedType_, menu_manager_->kMenuColorLightGreen);
+            pPed->drawSelectorAnim({50, 50});
+        }
+
+        // Draw target information
+        gameFont()->drawText(10, 90, targetNatureAndId_, menu_manager_->kMenuColorLightGreen);
+        gameFont()->drawText(10, 120, targetLocDescXYZ_, menu_manager_->kMenuColorLightGreen);
+        gameFont()->drawText(10, 135, targetLocDescOXYZ_, menu_manager_->kMenuColorLightGreen);
+    }
+}
+
 void MissionEditorMenu::drawCurrentTileSelector() {
     if (currentTile_) {
         mapRenderer_.drawTileContour(currentTilePos_, menu_manager_->kMenuColorYellow);
-
-        // Draw target information
-        gameFont()->drawText(10, 140, targetDesc_, menu_manager_->kMenuColorLightGreen);
-        gameFont()->drawText(10, 155, targetLocDescXYZ_, menu_manager_->kMenuColorLightGreen);
-        gameFont()->drawText(10, 170, targetLocDescOXYZ_, menu_manager_->kMenuColorLightGreen);
         
         // Then draw the tile on the left side to better isolate it
         mission_->map()->getTileManager()->drawTile(currentTile_, 33, 285);
