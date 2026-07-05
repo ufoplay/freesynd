@@ -38,7 +38,7 @@ using fs_eng::FontManager;
 const int kScrollStep = 16;
 
 MissionEditorMenu::MissionEditorMenu(MenuManager * m):
-    Menu(m, fs_edit_menus::kMenuIdMissionEditor, fs_edit_menus::kMenuIdMain),
+    Menu(m, fs_edit_menus::kMenuIdMissionEditor, fs_edit_menus::kMenuIdSrchMis),
     targetHovered_(nullptr), targetSelected_(nullptr), currentTile_(nullptr) {
     isCachable_ = false;
     cursorOnShow_ = kGameplayCursor; 

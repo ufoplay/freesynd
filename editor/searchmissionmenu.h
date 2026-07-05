@@ -65,6 +65,7 @@ public:
     bool handleBeforeShow() override;
     void handleRender() override;
     void handleAction(const ActionDesc &action) override;
+    bool handleUnMappedKey(const fs_eng::FS_Key key);
 
 protected:
     void initPedTypeListAndWidget();
@@ -73,6 +74,8 @@ protected:
 
     bool matchMissionWithPedType(fs_knl::Mission *pMission);
     bool matchMissionWithVehicleType(fs_knl::Mission *pMission);
+
+    void editMission();
 
 protected:
     int searchButId_;

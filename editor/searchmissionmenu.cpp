@@ -196,12 +196,31 @@ void SearchMissionMenu::handleAction(const ActionDesc &action) {
         searchOnVehicleType_ = true;
         vehicleTypeCriteria_ = pType->getType();
     } else if (action.id == selectMissionButId_) {
-        int missionId = std::stoi(pmissionIdTF_->getText());
-        // first clear result list
-        g_editorCtrl.getMissionResultList().clear();
-
-        g_editorCtrl.getMissionResultList().push_back(missionId);
-
-        menu_manager_->gotoMenu(fs_edit_menus::kMenuIdMissionEditor);
+        editMission();
     }
+}
+
+
+bool SearchMissionMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
+    
+    if (key.keyCode == fs_eng::kKeyCode_Return) {
+        fs_eng::TextField *pTextField = getCapturingInput();
+        if (pTextField == pmissionIdTF_) {
+            editMission();
+            return true;
+        }
+    }
+
+
+    return false;
+}
+
+void SearchMissionMenu::editMission() {
+    int missionId = std::stoi(pmissionIdTF_->getText());
+    // first clear result list
+    g_editorCtrl.getMissionResultList().clear();
+
+    g_editorCtrl.getMissionResultList().push_back(missionId);
+
+    menu_manager_->gotoMenu(fs_edit_menus::kMenuIdMissionEditor);
 }
