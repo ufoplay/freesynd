@@ -119,9 +119,10 @@ void PedInstance::synchDrawnAnimWithActionState(void) {
 /*!
  * Set the given state as the new state.
  * Update corresponding animation.
- * \param as new state
+ * @param as new state
+ * @param forceSync Force a sync of animation even if state did not change
  */
-void PedInstance::goToState(PedActionState as) {
+void PedInstance::goToState(PedActionState as, bool forceSync) {
     PedActionState prevState = state_;
     switch(as) {
         case kPedActionStateStanding:
@@ -150,7 +151,7 @@ void PedInstance::goToState(PedActionState as) {
             break;
     }
 
-    if(prevState != state_) {
+    if(prevState != state_ || forceSync) {
         synchDrawnAnimWithActionState();
     }
 }

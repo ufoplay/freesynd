@@ -179,11 +179,8 @@ public:
      * @name State management
      */
     ///@{
-    //! set animation based on current state
-    void synchDrawnAnimWithActionState(void);
-
     //! Set state for ped
-    void goToState(PedActionState as);
+    void goToState(PedActionState as, bool forceSync = false);
     //! Quit state for ped
     void leaveState(PedActionState as);
     //! Return is current state is equal to given state
@@ -596,6 +593,9 @@ protected:
     int applySpeedModifier(int speed) override;
 
 private:
+    //! set animation based on current state
+    void synchDrawnAnimWithActionState(void);
+
     inline int getClosestDirs(int dir, int& closest, int& closer);
     bool floodMap(Mission *m, const TilePoint &clippedDestPt, FloodNode *mdpmirror);
     void removeTilesWithNoChildsFromBase(Mission *m, unsigned short blvl, std::vector <FloodTile> &bv, std::vector <FloodLevelRange> &bn, FloodNode *mdpmirror);
