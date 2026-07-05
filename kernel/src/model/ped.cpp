@@ -44,6 +44,7 @@ const int PedInstance::kAgentMaxHealth = 16;
 const int PedInstance::kDefaultShootReactionTime = 200;
 const uint32_t PedInstance::kPlayerGroupId = 1;
 const int PedInstance::kAgentMaxSpeedWithOverweight = 64;
+const uint32_t PedInstance::pd_smUndefined = 0;
 
 PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, int maxSpeed) :
     ShootableMovableMapObject(anId, pMap, MapObject::kNaturePed, maxSpeed),
