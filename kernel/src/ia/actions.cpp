@@ -76,7 +76,7 @@ Action(aType) {
     pPrevious_ = NULL;
     isExclusive_ = exclusive;
     canExecInVehicle_ = canExecVehicle;
-    targetState_ = PedInstance::kPedActionStateStanding;
+    targetState_ = kPedActionStateStanding;
     warnBehaviour_ = false;
 }
 
@@ -106,7 +106,7 @@ bool MovementAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *p
             return false;
         } else {
             // action has started correctly -> change state
-            pPed->goToState(static_cast<PedInstance::PedActionState>(targetState_));
+            pPed->goToState(targetState_);
         }
     }
 
@@ -116,7 +116,7 @@ bool MovementAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *p
     }
 
     if (isFinished()) {
-        pPed->leaveState(static_cast<PedInstance::PedActionState>(targetState_));
+        pPed->leaveState(targetState_);
     }
 
     return update;
@@ -132,7 +132,7 @@ bool MovementAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *p
  */
 bool MovementAction::suspend(PedInstance *pPed) {
     if (status_ != kActStatusNotStarted) {
-        pPed->leaveState(static_cast<PedInstance::PedActionState>(targetState_));
+        pPed->leaveState(targetState_);
         savedStatus_ = status_;
         status_ = kActStatusSuspended;
     }
@@ -142,7 +142,7 @@ bool MovementAction::suspend(PedInstance *pPed) {
 
 void MovementAction::resume([[maybe_unused]] Mission *pMission, PedInstance *pPed) {
     status_ = savedStatus_;
-    pPed->goToState(static_cast<PedInstance::PedActionState>(targetState_));
+    pPed->goToState(targetState_);
 }
 
 /*!
@@ -208,7 +208,7 @@ void MovementAction::removeAndJoinChain() {
 WalkAction::WalkAction(const TilePoint &locT) :
     MovementAction(kActTypeWalk) {
     destLocT_ = locT;
-    targetState_ = PedInstance::kPedActionStateWalking;
+    targetState_ = kPedActionStateWalking;
 }
 
 /*! \brief
@@ -218,7 +218,7 @@ WalkAction::WalkAction(const TilePoint &locT) :
  *
  */
 WalkAction::WalkAction(ShootableMapObject *smo) : MovementAction(kActTypeWalk) {
-    targetState_ = PedInstance::kPedActionStateWalking;
+    targetState_ = kPedActionStateWalking;
     setDestination(smo);
 }
 
@@ -272,7 +272,7 @@ WalkToDirectionAction::WalkToDirectionAction(const WorldPoint &destLocW) :
 MovementAction(kActTypeWalk) {
     maxDistanceToWalk_ = 0;
     destLocW_ = destLocW;
-    targetState_ = PedInstance::kPedActionStateWalking;
+    targetState_ = kPedActionStateWalking;
 }
 
 WalkToDirectionAction::WalkToDirectionAction() :
@@ -281,7 +281,7 @@ MovementAction(kActTypeWalk) {
     destLocW_.x = -1;
     destLocW_.y = -1;
     destLocW_.z = -1;
-    targetState_ = PedInstance::kPedActionStateWalking;
+    targetState_ = kPedActionStateWalking;
 }
 
 bool WalkToDirectionAction::suspend(PedInstance *pPed) {
@@ -402,7 +402,7 @@ bool EscapeAction::doExecute([[maybe_unused]] uint32_t elapsed, Mission *pMissio
 FollowAction::FollowAction(PedInstance *pTarget) :
 MovementAction(kActTypeFollow) {
     pTarget_ = pTarget;
-    targetState_ = PedInstance::kPedActionStateWalking;
+    targetState_ = kPedActionStateWalking;
 }
 
 /*!
@@ -423,7 +423,7 @@ void FollowAction::doStart(Mission *pMission, PedInstance *pPed) {
         // Else, Ped must stay standing. But the method Action::execute() will do a goToState()
         // right after doStart() has been called. So we'll have a walking
         // animation without the ped moving. See doExecute() for more
-        targetState_ = PedInstance::kPedActionStateStanding;
+        targetState_ = kPedActionStateStanding;
     }
 }
 
@@ -439,7 +439,7 @@ bool FollowAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *p
             if (pPed->isCloseTo(pTarget_, kFollowDistance)) {
                 // We reached the target so stop moving temporarily
                 pPed->clearDestination();
-                pPed->leaveState(static_cast<PedInstance::PedActionState>(targetState_));
+                pPed->leaveState(targetState_);
             } else {
                 updated = pPed->doMove(elapsed);
             }
@@ -451,8 +451,8 @@ bool FollowAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *p
             // resetting target position
             updateLastTargetPos();
             if (pPed->initMovementToDestination(pMission, targetLastPos_)) {
-                targetState_ = PedInstance::kPedActionStateWalking;
-                pPed->goToState(static_cast<PedInstance::PedActionState>(targetState_));
+                targetState_ = kPedActionStateWalking;
+                pPed->goToState(targetState_);
             } else {
                 setFailed();
             }
@@ -468,7 +468,7 @@ bool FollowAction::doExecute(uint32_t elapsed, Mission *pMission, PedInstance *p
 FollowToShootAction::FollowToShootAction(PedInstance *pTarget) :
 MovementAction(kActTypeFollowToShoot) {
     pTarget_ = pTarget;
-    targetState_ = PedInstance::kPedActionStateWalking;
+    targetState_ = kPedActionStateWalking;
     followDistance_ = 0;
 }
 
@@ -544,7 +544,7 @@ bool FollowToShootAction::doExecute(uint32_t elapsed, Mission *pMission, PedInst
 
 PutdownWeaponAction::PutdownWeaponAction(uint8_t weaponIdx) : MovementAction(kActTypeDrop, true) {
     weaponIdx_ = weaponIdx;
-    targetState_ = PedInstance::kPedActionStatePutDown;
+    targetState_ = kPedActionStatePutDown;
 }
 
 void PutdownWeaponAction::doStart([[maybe_unused]] Mission *pMission, [[maybe_unused]] PedInstance *pPed) {
@@ -572,7 +572,7 @@ bool PutdownWeaponAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_u
 PickupWeaponAction::PickupWeaponAction(WeaponInstance *pWeapon) :
     MovementAction(kActTypePickUp, true) {
     pWeapon_ = pWeapon;
-    targetState_ = PedInstance::kPedActionStatePickUp;
+    targetState_ = kPedActionStatePickUp;
 }
 
 void PickupWeaponAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *pPed) {
@@ -789,14 +789,14 @@ HitAction::HitAction(DamageToInflict &d) :
     damage_.originLocW = d.originLocW;
     damage_.pWeapon = d.pWeapon;
 
-    targetState_ = PedInstance::kPedActionStateHit;
+    targetState_ = kPedActionStateHit;
 }
 
 bool HitAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) {
     if (status_ == kActStatusNotStarted) {
         setRunning();
         doStart(pMission, pPed);
-        pPed->goToState(PedInstance::kPedActionStateHit);
+        pPed->goToState(kPedActionStateHit);
         if (!isRunning()) {
             // not running means failed or waiting for next run
             return true;
@@ -854,7 +854,7 @@ bool RecoilHitAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_unuse
                 phase_ = kRecoilPhaseDying;
                 waitForAnimation();
             } else {
-                pPed->leaveState(PedInstance::kPedActionStateHit);
+                pPed->leaveState(kPedActionStateHit);
                 setSucceeded();
             }
         } else if (phase_ == kRecoilPhaseDying) {
@@ -975,7 +975,7 @@ bool PersuadedHitAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_un
     if (status_ == kActStatusRunning) {
         PedInstance *pAgent = static_cast<PedInstance *>(damage_.d_owner);
         pPed->handlePersuadedBy(pAgent);
-        pPed->leaveState(PedInstance::kPedActionStateHit);
+        pPed->leaveState(kPedActionStateHit);
         setSucceeded();
     }
     return true;
@@ -1015,12 +1015,12 @@ bool ShootAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed
         pWeapon_->playSound();
         pWeapon_->fire(pMission, dmg, elapsed);
         // change state to firing
-        pPed->goToState(PedInstance::kPedActionStateFiring);
+        pPed->goToState(kPedActionStateFiring);
         // waiting for animation to complete
         status_ = kActStatusWaitForAnim;
     } else if (status_ == kActStatusRunning) {
         // Shooting animation is finished
-        pPed->leaveState(PedInstance::kPedActionStateFiring);
+        pPed->leaveState(kPedActionStateFiring);
         if (pPed->isCurrentActionOfType(Action::kActTypeWalk)) {
             pPed->currentAction()->resume(pMission, pPed);
         }
@@ -1104,7 +1104,7 @@ bool AutomaticShootAction::execute(uint32_t elapsed, Mission *pMission, PedInsta
     if (status_ == kActStatusNotStarted) {
         setRunning();
         // change state to firing
-        pPed->goToState(PedInstance::kPedActionStateFiring);
+        pPed->goToState(kPedActionStateFiring);
         // If ped was moving, stop during shooting
         // TODO : stop moving only if shooting in different direction of movement
         if (pPed->hasDestination()) {
@@ -1139,7 +1139,7 @@ void AutomaticShootAction::stop() {
     if (status_ == kActStatusRunning) {
         PedInstance *pPed = pWeapon_->owner();
         // Shooting animation is finished
-        pPed->leaveState(PedInstance::kPedActionStateFiring);
+        pPed->leaveState(kPedActionStateFiring);
         // If ped was moving before starting shooting, then resume walking
         if (pPed->isCurrentActionOfType(Action::kActTypeWalk)) {
             pPed->currentAction()->resume(g_missionCtrl.mission(), pPed);

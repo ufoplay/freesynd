@@ -25,6 +25,7 @@
 #include "fs-utils/misc/timer.h"
 #include "fs-kernel/model/path.h"
 #include "fs-kernel/model/static.h"
+#include "fs-kernel/model/pedactionstate.h"
 
 namespace fs_knl {
 
@@ -218,7 +219,7 @@ protected:
     /*! This flag tells that the action can be executed when ped is in a vehicule.*/
     bool canExecInVehicle_;
     /*! Store the state the ped will have when executing the action.*/
-    uint32_t targetState_;
+    PedActionState targetState_;
     /*! Previous action in the chain.*/
     MovementAction *pPrevious_;
     /*! Next action in the chain.*/

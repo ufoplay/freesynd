@@ -32,21 +32,21 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
     cut.setStartHealth(10, true);
 
     SECTION( "State management") {
-        cut.goToState(fs_knl::PedInstance::kPedActionStateWalking);
-        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateWalking) );
+        cut.goToState(fs_knl::kPedActionStateWalking);
+        REQUIRE( cut.isState(fs_knl::kPedActionStateWalking) );
     }
 
     SECTION( "Firing state combines with current standing/walking state") {
-        cut.goToState(fs_knl::PedInstance::kPedActionStateWalking);
-        cut.goToState(fs_knl::PedInstance::kPedActionStateFiring);
-        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateWalkingFiring) );
+        cut.goToState(fs_knl::kPedActionStateWalking);
+        cut.goToState(fs_knl::kPedActionStateFiring);
+        REQUIRE( cut.isState(fs_knl::kPedActionStateWalkingFiring) );
 
         // Stopping while firing keeps firing active
-        cut.leaveState(fs_knl::PedInstance::kPedActionStateWalking);
-        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateStandingFiring) );
+        cut.leaveState(fs_knl::kPedActionStateWalking);
+        REQUIRE( cut.isState(fs_knl::kPedActionStateStandingFiring) );
 
-        cut.leaveState(fs_knl::PedInstance::kPedActionStateFiring);
-        REQUIRE( cut.isState(fs_knl::PedInstance::kPedActionStateStanding) );
+        cut.leaveState(fs_knl::kPedActionStateFiring);
+        REQUIRE( cut.isState(fs_knl::kPedActionStateStanding) );
     }
 
     SECTION("Mods") {

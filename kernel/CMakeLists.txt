@@ -39,6 +39,7 @@ set(HEADER_LIST
     "${Freesynd_SOURCE_DIR}/kernel/include/fs-kernel/model/map.h"
     "${Freesynd_SOURCE_DIR}/kernel/include/fs-kernel/model/mission.h"
     "${Freesynd_SOURCE_DIR}/kernel/include/fs-kernel/model/objectivedesc.h"
+    "${Freesynd_SOURCE_DIR}/kernel/include/fs-kernel/model/pedactionstate.h"
     "${Freesynd_SOURCE_DIR}/kernel/include/fs-kernel/model/ped.h"
     "${Freesynd_SOURCE_DIR}/kernel/include/fs-kernel/model/train.h"
     "${Freesynd_SOURCE_DIR}/kernel/include/fs-kernel/model/vehicle.h"

@@ -37,6 +37,7 @@
 #include "fs-kernel/model/weapon.h"
 #include "fs-kernel/model/weaponholder.h"
 #include "fs-kernel/model/ipastim.h"
+#include "fs-kernel/model/pedactionstate.h"
 #include "fs-kernel/ia/actions.h"
 #include "fs-kernel/ia/behaviour.h"
 
@@ -109,20 +110,6 @@ public:
         kPedTypeGuard = 0x08,
         kPedTypeCriminal = 0x10
     } ;
-
-    //! This is the list of possible state for a PedInstance
-    enum PedActionState {
-        kPedActionStateStanding,
-        kPedActionStateStandingFiring,
-        kPedActionStateWalking,
-        kPedActionStateWalkingFiring,
-        kPedActionStateHit,
-        kPedActionStatePickUp,
-        kPedActionStatePutDown,
-        //! Pseudo-state: only used as a parameter to goToState()/leaveState() to
-        //! start/stop firing from the current state ; never stored as-is in state_.
-        kPedActionStateFiring
-    };
 
     PedInstance(uint16_t id, Map *pMap, PedType type, bool isOur, int maxSpeed);
     ~PedInstance();
