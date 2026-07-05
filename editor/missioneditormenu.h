@@ -64,6 +64,7 @@ protected:
 
     void drawCurrentTileSelector();
     void drawObjectPanel();
+    void drawWeaponsInventory();
 
     void setTileTypeName(fs_eng::Tile::EType tileType);
 

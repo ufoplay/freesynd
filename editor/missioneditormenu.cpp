@@ -69,6 +69,7 @@ void MissionEditorMenu::handleRender() {
     mapRenderer_.render();
     g_System.drawFillRect({0,0}, 129, fs_eng::kScreenHeight, menu_manager_->kMenuColorBlack);
     drawObjectPanel();
+    drawWeaponsInventory();
     drawCurrentTileSelector();
 }
 
@@ -448,6 +449,9 @@ void MissionEditorMenu::updateCursorFromTarget(Point2D point) {
 
 void MissionEditorMenu::drawObjectPanel() {
     if (targetSelected_) {
+        // Draw a white rect for visibility
+        g_System.drawFillRect({5,5}, 120, 80, menu_manager_->kMenuColorWhite);
+
         // Draw the target
         if (targetSelected_->is(fs_knl::MapObject::kNaturePed)) {
             fs_knl::PedInstance *pPed = dynamic_cast<fs_knl::PedInstance *>(targetSelected_);
@@ -474,4 +478,55 @@ void MissionEditorMenu::drawCurrentTileSelector() {
     }
 
     gameFont()->drawText(10, 380, maxZDesc_, menu_manager_->kMenuColorLightGreen);
+}
+
+void MissionEditorMenu::drawWeaponsInventory() {
+    if (targetSelected_ && targetSelected_->is(fs_knl::MapObject::kNaturePed)) {
+        fs_knl::PedInstance *pPed = dynamic_cast<fs_knl::PedInstance *>(targetSelected_);
+        
+        for (uint8_t j = 0; j < 2; j++) {
+            for (uint8_t i = 0; i < 4; i++) {
+                fs_knl::WeaponInstance *wi = NULL;
+                int s = 1601;
+                // NOTE: weapon selectors can be drawn by drawFrame instead
+                // of using current draw(), animations are folowing:
+                // 285,286 empty selector :: 287 persuadatron 289
+                // 291 pistol 293 :: 295 gauss gun 297 :: 299 shotgun 301
+                // 303 uzi 305 :: 307 minigun 309 :: 311 laser gun 313
+                // 315 flamer 317 :: 319 long range 321 :: 323 scanner 325
+                // 327 medikit 329 :: 331 time bomb 333 :: 343 access card 345
+                // 351 energy shield 353
+
+                if (i + j * 4u < pPed->numWeapons()) {
+                    wi = pPed->weapon(i + j * 4u);
+                    s = wi->getClass()->selector();
+                }
+
+                g_SpriteMgr.drawSprite(s, {32 * i, 150 + j * 32});
+
+                // draw ammo bars
+                if (wi) {
+                    int n;
+
+                    if (!wi->usesAmmo())
+                        continue;
+                    if (wi->ammoCapacity() == 0)
+                        n = 25;
+                    else
+                        n = 25 * wi->ammoRemaining() / wi->ammoCapacity();
+
+                    g_System.drawFillRect({32 * i + 3, 150 + j * 32 + 23},
+                        n, 5, menu_manager_->kMenuColorWhiteBlue);
+                }
+            }
+        }
+    } else {
+        for (int j = 0; j < 2; j++)
+            for (int i = 0; i < 4; i++) {
+                int s = 1601;
+
+                g_SpriteMgr.drawSprite(s, {32 * i, 150 + j * 32});
+            }
+
+    }
 }
