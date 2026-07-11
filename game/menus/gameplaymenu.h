@@ -132,6 +132,8 @@ protected:
 protected:
     /*! Origin of the minimap on the screen.*/
     static const Point2D kMiniMapScreenPos;
+    //! Maximum time in millisecond to detect a double press on a key
+    static const uint32_t kDoublePressMs;
 
     uint32_t tick_count_, last_animate_tick_;
   
@@ -176,6 +178,8 @@ protected:
     bool canPlayPoliceWarnSound_;
     /*! Delay between 2 police warnings.*/
     fs_utl::Timer warningTimer_;
+    //! Used to store the last time we selected a ped (used for double press)
+    uint32_t lastSelectionTick_;
 
     //! Handles used for removing listener
     ListenerHandle handleAgentDied_;

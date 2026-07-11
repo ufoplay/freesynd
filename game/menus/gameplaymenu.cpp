@@ -49,6 +49,7 @@
 const int kScrollStep = 16;
 
 const Point2D GameplayMenu::kMiniMapScreenPos = {0, 46 + 44 + 10 + 46 + 44 + 15 + 2 * 32 + 2};
+const uint32_t GameplayMenu::kDoublePressMs = 400;
 
 GameplayMenu::GameplayMenu(fs_eng::MenuManager *m) :
 Menu(m, fs_game_menus::kMenuIdGameplay, fs_game_menus::kMenuIdDebrief),
@@ -62,22 +63,15 @@ mm_renderer_(kMiniMapScreenPos), warningTimer_(20000)
     scroll_ = {0, 0};
     ipa_chng_.ipa_chng = -1;
     canPlayPoliceWarnSound_ = true;
+    lastSelectionTick_ = 0;
 }
 
 /*!
  * Initialize the screen position centered on the squad leader.
  */
-void GameplayMenu::initRenderers()
-{
-    // get the leader position on the map
-    fs_knl::PedInstance *p_leader = selection_.leader();
-    fs_knl::TilePoint leaderPos(p_leader->tileX(),
-                                p_leader->tileY(),
-                                mission_->mmax_z_ + 1,
-                                0, 0);
-
+void GameplayMenu::initRenderers() {
     // Init renderers
-    map_renderer_.init(mission_, &selection_, leaderPos);
+    map_renderer_.init(mission_, &selection_);
     mm_renderer_.init(mission_, mission_->getSquad()->hasScanner(), missionPalette_);
     centerMinimapOnLeader();
 }
@@ -642,24 +636,28 @@ bool GameplayMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
 
     // Handle agent selection by numeric keys. Key 0 cycles between one agent
     // selection and all 4 agents.
-    // Individual keys select the specified agent unless ctrl is pressed -
-    // then they add/remove agent from current selection.
     if (key.keyCode == fs_eng::kKeyCode_0) {
         // This code is exactly the same as for clicking on "group-button"
         // as you can see above.
         selectAllAgents();
     }
-    else if (key.keyCode == fs_eng::kKeyCode_1) {
-        selectAgent(0, ctrl);
-    }
-    else if (key.keyCode == fs_eng::kKeyCode_2) {
-        selectAgent(1, ctrl);
-    }
-    else if (key.keyCode == fs_eng::kKeyCode_3) {
-        selectAgent(2, ctrl);
-    }
-    else if (key.keyCode == fs_eng::kKeyCode_4) {
-        selectAgent(3, ctrl);
+    // Individual keys select the specified agent unless ctrl is pressed -
+    // then they add/remove agent from current selection.
+    else if (key.keyCode >= fs_eng::kKeyCode_1 && key.keyCode <= fs_eng::kKeyCode_4) {
+        size_t agentIdx = static_cast<size_t>(key.keyCode - fs_eng::kKeyCode_1);
+        // Double press on the same key make the screen centers on the selection
+        if ((tick_count_ - lastSelectionTick_) < kDoublePressMs) {
+            if (selection_.getLeaderSlot() == agentIdx) {
+                map_renderer_.centerMapOnPed(selection_.leader());
+            }
+        } else {
+            lastSelectionTick_ = tick_count_;
+        }
+        
+        if (selection_.getLeaderSlot() != agentIdx) {
+            selectAgent(agentIdx, ctrl);
+        }
+        
     } else if (key.keyCode == fs_eng::kKeyCode_Left) { // Scroll the map to the left
         scroll_.x = -kScrollStep;
     } else if (key.keyCode == fs_eng::kKeyCode_Right) { // Scroll the map to the right
@@ -681,7 +679,7 @@ bool GameplayMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
 #endif
     else if (key.keyCode >= fs_eng::kKeyCode_F1 && key.keyCode <= fs_eng::kKeyCode_F8) {
         // Those keys are direct access to inventory
-        uint8_t weapon_idx = (uint8_t) key.keyCode - (uint8_t) fs_eng::kKeyCode_F5;
+        uint8_t weapon_idx = (uint8_t) key.keyCode - (uint8_t) fs_eng::kKeyCode_F1;
         handleWeaponSelection(weapon_idx, ctrl);
         return true;
     } else if ((key.keyCode == fs_eng::kKeyCode_D) && ctrl && mission_->isRunning()) { // selected agents are killed with 'd'
@@ -776,7 +774,6 @@ bool GameplayMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
 
     return consumed;
 }
-
 
 void GameplayMenu::drawSelectAllButton() {
     // 64x10
