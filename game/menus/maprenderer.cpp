@@ -38,15 +38,29 @@
 const int MapRenderer::kGameplayPanelWidth = 129;
 
 /*!
- * Initialize the renderer. 
+ * Initialize the renderer and centers on the leader of the selection.
  * @param pMission Pointer to current mission
  * @param pSelection Pointer to selection
- * @param center Try to center the viewport on this point
  */
-void MapRenderer::init(fs_knl::Mission *pMission, SquadSelection *pSelection, const fs_knl::TilePoint &center) {
+void MapRenderer::init(fs_knl::Mission *pMission, SquadSelection *pSelection) {
     pMission_ = pMission;
     pMap_ = pMission->map();
     pSelection_ = pSelection;
+
+    // get the leader position on the map
+    fs_knl::PedInstance *pLeader = pSelection_->leader();
+    centerMapOnPed(pLeader);
+}
+
+/*!
+ * Centers the map on the given ped
+ * @param pPed 
+ */
+void MapRenderer::centerMapOnPed(fs_knl::PedInstance *pPed) {
+    fs_knl::TilePoint center(pPed->tileX(),
+                                pPed->tileY(),
+                                pMission_->mmax_z_ + 1,
+                                0, 0);
 
     Point2D start;
     pMap_->tileToScreenPoint(center, &start);

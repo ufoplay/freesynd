@@ -139,7 +139,7 @@ public:
     MapRenderer() : pool_(10) {}
 
     //! Initialize the renderer
-    void init(fs_knl::Mission *pMission, SquadSelection *pSelection, const fs_knl::TilePoint &center);
+    void init(fs_knl::Mission *pMission, SquadSelection *pSelection);
 
     void render();
 
@@ -147,6 +147,9 @@ public:
     void scrollOnX(int scrollAmount);
     //! Scroll the map vertically.
     void scrollOnY(int scrollAmount);
+
+    //! Centers the map on the given ped
+    void centerMapOnPed(fs_knl::PedInstance *pPed);
 
     //! Return true if the mouse is over given object
     bool isMouseHovering(const Point2D &mousePt, const fs_knl::MapObject &mapObject, const Point2D &padTopLeft, const Point2D &padBotRight);
