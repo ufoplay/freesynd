@@ -227,7 +227,7 @@ void Weapon::initFromConfig(WeaponType w_type, ConfigFile &conf) {
         propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "bomb.explosiondelay");
         explosionDelay_ = conf.read<uint32_t>(propName, 0);
         propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "timereload");
-        time_reload_ = conf.read<int>(propName, 0);
+        reloadTime_ = conf.read<int>(propName, 0);
         propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "damagerange");
         range_dmg_ = conf.read<int>(propName, 0);
         propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "shotangle");

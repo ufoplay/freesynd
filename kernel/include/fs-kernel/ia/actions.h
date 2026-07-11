@@ -130,8 +130,12 @@ public:
 
     //! Sets the status to Running
     void setRunning() { status_ = kActStatusRunning; }
-    //! Sets the status to WaitForTime
-    void waitForTime() { status_ = kActStatusWaitForTime; }
+    //! Sets the status to WaitForTime and (re)starts the wait timer
+    //! \param timeToWait Duration (ms) to wait before the action can complete
+    void waitForTime(uint32_t timeToWait) {
+        timeToWaitTimer_.reset(timeToWait);
+        status_ = kActStatusWaitForTime;
+    }
     //! Sets the status to WaitForAnimation
     void waitForAnimation() { status_ = kActStatusWaitForAnim; }
     //! Sets the status to Succeeded
@@ -148,6 +152,8 @@ protected:
     ActionSource source_;
     /*! This is the status of the action.*/
     ActionStatus status_;
+    /*! Timer used when status is kActStatusWaitForTime.*/
+    fs_utl::Timer timeToWaitTimer_;
 };
 
 /*!
@@ -723,8 +729,6 @@ protected:
 protected:
     //! Where the player aimed with the mouse
     WorldPoint aimedAt_;
-    //! Time to wait between two shoot actions
-    int timeToWait_;
 };
 
 /*!
@@ -750,9 +754,6 @@ public:
 
     //! Entry point to execute the action
     bool execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) override;
-protected:
-    //! Time to wait between two weapon actions
-    int timeToWait_;
 };
 
 /*!

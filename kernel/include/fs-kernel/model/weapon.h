@@ -110,7 +110,7 @@ public:
     int ammoPerShot() { return ammo_per_shot_; }
     //! Time before a TimeBomb explodes, in milliseconds. Only meaningful for TimeBomb.
     uint32_t explosionDelay() { return explosionDelay_; }
-    int reloadTime() { return time_reload_; }
+    int reloadTime() { return reloadTime_; }
     int rangeDmg() { return range_dmg_; }
     double shotAngle() { return shot_angle_; }
     double shotAcurracy() { return shot_accuracy_; }
@@ -248,8 +248,8 @@ protected:
     int ammo_per_shot_;
     //! Time before a TimeBomb explodes. Only used by TimeBomb (see WeaponInstance::bombExplosionTimer).
     uint32_t explosionDelay_;
-    //! time required to make weapon ready to shoot
-    int time_reload_;
+    //! time required to make weapon ready to shoot again
+    int reloadTime_;
     /*! True when weapon was found and submit to search manager.*/
     bool submittedToSearch_;
     //WeaponShotPropertyType

@@ -51,7 +51,7 @@ const uint8_t ShootAction::kShootActionSingleShoot = 2;
  * \param aType What type of action.
  * \param origin Who has created this action.
  */
-Action::Action(ActionType aType) {
+Action::Action(ActionType aType) : timeToWaitTimer_(0) {
     status_ = kActStatusNotStarted;
     type_ = aType;
     source_ = kActionNotScripted;
@@ -1028,11 +1028,9 @@ bool ShootAction::execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed
         // The action is complete only after a certain laps of time to
         // simulate the fact that the weapon needs to be reloaded
         // and the shooter's reactivity to that
-        timeToWait_ = pPed->getTimeBetweenShoots(pWeapon_);
-        waitForTime();
+        waitForTime(pPed->getTimeBetweenShoots(pWeapon_));
     } else if (status_ == kActStatusWaitForTime) {
-        timeToWait_ -= elapsed;
-        if (timeToWait_ <= 0) {
+        if (timeToWaitTimer_.update(elapsed)) {
             // time is reached so action can finish
             setSucceeded();
         }
@@ -1125,8 +1123,7 @@ bool AutomaticShootAction::execute(uint32_t elapsed, Mission *pMission, PedInsta
             pWeapon_->fire(pMission, dmg, elapsed);
         }
     } else if (status_ == kActStatusWaitForTime) {
-        timeToWait_ -= elapsed;
-        if (timeToWait_ <= 0) {
+        if (timeToWaitTimer_.update(elapsed)) {
             // time is reached so action can finish
             setSucceeded();
         }
@@ -1147,8 +1144,7 @@ void AutomaticShootAction::stop() {
         // The action is complete only after a certain laps of time to
         // simulate the fact that the weapon needs to be reloaded
         // and the shooter's reactivity to that
-        timeToWait_ = pPed->getTimeBetweenShoots(pWeapon_);
-        waitForTime();
+        waitForTime(pPed->getTimeBetweenShoots(pWeapon_));
     }
 }
 
@@ -1163,8 +1159,7 @@ bool UseMedikitAction::execute(uint32_t elapsed, Mission *pMission, PedInstance 
     bool update = false;
     if (status_ == kActStatusNotStarted) {
         // set time before completing action
-        status_ = kActStatusWaitForTime;
-        timeToWait_ = pPed->getTimeBetweenShoots(pWeapon_);
+        waitForTime(pPed->getTimeBetweenShoots(pWeapon_));
 
         if (!pWeapon_->isInstanceOf(Weapon::MediKit)) {
             setFailed();
@@ -1176,8 +1171,7 @@ bool UseMedikitAction::execute(uint32_t elapsed, Mission *pMission, PedInstance 
             update = true;
         }
     } else if (status_ == kActStatusWaitForTime) {
-        timeToWait_ -= elapsed;
-        if (timeToWait_ <= 0) {
+        if (timeToWaitTimer_.update(elapsed)) {
             // time is reached so action can finish
             setSucceeded();
             update = true;
