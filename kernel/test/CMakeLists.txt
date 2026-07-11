@@ -21,6 +21,7 @@ add_executable(test-kernel
     testcase.cpp
     mapobjecttest.cpp
     weaponholdertest.cpp
+    weapontest.cpp
     squadtest.cpp
     vehicletest.cpp
     objectivedesctest.cpp
