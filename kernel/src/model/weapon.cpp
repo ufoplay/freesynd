@@ -224,8 +224,8 @@ void Weapon::initFromConfig(WeaponType w_type, ConfigFile &conf) {
         anim_ = conf.read<int>(propName);
         propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "ammopershot");
         ammo_per_shot_ = conf.read<int>(propName, 0);
-        propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "timeforshot");
-        time_for_shot_ = conf.read<uint32_t>(propName, 0);
+        propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "bomb.explosiondelay");
+        explosionDelay_ = conf.read<uint32_t>(propName, 0);
         propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "timereload");
         time_reload_ = conf.read<int>(propName, 0);
         propName = std::format(WEAPON_PROPERTY_PATTERN, typeAsInt, "damagerange");
@@ -265,7 +265,7 @@ WeaponInstance *WeaponInstance::createInstance(Weapon *pWeaponClass, int remaini
 
 WeaponInstance::WeaponInstance(Weapon * pWeaponClass, uint16_t anId, Map *pMap, int remainingAmmo) :
         ShootableMapObject(anId, pMap, MapObject::kNatureWeapon),
-        bombSoundTimer(pWeaponClass->reloadTime()), bombExplosionTimer(pWeaponClass->timeForShot()),
+        bombSoundTimer(pWeaponClass->reloadTime()), bombExplosionTimer(pWeaponClass->explosionDelay()),
         flamerTimer_(180), shieldTimer_(static_cast<uint32_t>(pWeaponClass->fireRate())) {
     pWeaponClass_ = pWeaponClass;
     ammo_remaining_ = remainingAmmo == -1 ? pWeaponClass->ammoCapacity() : remainingAmmo;

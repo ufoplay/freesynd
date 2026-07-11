@@ -34,7 +34,6 @@ void initWeaponConfigFile( ConfigFile &config ) {
     config.add("weapon.1.rank", 1);
     config.add("weapon.1.anim", 368);
     config.add("weapon.1.ammopershot", 1);
-    config.add("weapon.1.timeforshot", 200);
     config.add("weapon.1.timereload", 600);
     config.add("weapon.1.damagerange", 0);
     config.add("weapon.1.shotangle", 5.0);
@@ -54,7 +53,6 @@ void initWeaponConfigFile( ConfigFile &config ) {
     config.add("weapon.2.rank", 1);
     config.add("weapon.2.anim", 368);
     config.add("weapon.2.ammopershot", 1);
-    config.add("weapon.2.timeforshot", 200);
     config.add("weapon.2.timereload", 600);
     config.add("weapon.2.damagerange", 0);
     config.add("weapon.2.shotangle", 5.0);
@@ -70,7 +68,6 @@ void initWeaponConfigFile( ConfigFile &config ) {
     config.add("weapon.12.cost", 1000);
     config.add("weapon.12.range", 256);
     config.add("weapon.12.anim", 379);
-    config.add("weapon.12.timeforshot", 1);
     config.add("weapon.12.timereload", 1);
     config.add("weapon.12.weight", 1);
 
@@ -91,7 +88,6 @@ void initWeaponConfigFile( ConfigFile &config ) {
     config.add("weapon.13.range", 768);
     config.add("weapon.13.anim", 381);
     config.add("weapon.13.ammopershot", 1);
-    config.add("weapon.13.timeforshot", 75);
     config.add("weapon.13.auto.fire_rate", 75);
     config.add("weapon.13.ammo.impactNb", 1);
     config.add("weapon.13.weight", 8);

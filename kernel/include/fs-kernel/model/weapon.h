@@ -108,7 +108,8 @@ public:
     int range() { return range_; }
     int damagePerShot() { return dmg_per_shot_; }
     int ammoPerShot() { return ammo_per_shot_; }
-    uint32_t timeForShot() { return time_for_shot_; }
+    //! Time before a TimeBomb explodes, in milliseconds. Only meaningful for TimeBomb.
+    uint32_t explosionDelay() { return explosionDelay_; }
     int reloadTime() { return time_reload_; }
     int rangeDmg() { return range_dmg_; }
     double shotAngle() { return shot_angle_; }
@@ -245,8 +246,8 @@ protected:
     WeaponType type_;
     DamageType dmg_type_;
     int ammo_per_shot_;
-    //! time weapon uses to do a single shot
-    uint32_t time_for_shot_;
+    //! Time before a TimeBomb explodes. Only used by TimeBomb (see WeaponInstance::bombExplosionTimer).
+    uint32_t explosionDelay_;
     //! time required to make weapon ready to shoot
     int time_reload_;
     /*! True when weapon was found and submit to search manager.*/
