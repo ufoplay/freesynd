@@ -88,10 +88,7 @@ public:
      * to customize the start phase.
      * Only start objectives can be evaluated.
      */
-    void start() {
-        status = kStarted;
-        handleStart();
-    }
+    void start();
 
     /*!
      * @brief This method is called to evaluate the status of the objective in the

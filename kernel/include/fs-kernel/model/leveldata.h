@@ -365,28 +365,49 @@ namespace LevelData {
     };
 
     /*! Constant for field People::location : Ped is on the map.*/
-    static const int kPeopleLocOnMap = 0x04;
+    constexpr int kPeopleLocOnMap = 0x04;
     /*! Constant for field People::location : Ped is in a vehicle.*/
-    static const int kPeopleLocInVehicle = 0x05;
+    constexpr int kPeopleLocInVehicle = 0x05;
     /*! Constant for field People::location : located level above possible walking surface, purpose?*/
-    static const int kPeopleLocAboveWalkSurf = 0x0C;
+    constexpr int kPeopleLocAboveWalkSurf = 0x0C;
     /*! Constant for field People::location : they are not visible/present on original map(on water located), purpose?*/
-    static const int kPeopleLocNotVisible = 0x0D;
+    constexpr int kPeopleLocNotVisible = 0x0D;
 
     /*! Constant for field People::state : ped is walking.*/
-    static const int kPeopleStateWalking = 0x10;
+    constexpr int kPeopleStateWalking = 0x10;
     /*! Constant for field People::state : ped is dead.*/
-    static const int kPeopleStateDead = 0x11;
+    constexpr int kPeopleStateDead = 0x11;
 
     /*! Constant for field Scenario::type :  Use vehicle to go somewhere.*/
-    static const int kScenarioTypeUseVehicle = 0x02;
+    constexpr int kScenarioTypeUseVehicle = 0x02;
     /*! Constant for field Scenario::type :  Target has escape the map.*/
-    static const int kScenarioTypeEscape = 0x07;
+    constexpr int kScenarioTypeEscape = 0x07;
     /*! Constant for field Scenario::type : this is a trigger.
      * Agents will trigger it when they enter the circle defined by the center and a fixed radius.*/
-    static const int kScenarioTypeTrigger = 0x08;
+    constexpr int kScenarioTypeTrigger = 0x08;
     /*! Constant for field Scenario::type : Reset all scripted action.*/
-    static const int kScenarioTypeReset = 0x09;
+    constexpr int kScenarioTypeReset = 0x09;
+
+    /*! Constant for field Objectives::type : action for non-agent ped(?).*/
+    constexpr int kObjectiveTypeNonAgentAction = 0x00;
+    /*! Constant for field Objectives::type : persuade a target.*/
+    constexpr int kObjectiveTypePersuade = 0x01;
+    /*! Constant for field Objectives::type : assassinate a target.*/
+    constexpr int kObjectiveTypeAssassinate = 0x02;
+    /*! Constant for field Objectives::type : protect a target.*/
+    constexpr int kObjectiveTypeProtect = 0x03;
+    /*! Constant for field Objectives::type : acquire a piece of equipment.*/
+    constexpr int kObjectiveTypeEquipmentAcquisition = 0x05;
+    /*! Constant for field Objectives::type : combat sweep against police.*/
+    constexpr int kObjectiveTypeCombatSweepPolice = 0x0A;
+    /*! Constant for field Objectives::type : combat sweep.*/
+    constexpr int kObjectiveTypeCombatSweep = 0x0B;
+    /*! Constant for field Objectives::type : destroy a vehicle.*/
+    constexpr int kObjectiveTypeDestroyVehicle = 0x0E;
+    /*! Constant for field Objectives::type : use a vehicle.*/
+    constexpr int kObjectiveTypeUseVehicle = 0x0F;
+    /*! Constant for field Objectives::type : evacuate agents.*/
+    constexpr int kObjectiveTypeEvacuate = 0x10;
 }
 
 #endif  // MODEL_LEVELDATA_H_

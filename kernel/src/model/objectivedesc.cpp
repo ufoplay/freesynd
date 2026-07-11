@@ -21,6 +21,7 @@
 
 #include "fs-kernel/model/objectivedesc.h"
 
+#include "fs-utils/log/log.h"
 #include "fs-engine/appcontext.h"
 #include "fs-engine/events/event.h"
 #include "fs-kernel/model/ped.h"
@@ -30,6 +31,11 @@
 
 namespace fs_knl {
 
+void ObjectiveDesc::start() {
+    LOG(Log::k_FLG_GAME, "ObjectiveDesc","start", ("Objective has started"))
+    status = kStarted;
+    handleStart();
+}
 /*!
  * Evaluate the objective. By default, only started objectives can
  * be evaluated. Moreover, this method checks that not all squad is dead.
@@ -39,6 +45,7 @@ namespace fs_knl {
 void ObjectiveDesc::evaluate(Mission *pMission) {
     if ( status == kStarted) {
         if (pMission->getSquad()->isAllDead()) {
+            LOG(Log::k_FLG_GAME, "ObjectiveDesc","evaluate", ("Mission failed cause all agents are dead"))
             endObjective(false);
         } else {
             doEvaluate(pMission);

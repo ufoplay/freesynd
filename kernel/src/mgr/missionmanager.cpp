@@ -881,10 +881,10 @@ void MissionManager::createObjectives(const LevelData::LevelDataAll &level_data,
     // max 5(6 read) objectives
     std::vector <PedInstance *> peds_evacuate;
     for (uint8_t i = 0; i < 6; i++) {
-        ObjectiveDesc *objd = NULL;
+        ObjectiveDesc *objd = nullptr;
 
         const LevelData::Objectives & obj = level_data.objectives[i];
-        unsigned int bindx = fs_utl::READ_LE_UINT16(obj.offset), cindx = 0;
+        uint16_t bindx = fs_utl::READ_LE_UINT16(obj.offset), cindx = 0;
         // TODO: checking is implemented for correct offset, because
         // in game data objective description is not correctly defined
         // some offsets are wrong, objective type is missing somewhere
@@ -895,7 +895,7 @@ void MissionManager::createObjectives(const LevelData::LevelDataAll &level_data,
         // failed, similar actions are in many missions(scenarios defines this)
 
         switch (fs_utl::READ_LE_UINT16(obj.type)) {
-            case 0x00:
+            case LevelData::kObjectiveTypeNonAgentAction:
             {
                 int x = fs_utl::READ_LE_INT16(obj.mapposx);
                 if (x != 0) {
@@ -918,7 +918,7 @@ void MissionManager::createObjectives(const LevelData::LevelDataAll &level_data,
                 }
             }
                 break;
-            case 0x01:
+            case LevelData::kObjectiveTypePersuade:
                 if (bindx > 0 && bindx < 0x5C02) {
                     cindx = (bindx - 2) / 92;
                     if ((cindx * 92 + 2) == bindx && di.pindx[cindx] != 0xFFFF) {
@@ -927,41 +927,51 @@ void MissionManager::createObjectives(const LevelData::LevelDataAll &level_data,
                         p->setPanicImmuned();
                         // Adds the ped to the list of peds to evacuate
                         peds_evacuate.push_back(p);
-                    } else
-                        printf("0x01 incorrect offset");
-                } else
-                    printf("0x01 type not matched");
+                        LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Persuad"));
+                    } else {
+                        FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x01 incorrect offset"));
+                    }
+                } else  {
+                    FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x01 type not matched"));
+                }
                 break;
-            case 0x02: // Assassinate a civilian
+            case LevelData::kObjectiveTypeAssassinate: // Assassinate a civilian
                 if (bindx > 0 && bindx < 0x5C02) {
                     cindx = (bindx - 2) / 92;
                     if ((cindx * 92 + 2) == bindx && di.pindx[cindx] != 0xFFFF) {
                         PedInstance *p = pMission->ped(di.pindx[cindx]);
                         p->setPanicImmuned();
                         objd = new ObjAssassinate(p);
-                    } else
-                        printf("0x02 incorrect offset");
-                } else
-                    printf("0x02 type not matched");
+                        LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Assassinate"));
+                    } else {
+                        FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x02 incorrect offset"));
+                    }
+                } else  {
+                    FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x02 type not matched"));
+                }
                 break;
-            case 0x03:
+            case LevelData::kObjectiveTypeProtect:
                 if (bindx > 0 && bindx < 0x5C02) {
                     cindx = (bindx - 2) / 92;
                     if ((cindx * 92 + 2) == bindx && di.pindx[cindx] != 0xFFFF) {
                         PedInstance *p = pMission->ped(di.pindx[cindx]);
                         p->setPanicImmuned();
                         objd = new ObjProtect(p);
-                    } else
-                        printf("0x03 incorrect offset");
-                } else
-                    printf("0x03 type not matched");
+                        LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Protect"));
+                    } else {
+                        FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x03 incorrect offset"));
+                    }
+                } else  {
+                    FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x03 type not matched"));
+                }
                 break;
-            case 0x05:
+            case LevelData::kObjectiveTypeEquipmentAcquisition:
                 if (bindx >= 0x9562 && bindx < 0xDD62) {
                     bindx -= 0x9562;
                     cindx = bindx / 36;
                     if ((cindx * 36) == bindx && di.weapons[cindx] != NULL) {
                         objd = new ObjTakeWeapon(di.weapons[cindx]);
+                        LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - TakeWeapon"));
                     } else {
                         FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("Error creating Take Weapon objective(0x05) : incorrect offset %d", cindx));
                     }
@@ -970,57 +980,66 @@ void MissionManager::createObjectives(const LevelData::LevelDataAll &level_data,
                 }
 
                 break;
-            case 0x0A:
+            case LevelData::kObjectiveTypeCombatSweepPolice:
                 objd = new ObjEliminate(PedInstance::og_dmPolice);
+                LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Eliminate Police"));
                 break;
-            case 0x0B:
+            case LevelData::kObjectiveTypeCombatSweep:
                 objd = new ObjEliminate(PedInstance::og_dmAgent);
+                LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Eliminate Agent"));
                 break;
-            case 0x0E:
+            case LevelData::kObjectiveTypeDestroyVehicle:
                 if (bindx >= 0x5C02 && bindx < 0x6682) {
                     bindx -= 0x5C02;
                     cindx = bindx / 42;
                     if ((cindx * 42) == bindx && di.vindx[cindx] != 0xFFFF) {
                         objd = new ObjDestroyVehicle(pMission->vehicle(di.vindx[cindx]));
-                    } else
-                        printf("0x0E incorrect offset");
-                } else
-                    printf("0x0E type not matched");
+                        LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Destroy Vehicle"));
+                    } else {
+                        FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x01 incorrect offset"));
+                    }
+                } else  {
+                    FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x0E type not matched"));
+                }
 
                 break;
-            case 0x0F:
+            case LevelData::kObjectiveTypeUseVehicle:
                 if (bindx >= 0x5C02 && bindx < 0x6682) {
                     bindx -= 0x5C02;
                     cindx = bindx / 42;
                     if ((cindx * 42) == bindx && di.vindx[cindx] != 0xFFFF) {
                         objd = new ObjUseVehicle(pMission->vehicle(di.vindx[cindx]));
+                        LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Use Vehicle"));
                         // TODO Do we have to add the vehicle to the list of object to evacuate?
-                    } else
-                        printf("0x0F incorrect offset");
-                } else
-                    printf("0x0F type not matched");
+                    } else {
+                        FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x01 incorrect offset"));
+                    }
+                } else {
+                    FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("0x0F type not matched"));
+                }
                 break;
-            case 0x10:
+            case LevelData::kObjectiveTypeEvacuate:
                 // realworld coordinates, not tile based
                 objd = new ObjEvacuate(fs_utl::READ_LE_INT16(obj.mapposx),
                     fs_utl::READ_LE_INT16(obj.mapposy),
                     fs_utl::READ_LE_INT16(obj.mapposz),
                     peds_evacuate);
+                LOG(Log::k_FLG_GAME, "MissionManager", "createObjectives", (" - Evacuate ped"));
 
                 break;
 #ifdef _DEBUG
             default:
-                FSERR(Log::k_FLG_GAME, "Mission", "loadLevel", ("Unknown objective %X\n", fs_utl::READ_LE_UINT16(obj.type)));
+                FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("Unknown objective %X\n", fs_utl::READ_LE_UINT16(obj.type)));
                 break;
 #endif
         }
 
         // An objective has been created, adds it to the list
         // of objectives
-        if (objd != NULL) {
+        if (objd != nullptr) {
             pMission->addObjective(objd);
         } else {
-            // TODO add a better error handling
+            FSERR(Log::k_FLG_GAME, "Mission", "createObjectives", ("No objective defined for %X\n", fs_utl::READ_LE_UINT16(obj.type)));
             break;
         }
     }
