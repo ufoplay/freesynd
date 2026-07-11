@@ -127,6 +127,8 @@ public:
     bool isWaitingForAnimation() { return status_ == kActStatusWaitForAnim; }
     //! Returns true if action has succeeded or failed
     bool isFinished() { return status_ == kActStatusSucceeded || status_ == kActStatusFailed; }
+    //! Returns true if action has failed
+    bool hasFailed() { return status_ == kActStatusFailed; }
 
     //! Sets the status to Running
     void setRunning() { status_ = kActStatusRunning; }
@@ -171,7 +173,8 @@ protected:
 class MovementAction : public Action {
 public:
     //! Constructor for the class
-    MovementAction(ActionType type, bool isExclusive = false, bool canExecVehicle = false);
+    MovementAction(ActionType type, bool isExclusive = false, bool canExecVehicle = false,
+            bool blocking = false);
     //! Destructor of the class
     virtual ~MovementAction() { pNext_ = NULL; }
 
@@ -188,6 +191,11 @@ public:
     bool isExclusive() { return isExclusive_; }
     //! Returns true if the action can be executed while ped is in a vehicle
     bool canExecInVehicle() { return canExecInVehicle_; }
+
+    //! Returns true if a failure of this action must stop the rest of the chain
+    bool isBlocking() { return blocking_; }
+    //! Set if a failure of this action must stop the rest of the chain
+    void setBlocking(bool blocking) { blocking_ = blocking; }
 
     //! Returns true if Behaviour must be warned when action is finished
     bool warnBehaviour() { return warnBehaviour_; }
@@ -224,6 +232,8 @@ protected:
     bool isExclusive_;
     /*! This flag tells that the action can be executed when ped is in a vehicule.*/
     bool canExecInVehicle_;
+    /*! When this flag is set, a failure of this action stops the rest of the chain from executing.*/
+    bool blocking_;
     /*! Store the state the ped will have when executing the action.*/
     PedActionState targetState_;
     /*! Previous action in the chain.*/

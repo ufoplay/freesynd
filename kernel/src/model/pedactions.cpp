@@ -61,25 +61,41 @@ bool PedInstance::executeAction(uint32_t elapsed, Mission *pMission) {
             } else {
                 bool warnBehaviour = currentAction_->warnBehaviour();
                 Action::ActionType actionType = currentAction_->type();
+                bool blockingFailure = currentAction_->hasFailed() && currentAction_->isBlocking();
                 // current action is finished : go to next one
                 MovementAction *pNext = currentAction_->next();
 
                 if (currentAction_->source() == Action::kActionNotScripted) {
                     currentAction_->removeAndJoinChain();
                     delete currentAction_;
-                    currentAction_ = NULL;
                 }
+                currentAction_ = nullptr;
 
                 if (warnBehaviour) {
                     behaviour_.handleBehaviourEvent(Behaviour::kBehvEvtActionEnded, &actionType);
                 }
 
-                // If next action was suspended, resume it
-                if (pNext != NULL && pNext->isSuspended()) {
-                    pNext->resume(pMission, this);
-                }
+                if (blockingFailure) {
+                    // The action that just failed is blocking: don't unroll the rest of
+                    // the chain. Scripted actions are kept (they'll be replayed on the
+                    // next resetActions()); non-scripted ones are freed to avoid leaks.
+                    LOG(Log::k_FLG_GAME, "PedInstance","executeAction", ("Blocking action failed for ped %d", id()))
+                    while (pNext != nullptr) {
+                        MovementAction *pFollowing = pNext->next();
+                        if (pNext->source() == Action::kActionNotScripted) {
+                            pNext->removeAndJoinChain();
+                            delete pNext;
+                        }
+                        pNext = pFollowing;
+                    }
+                } else {
+                    // If next action was suspended, resume it
+                    if (pNext != NULL && pNext->isSuspended()) {
+                        pNext->resume(pMission, this);
+                    }
 
-                currentAction_ = pNext;
+                    currentAction_ = pNext;
+                }
             }
         } else if (currentAction_->type() == Action::kActTypeReset) {
             ResetScriptedAction *pReset = static_cast<ResetScriptedAction *>(currentAction_);

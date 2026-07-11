@@ -21,6 +21,43 @@
 
 #include "fs-kernel/model/ped.h"
 
+namespace {
+
+/*! Test-only action that always fails and records whether it was executed.*/
+class FakeFailingAction : public fs_knl::MovementAction {
+public:
+    explicit FakeFailingAction(bool blocking) :
+        fs_knl::MovementAction(fs_knl::Action::kActTypeUndefined, false, false, blocking) {}
+
+    bool executed = false;
+
+protected:
+    bool doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_unused]] fs_knl::Mission *pMission,
+            [[maybe_unused]] fs_knl::PedInstance *pPed) override {
+        executed = true;
+        setFailed();
+        return true;
+    }
+};
+
+/*! Test-only action that always succeeds and records whether it was executed.*/
+class FakeSpyAction : public fs_knl::MovementAction {
+public:
+    FakeSpyAction() : fs_knl::MovementAction(fs_knl::Action::kActTypeUndefined) {}
+
+    bool executed = false;
+
+protected:
+    bool doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_unused]] fs_knl::Mission *pMission,
+            [[maybe_unused]] fs_knl::PedInstance *pPed) override {
+        executed = true;
+        setSucceeded();
+        return true;
+    }
+};
+
+}  // namespace
+
 TEST_CASE( "PedAction", "[kernel][ped]" ) {
     fs_knl::PedInstance cut(1, nullptr, fs_knl::PedInstance::kPedTypeAgent, true, 128);
     cut.setStartHealth(10);
@@ -37,5 +74,32 @@ TEST_CASE( "PedAction", "[kernel][ped]" ) {
         // Reject cause state is already hit
         cut.goToState(fs_knl::kPedActionStateHit);
         REQUIRE_FALSE( cut.canTakeAction(fs_knl::Action::kActTypeHit) );
+    }
+
+    SECTION( "a blocking action failure stops the rest of the chain") {
+        cut.resetHealth();
+        FakeFailingAction *pFail = new FakeFailingAction(true);
+        FakeSpyAction *pSpy = new FakeSpyAction();
+        pFail->link(pSpy);
+        cut.addMovementAction(pFail, false);
+
+        cut.executeAction(100, nullptr);
+
+        REQUIRE( pFail->executed );
+        REQUIRE_FALSE( pSpy->executed );
+        REQUIRE( cut.currentAction() == nullptr );
+    }
+
+    SECTION( "a non-blocking action failure lets the chain continue") {
+        cut.resetHealth();
+        FakeFailingAction *pFail = new FakeFailingAction(false);
+        FakeSpyAction *pSpy = new FakeSpyAction();
+        pFail->link(pSpy);
+        cut.addMovementAction(pFail, false);
+
+        cut.executeAction(100, nullptr);
+
+        REQUIRE( pFail->executed );
+        REQUIRE( pSpy->executed );
     }
 }

@@ -72,7 +72,7 @@ void Action::reset() {
  * \param exclusive Does action allow shooting
  * \param canExecVehicle Is action is allowed while ped is in vehicle
  */
-MovementAction::MovementAction(ActionType aType, bool exclusive, bool canExecVehicle) :
+MovementAction::MovementAction(ActionType aType, bool exclusive, bool canExecVehicle, bool blocking) :
 Action(aType) {
     pNext_ = NULL;
     pPrevious_ = NULL;
@@ -80,6 +80,7 @@ Action(aType) {
     canExecInVehicle_ = canExecVehicle;
     targetState_ = kPedActionStateStanding;
     warnBehaviour_ = false;
+    blocking_ = blocking;
 }
 
 /*!
@@ -604,7 +605,7 @@ bool PickupWeaponAction::doExecute([[maybe_unused]] uint32_t elapsed, Mission *p
 }
 
 EnterVehicleAction::EnterVehicleAction(Vehicle *pVehicle) :
-        MovementAction(kActTypeUndefined, true) {
+        MovementAction(kActTypeUndefined, true, false, true) {
     pVehicle_ = pVehicle;
 }
 
@@ -619,9 +620,11 @@ bool EnterVehicleAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_un
     if (pPed->samePosition(pVehicle_)) {
         // state of ped is set in addPassenger
         pVehicle_->addPassenger(pPed);
+        setSucceeded();
+    } else {
+        // Vehicle is no longer where the ped expected it to be
+        setFailed();
     }
-    // Finish action anyway
-    setSucceeded();
     return true;
 }
 
