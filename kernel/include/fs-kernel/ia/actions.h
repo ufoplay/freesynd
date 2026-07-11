@@ -562,6 +562,10 @@ protected:
     void doStart(Mission *pMission, PedInstance *pPed);
     bool doExecute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) override;
 protected:
+    /*! Minimum duration (ms) of a single automatic-shooting burst.*/
+    static const int kMinAutomaticShootingTime;
+    /*! Maximum duration (ms) of a single automatic-shooting burst.*/
+    static const int kMaxAutomaticShootingTime;
     /*! The ped that is being shot at by the action owner.*/
     PedInstance *pTarget_;
     /*! tells if it is a single or automatic shot.*/

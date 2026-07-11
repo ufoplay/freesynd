@@ -42,6 +42,8 @@ namespace fs_knl {
 //*************************************
 const int FollowAction::kFollowDistance = 192;
 const int WalkBurnHitAction::kTimeToWalkBurning = 1000;
+const int FireWeaponAction::kMinAutomaticShootingTime = 500;
+const int FireWeaponAction::kMaxAutomaticShootingTime = 2000;
 const uint8_t ShootAction::kShootActionNotAdded = 0;
 const uint8_t ShootAction::kShootActionAutomaticShoot = 1;
 const uint8_t ShootAction::kShootActionSingleShoot = 2;
@@ -767,7 +769,10 @@ void FireWeaponAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *
             // failed to shoot because weapon has no ammo
             setFailed();
         } else if (shootType_ == ShootAction::kShootActionAutomaticShoot) {
-            // todo :set a timer to controle time shooting
+            // limit the duration of an automatic shooting burst to a random time
+            uint32_t shootingTime = kMinAutomaticShootingTime +
+                    (rand() % (kMaxAutomaticShootingTime - kMinAutomaticShootingTime + 1));
+            waitForTime(shootingTime);
         }
     }
 }
@@ -775,6 +780,8 @@ void FireWeaponAction::doStart([[maybe_unused]] Mission *pMission, PedInstance *
 bool FireWeaponAction::doExecute([[maybe_unused]] uint32_t elapsed, [[maybe_unused]] Mission *pMission, PedInstance *pPed) {
     if (!pPed->isUsingWeapon()) {
         setSucceeded();
+    } else if (status_ == kActStatusWaitForTime && timeToWaitTimer_.update(elapsed)) {
+        pPed->stopShooting();
     }
 
     return true;
