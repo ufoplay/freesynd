@@ -92,6 +92,7 @@ void initWeaponConfigFile( ConfigFile &config ) {
     config.add("weapon.13.anim", 381);
     config.add("weapon.13.ammopershot", 1);
     config.add("weapon.13.timeforshot", 75);
+    config.add("weapon.13.auto.fire_rate", 75);
     config.add("weapon.13.ammo.impactNb", 1);
     config.add("weapon.13.weight", 8);
 }

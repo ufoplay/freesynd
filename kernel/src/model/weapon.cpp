@@ -266,7 +266,7 @@ WeaponInstance *WeaponInstance::createInstance(Weapon *pWeaponClass, int remaini
 WeaponInstance::WeaponInstance(Weapon * pWeaponClass, uint16_t anId, Map *pMap, int remainingAmmo) :
         ShootableMapObject(anId, pMap, MapObject::kNatureWeapon),
         bombSoundTimer(pWeaponClass->reloadTime()), bombExplosionTimer(pWeaponClass->timeForShot()),
-        flamerTimer_(180) {
+        flamerTimer_(180), shieldTimer_(static_cast<uint32_t>(pWeaponClass->fireRate())) {
     pWeaponClass_ = pWeaponClass;
     ammo_remaining_ = remainingAmmo == -1 ? pWeaponClass->ammoCapacity() : remainingAmmo;
     pOwner_ = NULL;
@@ -310,35 +310,16 @@ void WeaponInstance::doUpdateState(uint32_t elapsed) {
     }
 }
 
-/**
- * Calculate amount of ammo consummed in the elapsed time
- * \param elapsed uint32_t
- * \return bool return true if there is no more ammo
- *
+/*!
+ * Consumes EnergyShield ammo at the weapon's fireRate() pace.
+ * At most one shot's worth of ammo is consumed per call, matching the
+ * single-fire-per-update idiom used by AutomaticShootAction::fireRateTimer_.
+ * \param elapsed uint32_t Time elapsed since last call, in milliseconds.
+ * \return bool True if there is no more ammo left.
  */
 bool WeaponInstance::consumeAmmoForEnergyShield(uint32_t elapsed) {
-    uint32_t timeForShot = pWeaponClass_->timeForShot();
-    shieldTimeUsed_ += elapsed;
-
-    if (ammo_remaining_ > 0 && shieldTimeUsed_ >= timeForShot) {
-        // here time for shot is the unit of time for spending ammo
-        // there's no time for reloading
-
-        int remainingShots = ammo_remaining_ / pWeaponClass_->ammoPerShot();
-        if (ammo_remaining_ % pWeaponClass_->ammoPerShot()) {
-            remainingShots++;
-        }
-
-        // effective shots is the number of shot we have to do due to elapsed time
-        int effectiveShots = shieldTimeUsed_ / timeForShot;
-        shieldTimeUsed_ %= timeForShot;
-
-        if (effectiveShots > remainingShots) {
-            effectiveShots = remainingShots;
-            shieldTimeUsed_ = 0;
-        }
-
-        ammo_remaining_ -= effectiveShots * pWeaponClass_->ammoPerShot();
+    if (shieldTimer_.update(elapsed) && ammo_remaining_ > 0) {
+        ammo_remaining_ -= pWeaponClass_->ammoPerShot();
         if (ammo_remaining_ < 0) {
             ammo_remaining_ = 0;
         }
@@ -360,7 +341,7 @@ void WeaponInstance::playSound() {
 void WeaponInstance::activate() {
     activated_ = true;
     if (isInstanceOf(Weapon::EnergyShield) && pOwner_ != nullptr) {
-        shieldTimeUsed_ = 0;
+        shieldTimer_.reset();
         playSound();
     }
 }

@@ -235,7 +235,7 @@ weapon.13.ammo.price=15
 weapon.13.range=768
 weapon.13.anim=381
 weapon.13.ammopershot=1
-weapon.13.timeforshot=75
+weapon.13.auto.fire_rate=75
 weapon.13.ammo.impactNb=1
 weapon.13.weight=8
 

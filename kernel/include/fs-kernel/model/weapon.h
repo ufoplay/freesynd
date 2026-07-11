@@ -379,8 +379,8 @@ protected:
     fs_utl::Timer bombExplosionTimer;
     /*! Timer used for rotating flamer direction.*/
     fs_utl::Timer flamerTimer_;
-    /*! counter for tracking time for ammo consumption for shields.*/
-    int shieldTimeUsed_;
+    /*! Timer pacing ammo consumption while an EnergyShield is active (paced by fireRate()). */
+    fs_utl::Timer shieldTimer_;
     /*! TimeBomb, Shield are activated on specific events.*/
     bool activated_;
 
