@@ -113,6 +113,25 @@ public:
     }
 
     /*!
+     * Return a damage reduction multiplier corresponding to the mod Chest.
+     * @return x1 (no reduction) if Agent has no mod for chest
+     */
+    float getDamageResistance() {
+        Mod *pMod = slots_[Mod::MOD_CHEST];
+        if (pMod) {
+            switch(pMod->getVersion()) {
+                case Mod::MOD_V1:
+                    return 0.9f;
+                case Mod::MOD_V2:
+                    return 0.75f;
+                case Mod::MOD_V3:
+                    return 0.6f;
+            }
+        }
+        return 1.0f;
+    }
+
+    /*!
      * Return a multiplier factor corresponding to the mod Leg.
      * @return x1 if Agent has no mod for leg
      */

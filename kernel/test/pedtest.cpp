@@ -89,5 +89,43 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             cut.setSpeedToMax();
             REQUIRE( cut.speed() == 87 );
         }
+
+        SECTION ("Damage should be reduced with Chest Mod") {
+            // health is clamped to 255, so keep the damage values well below that
+            cut.setStartHealth(200, true);
+
+            fs_knl::Mod chestV1("ChestV1", fs_knl::Mod::MOD_CHEST, fs_knl::Mod::MOD_V1, 0, "", 0);
+            fs_knl::Mod chestV2("ChestV2", fs_knl::Mod::MOD_CHEST, fs_knl::Mod::MOD_V2, 0, "", 0);
+            fs_knl::Mod chestV3("ChestV3", fs_knl::Mod::MOD_CHEST, fs_knl::Mod::MOD_V3, 0, "", 0);
+
+            fs_knl::DamageToInflict damage;
+            damage.dtype = fs_knl::kDmgTypeBullet;
+            damage.dvalue = 40;
+            damage.d_owner = nullptr;
+            damage.pWeapon = nullptr;
+
+            int expectedHealth = cut.startHealth();
+
+            cut.addMod(&chestV1);
+            cut.takeDamage(damage);
+            expectedHealth -= static_cast<int>(40.f * 0.9f);
+            REQUIRE( cut.health() == expectedHealth );
+
+            cut.addMod(&chestV2);
+            cut.takeDamage(damage);
+            expectedHealth -= static_cast<int>(40.f * 0.75f);
+            REQUIRE( cut.health() == expectedHealth );
+
+            cut.addMod(&chestV3);
+            cut.takeDamage(damage);
+            expectedHealth -= static_cast<int>(40.f * 0.6f);
+            REQUIRE( cut.health() == expectedHealth );
+
+            // Persuasion damage is not reduced by the Chest mod
+            damage.dtype = fs_knl::kDmgTypePersuasion;
+            cut.takeDamage(damage);
+            expectedHealth -= 40;
+            REQUIRE( cut.health() == expectedHealth );
+        }
     }
 }

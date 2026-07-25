@@ -915,8 +915,11 @@ bool PedInstance::isFollowing() {
  * @return True if Ped has died due to damage received
  */
 bool PedInstance::takeDamage(DamageToInflict &damage) {
-    // TODO : reduce damage based on Mod protection
-    decreaseHealth(damage.dvalue);
+    int dvalue = damage.dvalue;
+    if (damage.dtype != kDmgTypePersuasion) {
+        dvalue = static_cast<int>(static_cast<float>(dvalue) * getDamageResistance());
+    }
+    decreaseHealth(dvalue);
     return isDead();
 }
 
