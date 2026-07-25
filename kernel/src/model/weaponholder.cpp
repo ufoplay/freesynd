@@ -53,6 +53,7 @@ void WeaponHolder::addWeapon(WeaponInstance *w) {
         if (it == weapons_.end()) {
             w->setDrawable(false);
             weapons_.push_back(w);
+            handleWeaponAdded(w);
         }
     }
 }
@@ -86,6 +87,7 @@ void WeaponHolder::removeWeapon(WeaponInstance *wi) {
 
     if (std::erase(weapons_, wi)) {
         wi->setOwner(NULL);
+        handleWeaponRemoved(wi);
     }
 }
 

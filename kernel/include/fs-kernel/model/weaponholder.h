@@ -141,6 +141,16 @@ protected:
      * \param previousWeapon The previous selected weapon (can be null if no weapon was selected)
      */
     virtual void handleWeaponSelected([[maybe_unused]] WeaponInstance * wi, [[maybe_unused]] WeaponInstance * previousWeapon) {}
+    /*!
+     * Called when a weapon has been added to the inventory.
+     * \param wi The added weapon
+     */
+    virtual void handleWeaponAdded([[maybe_unused]] WeaponInstance * wi) {}
+    /*!
+     * Called when a weapon has been removed from the inventory.
+     * \param wi The removed weapon
+     */
+    virtual void handleWeaponRemoved([[maybe_unused]] WeaponInstance * wi) {}
 
     //! Selects a weapon based on the given criteria
     bool selectRequiredWeapon(const WeaponSelectCriteria &criteria);

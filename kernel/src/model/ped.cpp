@@ -56,6 +56,7 @@ PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, 
     old_obj_group_def_(PedInstance::og_dmUndefined),
     obj_group_id_(0), old_obj_group_id_(0),
     sight_range_(0), in_vehicle_(NULL),
+    baseMaxSpeed_(maxSpeed),
     owner_(NULL),
     adrenaline_(IPAStim::Adrenaline),
     perception_(IPAStim::Perception),
@@ -815,6 +816,32 @@ void PedInstance::handleWeaponSelected(WeaponInstance * wi, WeaponInstance * pre
 }
 
 /*!
+ * Called when a weapon has been added to the inventory.
+ * \param wi The added weapon
+ */
+void PedInstance::handleWeaponAdded([[maybe_unused]] WeaponInstance * wi) {
+    updateMaxSpeed();
+}
+
+/*!
+ * Called when a weapon has been removed from the inventory.
+ * \param wi The removed weapon
+ */
+void PedInstance::handleWeaponRemoved([[maybe_unused]] WeaponInstance * wi) {
+    updateMaxSpeed();
+}
+
+/*!
+ * Called when a mod has been added/upgraded.
+ * \param pNewMod The added mod
+ */
+void PedInstance::handleModAdded(Mod *pNewMod) {
+    if (pNewMod->getType() == Mod::MOD_LEGS) {
+        updateMaxSpeed();
+    }
+}
+
+/*!
  * Drops the weapon at given index on the ground.
  * \param index Index of weapon in the agent inventory.
  * \return the instance of dropped weapon
@@ -1132,15 +1159,12 @@ void PedInstance::setIPAAmount(IPAStim::IPAType ipaType, uint8_t percentage) {
 }
 
 /*!
- * Movement speed calculated from base speed, mods, weight of inventory,
- * ipa, etc.
+ * Recomputes the effective max speed from the base speed, the Legs mod
+ * multiplier and the inventory weight penalty. Called whenever one of
+ * these factors changes (Legs mod added, weapon added/removed).
  */
-int PedInstance::applySpeedModifier(int speed) {
-    if (isInPanic()) {
-        return 256;
-    }
-    
-    float speed_new = static_cast<float>(speed) * getSpeedMultiplier();
+void PedInstance::updateMaxSpeed() {
+    float speed_new = static_cast<float>(baseMaxSpeed_) * getSpeedMultiplier();
 
     int weight_max = getMaxWeight();
     int weight_inv = getInventoryWeight();
@@ -1151,6 +1175,20 @@ int PedInstance::applySpeedModifier(int speed) {
         else
             speed_new /= 2;
     }
+
+    setMaxSpeed(static_cast<int>(speed_new));
+}
+
+/*!
+ * Movement speed calculated from the (already mods/weight adjusted) max
+ * speed, further modified dynamically by panic, ipa and persuasion.
+ */
+int PedInstance::applySpeedModifier(int speed) {
+    if (isInPanic()) {
+        return 256;
+    }
+
+    float speed_new = static_cast<float>(speed);
 
     if (obj_group_def_ == PedInstance::og_dmAgent)
     {

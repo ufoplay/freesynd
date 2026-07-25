@@ -531,6 +531,9 @@ protected:
      */
     virtual int applySpeedModifier(int speed) { return speed; }
 
+    //! Sets the maximum speed of the object.
+    void setMaxSpeed(int newMaxSpeed) { maxSpeed_ = newMaxSpeed; }
+
 protected:
     //! on reaching this distance object should stop
     int dist_to_pos_;

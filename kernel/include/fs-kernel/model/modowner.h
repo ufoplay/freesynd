@@ -36,6 +36,7 @@ public:
         for (int i = 0; i < 6; i++)
             slots_[i] = NULL;
     }
+    virtual ~ModOwner() {}
     /*!
     * Returns true if the agent can be equiped with that mod version.
     */
@@ -58,6 +59,7 @@ public:
     void addMod(Mod *pNewMod) {
         if (pNewMod) {
             slots_[pNewMod->getType()] = pNewMod;
+            handleModAdded(pNewMod);
         }
     }
 
@@ -138,6 +140,9 @@ public:
     }
 
 protected:
+    //! Called when a mod has been added/upgraded.
+    virtual void handleModAdded([[maybe_unused]] Mod *pNewMod) {}
+
     Mod *slots_[6];
 };
 

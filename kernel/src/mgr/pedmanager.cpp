@@ -179,7 +179,7 @@ void PedManager::initOurAgent(Agent *pAgent, unsigned int obj_group_id, PedInsta
         pPed->addWeapon(wi);
         wi->setOwner(pPed);
     }
-    *((ModOwner *)pPed) = *((ModOwner *)pAgent);
+    pAgent->transferMods(*pPed);
 
     pPed->setObjGroupID(obj_group_id);
     pPed->setObjGroupDef(PedInstance::og_dmAgent);

@@ -576,6 +576,12 @@ protected:
     void handleWeaponDeselected(WeaponInstance * wi);
     //! See WeaponHolder::handleWeaponSelected()
     void handleWeaponSelected(WeaponInstance * wi, WeaponInstance * previousWeapon);
+    //! See WeaponHolder::handleWeaponAdded()
+    void handleWeaponAdded(WeaponInstance * wi) override;
+    //! See WeaponHolder::handleWeaponRemoved()
+    void handleWeaponRemoved(WeaponInstance * wi) override;
+    //! See ModOwner::handleModAdded()
+    void handleModAdded(Mod *pNewMod) override;
 
     //! Called when a weapon has no ammo to select another one
     void handleSelectedWeaponHasNoAmmo();
@@ -593,6 +599,9 @@ protected:
     int applySpeedModifier(int speed) override;
 
 private:
+    //! Recomputes the effective max speed from the base speed, the Legs mod and the inventory weight.
+    void updateMaxSpeed();
+
     //! set animation based on current state
     void synchDrawnAnimWithActionState(void);
 
@@ -604,25 +613,42 @@ private:
     void buildFinalDestinationPath(Mission *m, std::vector<TilePoint> &cdestpath, const TilePoint &destinationPt);
 
 protected:
+    // TODO : check if we can remove
     static const uint32_t pd_smUndefined;
 
     //! Type of Ped
     PedType type_;
 
+    //! This flag tells if this is our agent, assuming it's an agent.
+    bool is_our_;
+
+    //! base value that influences accuracy during fire
+    double base_mod_acc_;
+
+    int sight_range_;
+    //! Stores the current vehicle the ped is in. Null if not in vehicle.
+    Vehicle *in_vehicle_;
+
+    //! Base max speed for the ped's type, unaffected by mods or inventory weight.
+    int baseMaxSpeed_;
+
     /*! Ped's behaviour.*/
     Behaviour behaviour_;
-    /*! Current action*/
-    MovementAction *currentAction_;
     /*!
-     * Default and Alternative actions define the behaviour of non player controlled peds.
-     * Default actions come from a mission file and alternative actions are used by ped
-     * to react in certain situations (like fight).
-     * Those actions are not deleted when finished.
+     * Default and Alternative actions are predefined sequences of actions for non player 
+     * controlled peds. Those actions are not deleted when finished.
+     * Default actions come from the original mission file.
      */
     MovementAction *defaultAction_;
+    /*!
+     * Alternative actions are used by ped to react in certain situations (like fight).
+     */
     MovementAction *altAction_;
+    //! The action currently performed by the ped (everything outside of using a weapon).
+    MovementAction *currentAction_;
     /*! Current action of using a weapon.*/
     UseWeaponAction *pUseWeaponAction_;
+    
     //! The list of animations for the ped
     PedAnimations animations_;
     //! State of the ped
@@ -654,14 +680,7 @@ protected:
 
     //! time wait before checking environment (enemies, friends etc)
     int32_t tm_before_check_;
-
-    //! base value that influences accuracy during fire
-    double base_mod_acc_;
-
-    int sight_range_;
-    Vehicle *in_vehicle_;
-    //! This flag tells if this is our agent, assuming it's an agent.
-    bool is_our_;
+    
     //! controller of ped - for persuaded
     PedInstance *owner_;
     //! Points obtained by agents for persuading peds
