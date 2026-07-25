@@ -836,7 +836,7 @@ void PedInstance::handleWeaponRemoved([[maybe_unused]] WeaponInstance * wi) {
  * \param pNewMod The added mod
  */
 void PedInstance::handleModAdded(Mod *pNewMod) {
-    if (pNewMod->getType() == Mod::MOD_LEGS) {
+    if (pNewMod->getType() == Mod::MOD_LEGS || pNewMod->getType() == Mod::MOD_ARMS) {
         updateMaxSpeed();
     }
 }
