@@ -118,7 +118,7 @@ void CommonAgentBehaviourComponent::execute(const Behaviour::BehaviourParam &par
 void CommonAgentBehaviourComponent::handleBehaviourEvent(const Behaviour::BehaviourEvent &event) {
     switch(event.evtType) {
     case Behaviour::kBehvEvtHit:
-        if (event.pPed->hasMinimumVersionOfMod(Mod::MOD_CHEST, Mod::MOD_V2)) {
+        if (event.pPed->hasHealthRegeneration()) {
             doRegenerates_ = true;
         }
         break;

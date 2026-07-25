@@ -83,6 +83,15 @@ public:
     }
 
     /*!
+     * @brief Return true if ped has the right version of mod (Chest) to auto heal
+     * @return Chest must be at least V2
+     */
+    bool hasHealthRegeneration() {
+        Mod *pMod = slots_[Mod::MOD_CHEST];
+        return pMod && pMod->getVersion() >= Mod::MOD_V2;
+    }
+
+    /*!
      * This method returns the amount of time before health
      * is restored when a ped owns the right version of Chest.
      * \return 0 if ped do not have good chest.
@@ -90,9 +99,13 @@ public:
     uint16_t getHealthRegenerationPeriod() {
         Mod *pMod = slots_[Mod::MOD_CHEST];
         if (pMod) {
-            // TODO : add different times depending on version of chest
-            if (pMod->getVersion() >= Mod::MOD_V1) {
-                return 4000;
+            switch(pMod->getVersion()) {
+                case Mod::MOD_V2:
+                    return 10000;
+                case Mod::MOD_V3:
+                    return 4000;
+                default:
+                    return 0;
             }
         }
 

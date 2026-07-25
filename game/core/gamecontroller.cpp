@@ -115,13 +115,13 @@ void GameController::setCheatCode(const char *name) {
         // $100 000 000 in funds, select any mission
         cheatFunds();
         cheatAnyMission();
+        cheatWeaponsAndMods();
     }
     else if (!strcmp(name, "COOPER TEAM")) {
         // $100 000 000 in funds, select any mission, all weapons and mods
         cheatFemaleRecruits();
         cheatFunds();
         cheatAnyMission();
-        cheatWeaponsAndMods();
         cheatEquipAllMods();
         cheatEquipFancyWeapons();
     }
