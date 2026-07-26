@@ -18,6 +18,7 @@
  * 
  */
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include "fs-kernel/model/ped.h"
 #include "testcase.h"
@@ -29,6 +30,9 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
     initWeaponConfigFile(config);
 
     fs_knl::PedInstance cut(1, nullptr, fs_knl::PedInstance::kPedTypeAgent, true, 50);
+    cut.setStartHealth(10, true);
+
+    fs_knl::PedInstance civilian(2, nullptr, fs_knl::PedInstance::kPedTypeCivilian, false, 50);
     cut.setStartHealth(10, true);
 
     SECTION( "State management") {
@@ -126,6 +130,57 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             cut.takeDamage(damage);
             expectedHealth -= 40;
             REQUIRE( cut.health() == expectedHealth );
+        }
+
+        SECTION ("Accuracy should improve with Eyes and Brain Mods") {
+            // cut is a kPedTypeAgent, base accuracy is 0.5 (see getBaseAccuracyFor)
+            const double baseAccuracy = 0.5;
+            // setObjGroupDef(og_dmAgent) is needed for the perception/adrenaline
+            // branch in getAccuracy(); with neutral (default) IPA levels, their
+            // contributions cancel out
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+
+            fs_knl::Mod eyesV1("EyesV1", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V1, 0, "", 0);
+            fs_knl::Mod brainV2("BrainV2", fs_knl::Mod::MOD_BRAIN, fs_knl::Mod::MOD_V2, 0, "", 0);
+
+            const double weaponAccuracy = 0.7;
+            double modBonus = 0.0;
+
+            double base_acc = weaponAccuracy;
+            cut.getAccuracy(base_acc);
+            double expected = weaponAccuracy * (1.0 - (baseAccuracy + modBonus)) + (1.0 - weaponAccuracy);
+            REQUIRE( base_acc == Catch::Approx(expected) );
+
+            cut.addMod(&eyesV1);
+            modBonus += 0.006 * (fs_knl::Mod::MOD_V1 + 1);
+            base_acc = weaponAccuracy;
+            cut.getAccuracy(base_acc);
+            expected = weaponAccuracy * (1.0 - (baseAccuracy + modBonus)) + (1.0 - weaponAccuracy);
+            REQUIRE( base_acc == Catch::Approx(expected) );
+
+            cut.addMod(&brainV2);
+            modBonus += 0.006 * (fs_knl::Mod::MOD_V2 + 1);
+            base_acc = weaponAccuracy;
+            cut.getAccuracy(base_acc);
+            expected = weaponAccuracy * (1.0 - (baseAccuracy + modBonus)) + (1.0 - weaponAccuracy);
+            REQUIRE( base_acc == Catch::Approx(expected) );
+        }
+
+        SECTION ("Accuracy mod bonus is not applied to non-agent peds") {
+            // civilian is a kPedTypeCivilian, base accuracy is 0.2 (see getBaseAccuracyFor)
+            const double baseAccuracy = 0.2;
+            civilian.setObjGroupDef(fs_knl::PedInstance::og_dmCivilian);
+
+            // handleModAdded() ignores mods added to a ped whose type is not
+            // kPedTypeAgent, so this mod has no effect on accuracy
+            fs_knl::Mod eyesV3("EyesV3", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V3, 0, "", 0);
+            civilian.addMod(&eyesV3);
+
+            const double weaponAccuracy = 0.7;
+            double base_acc = weaponAccuracy;
+            civilian.getAccuracy(base_acc);
+            double expected = weaponAccuracy * (1.0 - baseAccuracy) + (1.0 - weaponAccuracy);
+            REQUIRE( base_acc == Catch::Approx(expected) );
         }
     }
 }

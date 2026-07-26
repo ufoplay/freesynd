@@ -66,8 +66,8 @@ PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, 
     is_our_ = isOur;
 
     tm_before_check_ = 1000;
-    base_mod_acc_ = 0.1;
-
+    baseAccuracy_ = getBaseAccuracyFor(pedType);
+    
     behaviour_.setOwner(this);
     currentAction_ = NULL;
     defaultAction_ = NULL;
@@ -81,6 +81,23 @@ PedInstance::PedInstance(uint16_t anId, Map *pMap, PedType pedType, bool isOur, 
 PedInstance::~PedInstance() {
     destroyAllActions();
     destroyUseWeaponAction();
+}
+
+double PedInstance::getBaseAccuracyFor(PedType pedType) {
+    switch (pedType) {
+        case kPedTypeAgent:
+            return 0.5;
+        case kPedTypeCivilian:
+            return 0.2;
+        case kPedTypePolice:
+            return 0.4;
+        case kPedTypeGuard:
+            return 0.45;
+        case kPedTypeCriminal:
+            return 0.2;
+        default:
+            return 0.2;
+    }
 }
 
 /*!
@@ -836,8 +853,25 @@ void PedInstance::handleWeaponRemoved([[maybe_unused]] WeaponInstance * wi) {
  * \param pNewMod The added mod
  */
 void PedInstance::handleModAdded(Mod *pNewMod) {
+    if (type_ != kPedTypeAgent) {
+        FSERR(Log::k_FLG_GAME, "PedInstance", "handleModAdded", ("Mod has been added to a non agent Ped"))
+        return;
+    }
+
     if (pNewMod->getType() == Mod::MOD_LEGS || pNewMod->getType() == Mod::MOD_ARMS) {
         updateMaxSpeed();
+    }
+
+    switch (pNewMod->getType()) {
+        case Mod::MOD_EYES:
+        case Mod::MOD_BRAIN:
+        case Mod::MOD_ARMS:
+        case Mod::MOD_HEART:
+        case Mod::MOD_LEGS:
+            updateAccuracyModifier();
+            break;
+        default:
+            break;
     }
 }
 
@@ -1183,6 +1217,37 @@ void PedInstance::updateMaxSpeed() {
 }
 
 /*!
+ * Recomputes the accuracy bonus accumulated from the Eyes, Brain, Arms,
+ * Heart and Legs mods. Called whenever one of these mods is added/upgraded.
+ */
+void PedInstance::updateAccuracyModifier() {
+    double bonus = 0.0;
+
+    Mod *pMod = slots_[Mod::MOD_EYES];
+    if (pMod) {
+        bonus += 0.006 * (pMod->getVersion() + 1);
+    }
+    pMod = slots_[Mod::MOD_BRAIN];
+    if (pMod) {
+        bonus += 0.006 * (pMod->getVersion() + 1);
+    }
+    pMod = slots_[Mod::MOD_ARMS];
+    if (pMod) {
+        bonus += 0.006 * (pMod->getVersion() + 1);
+    }
+    pMod = slots_[Mod::MOD_HEART];
+    if (pMod) {
+        bonus += 0.006 * (pMod->getVersion() + 1);
+    }
+    pMod = slots_[Mod::MOD_LEGS];
+    if (pMod) {
+        bonus += 0.006 * (pMod->getVersion() + 1);
+    }
+
+    baseAccuracy_ = getBaseAccuracyFor(type_) + bonus;
+}
+
+/*!
  * Movement speed calculated from the (already mods/weight adjusted) max
  * speed, further modified dynamically by panic, ipa and persuasion.
  */
@@ -1256,36 +1321,19 @@ void PedInstance::adjustAimedPtWithRangeAndAccuracy(Weapon *pWeaponClass, WorldP
     }
 
     // 2- Adjust Accuracy
-    // TODO Add imprecision and accuracy
-    //double accuracy = pWeaponClass->shotAcurracy();
+    double accuracy = pWeaponClass->shotAcurracy();
+    getAccuracy(accuracy);
+    // accuracy now holds the fraction of the weapon's max angle used to
+    // randomize the shot (0 = precise, close to 1 = imprecise)
+    *pAimedLocW = computeAngularDeviation(originLocW, *pAimedLocW,
+        pWeaponClass->shotAngle() * accuracy);
 }
 
 void PedInstance::getAccuracy(double &base_acc)
 {
-    double base_mod = base_mod_acc_;
+    double base_mod = baseAccuracy_;
 
-    if (obj_group_def_ == PedInstance::og_dmAgent)
-    {
-        Mod *pMod = slots_[Mod::MOD_EYES];
-        if (pMod) {
-            base_mod += 0.006 * (pMod->getVersion() + 1);
-        }
-        pMod = slots_[Mod::MOD_BRAIN];
-       if (pMod) {
-            base_mod += 0.006 * (pMod->getVersion() + 1);
-        }
-        pMod = slots_[Mod::MOD_ARMS];
-        if (pMod) {
-            base_mod += 0.006 * (pMod->getVersion() + 1);
-        }
-        pMod = slots_[Mod::MOD_HEART];
-        if (pMod) {
-            base_mod += 0.006 * (pMod->getVersion() + 1);
-        }
-        pMod = slots_[Mod::MOD_LEGS];
-        if (pMod) {
-            base_mod += 0.006 * (pMod->getVersion() + 1);
-        }
+    if (obj_group_def_ == PedInstance::og_dmAgent) {
         // 0.59 max from here
 
         base_mod -= 0.4 * (2.0 - perception_.getMultiplier());

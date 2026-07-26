@@ -25,6 +25,7 @@
 
 #include "fs-kernel/model/shot.h"
 
+#include <algorithm>
 #include <map>
 
 #include "fs-engine/sound/soundmanager.h"
@@ -33,6 +34,43 @@
 #include "fs-kernel/model/vehicle.h"
 
 namespace fs_knl {
+
+WorldPoint computeAngularDeviation(const WorldPoint &originLocW,
+    const WorldPoint &targetLocW, double angleDegrees) {
+    if (angleDegrees <= 0.0)
+        return targetLocW;
+
+    double dtx = (double)(targetLocW.x - originLocW.x);
+    double dty = (double)(targetLocW.y - originLocW.y);
+    double dtz = (double)(targetLocW.z - originLocW.z);
+    double dist = sqrt(dtx * dtx + dty * dty + dtz * dtz);
+    if (dist == 0.0)
+        return targetLocW;
+
+    double angle = angleDegrees / (180.0 / fs_utl::kPI);
+    double angx = acos(dtx / dist);
+    double angy = acos(dty / dist);
+    double angz = acos(dtz / dist);
+
+    double setSign = (rand() % 100 < 50) ? -1.0 : 1.0;
+    double diffAng = (angle * (double)(rand() % 100) / 200.0) * setSign;
+    angx += diffAng;
+    angle -= fabs(diffAng);
+
+    setSign = (rand() % 100 < 50) ? -1.0 : 1.0;
+    diffAng = (angle * (double)(rand() % 100) / 200.0) * setSign;
+    angy += diffAng;
+    angle -= fabs(diffAng);
+
+    setSign = (rand() % 100 < 50) ? -1.0 : 1.0;
+    angz += (angle * (double)(rand() % 100) / 200.0) * setSign;
+
+    WorldPoint deviatedLocW;
+    deviatedLocW.x = std::max(0, originLocW.x + (int)(cos(angx) * dist));
+    deviatedLocW.y = std::max(0, originLocW.y + (int)(cos(angy) * dist));
+    deviatedLocW.z = std::max(0, originLocW.z + (int)(cos(angz) * dist));
+    return deviatedLocW;
+}
 
 void InstantImpactShot::inflictDamage(Mission *pMission) {
     // get how much impacts does the weapon generate

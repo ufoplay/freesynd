@@ -187,7 +187,6 @@ void PedManager::initOurAgent(Agent *pAgent, unsigned int obj_group_id, PedInsta
     pPed->addEnemyGroupDef(3);
     pPed->setSightRange(7 * 256);
     pPed->setTimeBeforeCheck(400);
-    pPed->setBaseModAcc(0.5);
 
     // Set components of behaviour for our agent
     pPed->behaviour().addComponent(new CommonAgentBehaviourComponent(pPed));
@@ -204,9 +203,9 @@ void PedManager::initEnemyAgent(PedInstance *pPed) {
     LOG(Log::k_FLG_GAME, "PedManager","initEnemyAgent", ("Create enemy agent with id %d", pPed->id()))
 
     pPed->setObjGroupID(2);
+    pPed->setObjGroupDef(PedInstance::og_dmAgent);
     pPed->addEnemyGroupDef(1);
     // enemies get top version of mods
-    pPed->addMod(g_modMgr.getHighestVersion(Mod::MOD_LEGS));
     pPed->addMod(g_modMgr.getHighestVersion(Mod::MOD_LEGS));
     pPed->addMod(g_modMgr.getHighestVersion(Mod::MOD_ARMS));
     pPed->addMod(g_modMgr.getHighestVersion(Mod::MOD_CHEST));
@@ -214,8 +213,7 @@ void PedManager::initEnemyAgent(PedInstance *pPed) {
     pPed->addMod(g_modMgr.getHighestVersion(Mod::MOD_EYES));
     pPed->addMod(g_modMgr.getHighestVersion(Mod::MOD_BRAIN));
     pPed->setTimeBeforeCheck(400);
-    pPed->setBaseModAcc(0.5);
-
+    
     pPed->behaviour().addComponent(new PlayerHostileBehaviourComponent());
 }
 
@@ -231,8 +229,7 @@ void PedManager::initGuard(PedInstance *pPed) {
     pPed->setObjGroupID(3);
     pPed->addEnemyGroupDef(1);
     pPed->setTimeBeforeCheck(300);
-    pPed->setBaseModAcc(0.45);
-
+    
     pPed->behaviour().addComponent(new PlayerHostileBehaviourComponent());
 }
 
@@ -247,8 +244,7 @@ void PedManager::initPolice(PedInstance *pPed) {
 
     pPed->setObjGroupID(4);
     pPed->setTimeBeforeCheck(400);
-    pPed->setBaseModAcc(0.4);
-
+    
     pPed->behaviour().addComponent(new PoliceBehaviourComponent());
 }
 
@@ -264,7 +260,6 @@ void PedManager::initCivilian(PedInstance *pPed) {
     pPed->setObjGroupID(5);
     pPed->addEnemyGroupDef(6);
     pPed->setTimeBeforeCheck(600);
-    pPed->setBaseModAcc(0.2);
 
     pPed->behaviour().addComponent(new PanicComponent());
 }
@@ -280,7 +275,6 @@ void PedManager::initCriminal(PedInstance *pPed) {
 
     pPed->setObjGroupID(6);
     pPed->setTimeBeforeCheck(500);
-    pPed->setBaseModAcc(0.2);
 }
 
 }

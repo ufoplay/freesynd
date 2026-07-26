@@ -38,6 +38,21 @@ class WeaponInstance;
 class PedInstance;
 
 /*!
+ * Rotates targetLocW around originLocW by a random angle bounded by
+ * angleDegrees (applied independently on each axis). Used to simulate
+ * imprecision, either from a weapon's inherent spread (multiple impacts)
+ * or from a ped's shooting accuracy. Returns targetLocW unchanged when
+ * angleDegrees is 0 or originLocW == targetLocW. The returned point is
+ * not clamped to the map bounds.
+ * \param originLocW Where the deviation is computed from (eg. the shooter)
+ * \param targetLocW The point to deviate
+ * \param angleDegrees Maximum deviation angle, in degrees
+ * \return The deviated point
+ */
+WorldPoint computeAngularDeviation(const WorldPoint &originLocW,
+    const WorldPoint &targetLocW, double angleDegrees);
+
+/*!
  * A shot is the result of the action of a weapon.
  * It's the shot that inflicts damage.
  */

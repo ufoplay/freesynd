@@ -383,7 +383,6 @@ public:
     unsigned int objGroupID() { return obj_group_id_; }
 
     void setTimeBeforeCheck(int32_t tm) { tm_before_check_ = tm; }
-    void setBaseModAcc(double mod_acc) { base_mod_acc_ = mod_acc; }
 
     class Mmuu32_t: public std::multimap<uint32_t, uint32_t> {
     public:
@@ -599,8 +598,13 @@ protected:
     int applySpeedModifier(int speed) override;
 
 private:
+    //! Init the default accuracy based on ped type
+    double getBaseAccuracyFor(PedType pedType);
     //! Recomputes the effective max speed from the base speed, the Legs mod and the inventory weight.
     void updateMaxSpeed();
+
+    //! Recomputes the accuracy bonus accumulated from equipped mods.
+    void updateAccuracyModifier();
 
     //! set animation based on current state
     void synchDrawnAnimWithActionState(void);
@@ -622,8 +626,8 @@ protected:
     //! This flag tells if this is our agent, assuming it's an agent.
     bool is_our_;
 
-    //! base value that influences accuracy during fire
-    double base_mod_acc_;
+    //! accuracy bonus accumulated from equipped mods, recomputed in updateAccuracyModifier()
+    double baseAccuracy_;
 
     int sight_range_;
     //! Stores the current vehicle the ped is in. Null if not in vehicle.
