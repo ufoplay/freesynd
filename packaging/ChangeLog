@@ -3,6 +3,7 @@ freesynd (0.10) unstable; urgency=low
   * Car stops before other cars or peds crossing roads. Closes: #53
   * Using Tracy for application profiling
   * Double pressing on a selection key centers the screen on the agent. Closes: #56
+  * Implemented bonus of mods eyes (accuracy), chest (damage), arms (weight) and legs (speed). Closes: #49
   * Editor : New menu to display a mission and infos on tiles and objects
   * Editor : Tiles can be displayed in Animation and Tiles menu
   [ Changed ]
