@@ -862,16 +862,8 @@ void PedInstance::handleModAdded(Mod *pNewMod) {
         updateMaxSpeed();
     }
 
-    switch (pNewMod->getType()) {
-        case Mod::MOD_EYES:
-        case Mod::MOD_BRAIN:
-        case Mod::MOD_ARMS:
-        case Mod::MOD_HEART:
-        case Mod::MOD_LEGS:
-            updateAccuracyModifier();
-            break;
-        default:
-            break;
+    if (pNewMod->getType() == Mod::MOD_EYES) {
+        updateAccuracyModifier();
     }
 }
 
@@ -1217,29 +1209,13 @@ void PedInstance::updateMaxSpeed() {
 }
 
 /*!
- * Recomputes the accuracy bonus accumulated from the Eyes, Brain, Arms,
- * Heart and Legs mods. Called whenever one of these mods is added/upgraded.
+ * Recomputes the accuracy bonus brought by the Eyes mod.
+ * Called whenever this mod is added/upgraded.
  */
 void PedInstance::updateAccuracyModifier() {
     double bonus = 0.0;
 
     Mod *pMod = slots_[Mod::MOD_EYES];
-    if (pMod) {
-        bonus += 0.006 * (pMod->getVersion() + 1);
-    }
-    pMod = slots_[Mod::MOD_BRAIN];
-    if (pMod) {
-        bonus += 0.006 * (pMod->getVersion() + 1);
-    }
-    pMod = slots_[Mod::MOD_ARMS];
-    if (pMod) {
-        bonus += 0.006 * (pMod->getVersion() + 1);
-    }
-    pMod = slots_[Mod::MOD_HEART];
-    if (pMod) {
-        bonus += 0.006 * (pMod->getVersion() + 1);
-    }
-    pMod = slots_[Mod::MOD_LEGS];
     if (pMod) {
         bonus += 0.006 * (pMod->getVersion() + 1);
     }

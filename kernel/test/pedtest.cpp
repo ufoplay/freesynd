@@ -132,7 +132,7 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             REQUIRE( cut.health() == expectedHealth );
         }
 
-        SECTION ("Accuracy should improve with Eyes and Brain Mods") {
+        SECTION ("Accuracy should improve with Eyes Mod only") {
             // cut is a kPedTypeAgent, base accuracy is 0.5 (see getBaseAccuracyFor)
             const double baseAccuracy = 0.5;
             // setObjGroupDef(og_dmAgent) is needed for the perception/adrenaline
@@ -141,28 +141,26 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
 
             fs_knl::Mod eyesV1("EyesV1", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V1, 0, "", 0);
-            fs_knl::Mod brainV2("BrainV2", fs_knl::Mod::MOD_BRAIN, fs_knl::Mod::MOD_V2, 0, "", 0);
+            fs_knl::Mod legsV3("LegsV3", fs_knl::Mod::MOD_LEGS, fs_knl::Mod::MOD_V3, 0, "", 0);
 
             const double weaponAccuracy = 0.7;
-            double modBonus = 0.0;
 
             double base_acc = weaponAccuracy;
             cut.getAccuracy(base_acc);
-            double expected = weaponAccuracy * (1.0 - (baseAccuracy + modBonus)) + (1.0 - weaponAccuracy);
+            double expected = weaponAccuracy * (1.0 - baseAccuracy) + (1.0 - weaponAccuracy);
             REQUIRE( base_acc == Catch::Approx(expected) );
 
             cut.addMod(&eyesV1);
-            modBonus += 0.006 * (fs_knl::Mod::MOD_V1 + 1);
+            const double eyesBonus = 0.006 * (fs_knl::Mod::MOD_V1 + 1);
             base_acc = weaponAccuracy;
             cut.getAccuracy(base_acc);
-            expected = weaponAccuracy * (1.0 - (baseAccuracy + modBonus)) + (1.0 - weaponAccuracy);
+            expected = weaponAccuracy * (1.0 - (baseAccuracy + eyesBonus)) + (1.0 - weaponAccuracy);
             REQUIRE( base_acc == Catch::Approx(expected) );
 
-            cut.addMod(&brainV2);
-            modBonus += 0.006 * (fs_knl::Mod::MOD_V2 + 1);
+            // Other mods (Legs here) do not affect accuracy
+            cut.addMod(&legsV3);
             base_acc = weaponAccuracy;
             cut.getAccuracy(base_acc);
-            expected = weaponAccuracy * (1.0 - (baseAccuracy + modBonus)) + (1.0 - weaponAccuracy);
             REQUIRE( base_acc == Catch::Approx(expected) );
         }
 
