@@ -135,9 +135,9 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
         SECTION ("Accuracy should improve with Eyes Mod only") {
             // cut is a kPedTypeAgent, base accuracy is 0.5 (see getBaseAccuracyFor)
             const double baseAccuracy = 0.5;
-            // setObjGroupDef(og_dmAgent) is needed for the perception/adrenaline
-            // branch in getAccuracy(); with neutral (default) IPA levels, their
-            // contributions cancel out
+            // setObjGroupDef(og_dmAgent) is needed for the perception branch
+            // in getAccuracy(); with neutral (default) perception level, its
+            // contribution is zero
             cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
 
             fs_knl::Mod eyesV1("EyesV1", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V1, 0, "", 0);

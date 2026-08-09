@@ -1310,11 +1310,10 @@ void PedInstance::getAccuracy(double &base_acc)
     double base_mod = baseAccuracy_;
 
     if (obj_group_def_ == PedInstance::og_dmAgent) {
-        // 0.59 max from here
-
-        base_mod -= 0.4 * (2.0 - perception_.getMultiplier());
-        base_mod += 0.4 * (2.0 - adrenaline_.getMultiplier());
-        // 0.99 max after adrenaline
+        // Only Perception affects accuracy. Neutral perception (multiplier
+        // of 1) leaves base_mod unchanged; it ranges from -0.2 (lowest
+        // perception) to +0.4 (highest perception).
+        base_mod += 0.4 * (perception_.getMultiplier() - 1.0);
     }
 
     // NOTE :(1.0 - base_acc) is randomized and not dependent on anything
