@@ -23,6 +23,8 @@
  * 
  */
 
+#include <cmath>
+
 #include "fs-utils/common.h"
 #include "fs-utils/log/log.h"
 #include "fs-engine/gfx/animationmanager.h"
@@ -516,14 +518,20 @@ void PedInstance::updateShootingTarget(const WorldPoint &aimedPt) {
 /*!
  * Returns the mean time between two shoots.
  * When a ped has shot, it takes time to shoot again : time to reload
- * the weapon + ped's reactivity time (influenced by IPA and Mods)
+ * the weapon + ped's reaction time. For agents, the reaction time is
+ * divided by the Adrenaline multiplier; the reload time never changes.
  * \param pWeapon The weapon used to shoot
  * \return Time to wait
  */
 int PedInstance::getTimeBetweenShoots(WeaponInstance *pWeapon) {
-    // TODO : Add IPA and mods influence
-    return kDefaultShootReactionTime +
-            pWeapon->getClass()->reloadTime();
+    int reactionTime = kDefaultShootReactionTime;
+
+    if (obj_group_def_ == PedInstance::og_dmAgent) {
+        reactionTime = static_cast<int>(std::lround(
+            static_cast<float>(kDefaultShootReactionTime) / adrenaline_.getMultiplier()));
+    }
+
+    return reactionTime + pWeapon->getClass()->reloadTime();
 }
 
 /*!

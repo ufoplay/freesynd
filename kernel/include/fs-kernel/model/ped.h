@@ -288,7 +288,13 @@ public:
     void updateShootingTarget(const WorldPoint &aimedPt);
     //! Adjust aimed point with user accuracy and weapon max range
     void adjustAimedPtWithRangeAndAccuracy(Weapon *pWeaponClass, WorldPoint *pAimedLocW);
-    //! Gets the time before a ped can shoot again
+    /*!
+     * @brief Gets the time before a ped can shoot again.
+     * For agents, the reaction part is divided by the Adrenaline multiplier;
+     * the weapon reload time is never changed.
+     * @param pWeapon The weapon used to shoot
+     * @return Time to wait in milliseconds
+     */
     int getTimeBetweenShoots(WeaponInstance *pWeapon);
 
     //! Return true if ped has activated his energy shield

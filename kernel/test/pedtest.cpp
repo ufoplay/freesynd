@@ -71,6 +71,11 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
         // Levels given to initAllLevelsForIPAType use the 0-255 range of the
         // original data files: 0 -> 0, 128 -> 50, 192 -> 75.
 
+        // Weapon used to check the time between shots
+        fs_knl::Weapon pistolClass(fs_knl::Weapon::Pistol, config);
+        fs_knl::WeaponInstance pistol(&pistolClass, 0, nullptr);
+        const int reloadTime = pistolClass.reloadTime();
+
         SECTION ("IPA multiplier depends on the gap between amount and dependency") {
             REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(1.0) );
 
@@ -197,6 +202,46 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             base_acc = weaponAccuracy;
             cut.getAccuracy(base_acc);
             REQUIRE( base_acc == Catch::Approx(0.7433333) );
+        }
+
+        SECTION ("Adrenaline changes agent time between shots, not reload time") {
+            const int reactionTime = fs_knl::PedInstance::kDefaultShootReactionTime;
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+
+            // Neutral Adrenaline keeps the default reaction time
+            REQUIRE( cut.getTimeBetweenShoots(&pistol) == reactionTime + reloadTime );
+
+            // Adrenaline x1.5 divides the reaction part by 1.5
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            REQUIRE( cut.getTimeBetweenShoots(&pistol) == 133 + reloadTime );
+
+            // Adrenaline x2 halves the reaction part
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            REQUIRE( cut.getTimeBetweenShoots(&pistol) == 100 + reloadTime );
+
+            // Adrenaline x1/1.5 makes the reaction part 1.5 times longer
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 128, 128, 128);
+            cut.setIPAAmount(IPAStim::Adrenaline, 0);
+            REQUIRE( cut.getTimeBetweenShoots(&pistol) == 300 + reloadTime );
+        }
+
+        SECTION ("Enemy agent Adrenaline from mission data changes time between shots") {
+            fs_knl::PedInstance enemy(3, nullptr, fs_knl::PedInstance::kPedTypeAgent, false, 50);
+            enemy.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+
+            // Amount 75 / dependency 0 gives Adrenaline x1.75: 200 / 1.75 = 114
+            enemy.initAllLevelsForIPAType(IPAStim::Adrenaline, 192, 0, 192);
+            REQUIRE( enemy.getTimeBetweenShoots(&pistol) == 114 + reloadTime );
+        }
+
+        SECTION ("Non-agent peds keep the default time between shots") {
+            civilian.setObjGroupDef(fs_knl::PedInstance::og_dmCivilian);
+
+            civilian.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            civilian.setIPAAmount(IPAStim::Adrenaline, 100);
+            REQUIRE( civilian.getTimeBetweenShoots(&pistol) ==
+                fs_knl::PedInstance::kDefaultShootReactionTime + reloadTime );
         }
     }
 
