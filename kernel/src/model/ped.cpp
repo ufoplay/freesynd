@@ -1230,9 +1230,9 @@ void PedInstance::triggerPanicMode() {
         return;
     }
 
-    adrenaline_.setAmount(IPAStim::kMaxLevel);
-    perception_.setAmount(IPAStim::kMaxLevel);
-    intelligence_.setAmount(IPAStim::kMaxLevel);
+    adrenaline_.setAmount(IPAStim::kMaxAmount);
+    perception_.setAmount(IPAStim::kMaxAmount);
+    intelligence_.setAmount(IPAStim::kMaxAmount);
 }
 
 /*!

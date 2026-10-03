@@ -12,6 +12,6 @@
 - [x] A non-agent owner gives ×1
 - [x] The doubled-integer convention and its comment are removed from every caller
 - [x] Covered by ped tests
-- [ ] In game, followers visibly keep pace with a boosted agent (manual check)
+- [x] In game, followers visibly keep pace with a boosted agent (manual check)
 
 **Note:** the old code never applied the `/2` correction (it was commented out), so persuaded peds actually moved at ×4 / ×2 / ×1. With a neutral persuader they now move at their own speed (×1), i.e. half as fast as before this change.

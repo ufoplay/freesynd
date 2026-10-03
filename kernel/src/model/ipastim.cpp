@@ -36,7 +36,7 @@ const char * IPAStim::IPANames[3] = {
 
 IPAStim::IPAStim(IPAType ipa_type, uint8_t amount, uint8_t dependency)
 :ipa_type_(ipa_type), effect_(50), effect_timer_(kEffectPeriod), dependency_timer_(kDependencyPeriod),
-hold_multiplier_(1.0f)
+holdMultiplier_(1.0f)
 {
     assert(ipa_type_ <= 3);
     setLevels(amount, dependency);
@@ -95,7 +95,7 @@ uint32_t IPAStim::holdPeriod(uint32_t basePeriod) const
     // Holding only slows down a boost: recovery keeps the base period
     if (amount_ > dependency_) {
         // Hold multipliers are small positive factors, so the period fits in 32 bits
-        return static_cast<uint32_t>(std::lround(static_cast<float>(basePeriod) * hold_multiplier_));
+        return static_cast<uint32_t>(std::lround(static_cast<float>(basePeriod) * holdMultiplier_));
     }
     return basePeriod;
 }

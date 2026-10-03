@@ -41,8 +41,8 @@ public:
         Intelligence
     };
 
-    //! Highest value of an IPA level, in percent
-    static constexpr uint8_t kMaxLevel = 100;
+    //! Highest value of an IPA amount, in percent
+    static constexpr uint8_t kMaxAmount = 100;
 
     IPAStim(IPAType ipa_type, uint8_t amount = 50, uint8_t dependency = 50);
 
@@ -70,7 +70,7 @@ public:
      * Used by the mod linked to this IPA level to make a boost last longer.
      * @param multiplier The hold multiplier (1 means no change)
      */
-    void setHoldMultiplier(float multiplier) { hold_multiplier_ = multiplier; }
+    void setHoldMultiplier(float multiplier) { holdMultiplier_ = multiplier; }
 
     void processTicks(uint32_t elapsed);
 
@@ -156,7 +156,7 @@ private:
     //! A timer to control the level of dependency
     fs_utl::Timer dependency_timer_;
     //! Factor applied to the timer periods while amount is above dependency
-    float hold_multiplier_;
+    float holdMultiplier_;
 };
 
 #endif

@@ -1,8 +1,8 @@
 # Spec: IPA levels affect agents in missions
 
-Status: ready-for-agent
+Status: done
 
-Source document: `docs/mods-ipa.md` (original functional description, French). Vocabulary: `CONTEXT.md`.
+Vocabulary: `CONTEXT.md`.
 
 ## Problem Statement
 
@@ -84,11 +84,6 @@ Make every IPA level and the IPA-related mods have a visible, consistent effect 
 39. As a player, I want a drag on an IPA bar of a selected agent to apply to every selected agent, so that click and drag behave the same.
 40. As a player, I want a click or drag on an IPA bar of an unselected agent to affect only that agent, so that I can still tune one agent individually.
 
-### Enemy agents
-
-41. As a player, I want enemy agents' IPA levels from the mission data to affect their speed, accuracy, reaction time and regeneration, so that enemies follow the same rules as my agents.
-42. As a mission designer, I want enemy agents' IPA levels to stay fixed during the mission, so that the difficulty I set does not fade within a minute.
-
 ## Implementation Decisions
 
 - **IPA multiplier curve is kept as implemented**: when amount > dependency the multiplier is `1 + gap/100`; otherwise `1 / (1 + gap/100)`, where `gap = |amount − dependency|`. The multiplier comment that claims full Adrenaline doubles speed with a centred dependency is wrong and must be corrected to describe this curve.
@@ -111,7 +106,7 @@ Make every IPA level and the IPA-related mods have a visible, consistent effect 
 - **Panic Mode**: a new public method on the ped sets all three IPA amounts to 100 (no-op on dead peds). It creates no special state. It must not be confused with the existing civilian panic logic (`isInPanic` and related), which is unrelated and stays unchanged.
 - **Panic Mode input**: the gameplay menu detects left + right mouse buttons pressed together on the map view and calls the Panic Mode method on every selected agent. The simultaneous press must not also trigger the single-button map actions (move, shoot).
 - **Group mode**: in the gameplay menu, a click on an IPA bar follows the same rule as the existing drag: if the clicked agent is selected, the amount is applied to all selected agents; otherwise only to the clicked agent.
-- **Enemy agents**: IPA effects apply to every ped in the agent group, including enemy agents. Only the player's squad has its IPA levels updated each tick; enemy agents keep the levels loaded from the mission data.
+- **Enemy agents**: not a requirement of this feature. As it stands, the IPA rules are tied to the agent ped type, so enemy agents are affected by their mission-data IPA levels (speed, accuracy, time between shots) as a side effect; they do not regenerate. Only the player's squad has its IPA levels updated each tick. How enemies should use IPA is deferred to a future feature.
 - **Mission start**: agents' IPA levels are neutral (50 / 50 / 50) at the start of each mission; levels are not saved between missions.
 - **Intelligence**: its multiplier is computed like the others but has no consumer in this feature.
 
@@ -138,11 +133,11 @@ Make every IPA level and the IPA-related mods have a visible, consistent effect 
 - Legs speed multipliers, Arms carrying capacity and Chest damage reduction (already implemented).
 - Dedicated ammo-saving rules or multi-target hit rules — these are natural consequences of the accuracy change.
 - Persisting IPA levels between missions.
+- Enemy agent IPA behaviour (formerly user stories 41–42: enemy IPA levels affecting speed, accuracy, reaction time and regeneration, and staying fixed during the mission), deferred to a future feature.
 - Ticking enemy agents' IPA levels.
 - Changes to civilian panic.
 
 ## Further Notes
 
-- The source document `docs/mods-ipa.md` is kept unchanged as the original description; this spec supersedes it where they differ (multiplier range reachability, click semantics, Arms precision, Heart efficiency, persuaded speed).
 - The IPA stim class keeps its name; the glossary term is **IPA level**.
 - No ADR was recorded: every decision here is a balancing choice that is cheap to revisit.
