@@ -36,6 +36,22 @@ static void elapseIPATime(fs_knl::PedInstance &ped, uint32_t durationMs) {
     }
 }
 
+/*!
+ * @brief Sets the ped's Adrenaline to x0.5 (amount 0, dependency 100).
+ * Dependency 100 cannot be loaded from the 0-255 data range, so the amount
+ * is held at 100 until the dependency creeps up to it.
+ * @param ped The ped whose Adrenaline is set
+ */
+static void setLowestAdrenaline(fs_knl::PedInstance &ped) {
+    ped.initAllLevelsForIPAType(IPAStim::Adrenaline, 255, 255, 255);
+    for (int i = 0; i < 200 && ped.adrenaline().dependency() < 100; ++i) {
+        ped.setIPAAmount(IPAStim::Adrenaline, 100);
+        elapseIPATime(ped, 100);
+    }
+    REQUIRE( ped.adrenaline().dependency() == 100 );
+    ped.setIPAAmount(IPAStim::Adrenaline, 0);
+}
+
 TEST_CASE( "Ped", "[kernel][ped]" ) {
     fs_eng::AppContext appCtx;
     ConfigFile config;
@@ -242,6 +258,77 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             civilian.setIPAAmount(IPAStim::Adrenaline, 100);
             REQUIRE( civilian.getTimeBetweenShoots(&pistol) ==
                 fs_knl::PedInstance::kDefaultShootReactionTime + reloadTime );
+        }
+
+        SECTION ("Adrenaline changes health regeneration period with Chest V2+") {
+            fs_knl::Mod chestV1("ChestV1", fs_knl::Mod::MOD_CHEST, fs_knl::Mod::MOD_V1, 0, "", 0);
+            fs_knl::Mod chestV2("ChestV2", fs_knl::Mod::MOD_CHEST, fs_knl::Mod::MOD_V2, 0, "", 0);
+            fs_knl::Mod chestV3("ChestV3", fs_knl::Mod::MOD_CHEST, fs_knl::Mod::MOD_V3, 0, "", 0);
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+
+            // Neutral Adrenaline keeps the Chest periods
+            cut.addMod(&chestV2);
+            REQUIRE( cut.getHealthRegenerationPeriod() == 10000 );
+            cut.addMod(&chestV3);
+            REQUIRE( cut.getHealthRegenerationPeriod() == 4000 );
+
+            // Adrenaline x2 doubles the period
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            REQUIRE( cut.getHealthRegenerationPeriod() == 8000 );
+            cut.addMod(&chestV2);
+            REQUIRE( cut.getHealthRegenerationPeriod() == 20000 );
+
+            // Adrenaline x0.5 halves the period
+            setLowestAdrenaline(cut);
+            REQUIRE( cut.getHealthRegenerationPeriod() == 5000 );
+            cut.addMod(&chestV3);
+            REQUIRE( cut.getHealthRegenerationPeriod() == 2000 );
+
+            // Chest V1 does not regenerate whatever the Adrenaline level
+            cut.addMod(&chestV1);
+            REQUIRE_FALSE( cut.hasHealthRegeneration() );
+            REQUIRE( cut.getHealthRegenerationPeriod() == 0 );
+        }
+
+        SECTION ("Agent without Chest does not regenerate whatever the Adrenaline level") {
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+            setLowestAdrenaline(cut);
+
+            REQUIRE_FALSE( cut.hasHealthRegeneration() );
+            REQUIRE( cut.getHealthRegenerationPeriod() == 0 );
+        }
+
+        SECTION ("Regeneration follows the current Adrenaline level") {
+            fs_knl::Mod chestV3("ChestV3", fs_knl::Mod::MOD_CHEST, fs_knl::Mod::MOD_V3, 0, "", 0);
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+            cut.addMod(&chestV3);
+            cut.behaviour().addComponent(new fs_knl::CommonAgentBehaviourComponent(&cut));
+
+            cut.setStartHealth(200, true);
+            cut.decreaseHealth(50);
+            cut.behaviour().handleBehaviourEvent(fs_knl::Behaviour::kBehvEvtHit);
+
+            // Neutral Adrenaline: one point every 4 s
+            cut.behaviour().execute(4000, nullptr);
+            REQUIRE( cut.health() == 150 );
+            cut.behaviour().execute(1, nullptr);
+            REQUIRE( cut.health() == 151 );
+
+            // Calming the agent (x0.5) after the component was created heals every 2 s
+            setLowestAdrenaline(cut);
+            cut.behaviour().execute(2000, nullptr);
+            REQUIRE( cut.health() == 151 );
+            cut.behaviour().execute(1, nullptr);
+            REQUIRE( cut.health() == 152 );
+
+            // Boosting the agent (x2) heals every 8 s
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            cut.behaviour().execute(4001, nullptr);
+            REQUIRE( cut.health() == 152 );
+            cut.behaviour().execute(4000, nullptr);
+            REQUIRE( cut.health() == 153 );
         }
     }
 

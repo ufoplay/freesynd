@@ -4,10 +4,12 @@
 
 **Blocked by:** 01 (Lock in the current IPA behaviour with tests)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] With neutral Adrenaline, regeneration periods are unchanged (10 s V2, 4 s V3)
-- [ ] With Adrenaline at ×2, a Chest V3 agent regenerates every 8 s; at ×0.5, every 2 s
-- [ ] An agent without a Chest, or with a Chest V1, does not regenerate whatever the Adrenaline level
-- [ ] The period is evaluated from the current Adrenaline level, so changing the dose changes the healing speed
-- [ ] Covered by ped tests
+- [x] With neutral Adrenaline, regeneration periods are unchanged (10 s V2, 4 s V3)
+- [x] With Adrenaline at ×2, a Chest V3 agent regenerates every 8 s; at ×0.5, every 2 s
+- [x] An agent without a Chest, or with a Chest V1, does not regenerate whatever the Adrenaline level
+- [x] The period is evaluated from the current Adrenaline level, so changing the dose changes the healing speed
+- [x] Covered by ped tests
+
+**Notes:** Enemy agents do not regenerate: only the player's agents get the component that heals (`CommonAgentBehaviourComponent`); enemy agents only get `PlayerHostileBehaviourComponent`. The Adrenaline rule is in `PedInstance::getHealthRegenerationPeriod()`, so it would apply to them too if they ever regenerate. This leaves the regeneration part of spec story 41 unmet; to discuss with the spec owner.

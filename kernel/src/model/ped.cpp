@@ -534,6 +534,11 @@ int PedInstance::getTimeBetweenShoots(WeaponInstance *pWeapon) {
     return reactionTime + pWeapon->getClass()->reloadTime();
 }
 
+uint32_t PedInstance::getHealthRegenerationPeriod() {
+    return static_cast<uint32_t>(std::lround(
+        static_cast<float>(getChestRegenerationPeriod()) * adrenaline_.getMultiplier()));
+}
+
 /*!
  * Forces an agent to commit suicide.
  * If he's equiped with the good version of Mod Chest, he will

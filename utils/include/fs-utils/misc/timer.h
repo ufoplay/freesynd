@@ -57,6 +57,14 @@ class Timer {
      }
 
      /*!
+      * @brief Sets a new max time without resetting the counter.
+      * @param i_max The new max time
+      */
+     void setMax(uint32_t i_max) {
+         i_max_ = i_max;
+     }
+
+     /*!
       * Adds time to time and returns true if max is reached.
       * If max is reached, counter is reset.
       * \return True if timer has reached max.

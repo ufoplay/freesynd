@@ -92,11 +92,11 @@ public:
     }
 
     /*!
-     * This method returns the amount of time before health
-     * is restored when a ped owns the right version of Chest.
-     * \return 0 if ped do not have good chest.
+     * @brief Returns the base amount of time before health is restored
+     * when a ped owns the right version of Chest.
+     * @return Period in milliseconds, 0 if ped does not have a Chest V2+.
      */
-    uint16_t getHealthRegenerationPeriod() {
+    uint16_t getChestRegenerationPeriod() {
         Mod *pMod = slots_[Mod::MOD_CHEST];
         if (pMod) {
             switch(pMod->getVersion()) {

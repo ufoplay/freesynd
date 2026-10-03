@@ -296,6 +296,13 @@ public:
      * @return Time to wait in milliseconds
      */
     int getTimeBetweenShoots(WeaponInstance *pWeapon);
+    /*!
+     * @brief Gets the time between two health regeneration steps.
+     * The Chest period is multiplied by the current Adrenaline multiplier,
+     * so a calmed agent heals faster and a boosted one slower.
+     * @return Period in milliseconds, 0 if ped does not have a Chest V2+
+     */
+    uint32_t getHealthRegenerationPeriod();
 
     //! Return true if ped has activated his energy shield
     bool isEnergyShieldActivated();

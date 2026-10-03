@@ -107,9 +107,12 @@ CommonAgentBehaviourComponent::CommonAgentBehaviourComponent(PedInstance *pPed):
  * \param pPed The owner of the behaviour
  */
 void CommonAgentBehaviourComponent::execute(const Behaviour::BehaviourParam &param) {
-    // If Agent is equiped with right chest, his health periodically updates
-    if (doRegenerates_ && healthTimer_.update(param.elapsed)) {
-        if (param.pPed->increaseHealth(kRegeratesHealthStep)) {
+    // If Agent is equiped with right chest, his health periodically updates.
+    // The period depends on the current Adrenaline level.
+    if (doRegenerates_) {
+        healthTimer_.setMax(param.pPed->getHealthRegenerationPeriod());
+        if (healthTimer_.update(param.elapsed) &&
+                param.pPed->increaseHealth(kRegeratesHealthStep)) {
             doRegenerates_ = false;
         }
     }
