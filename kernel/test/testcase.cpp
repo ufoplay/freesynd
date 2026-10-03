@@ -62,6 +62,26 @@ void initWeaponConfigFile( ConfigFile &config ) {
     config.add("weapon.2.ammo.impactNb", 1);
     config.add("weapon.2.weight", 15);
 
+    config.add("weapon.4.name", "WEAPON_UZI");
+    config.add("weapon.4.icon.small", 18);
+    config.add("weapon.4.icon.big", 68);
+    config.add("weapon.4.cost", 750);
+    config.add("weapon.4.ammo.nb", 50);
+    config.add("weapon.4.ammo.price", 2);
+    config.add("weapon.4.range", 1792);
+    config.add("weapon.4.rank", 2);
+    config.add("weapon.4.anim", 371);
+    config.add("weapon.4.ammopershot", 1);
+    config.add("weapon.4.timereload", 100);
+    config.add("weapon.4.damagerange", 0);
+    config.add("weapon.4.shotangle", 0.0);
+    config.add("weapon.4.shotaccuracy", 0.0);
+    config.add("weapon.4.shotspeed", 0);
+    config.add("weapon.4.dmg_per_shot", 2);
+    config.add("weapon.4.ammo.impactNb", 1);
+    config.add("weapon.4.auto.fire_rate", 50);
+    config.add("weapon.4.weight", 2);
+
     config.add("weapon.12.name", "scanner");
     config.add("weapon.12.icon.small", 26);
     config.add("weapon.12.icon.big", 76);
