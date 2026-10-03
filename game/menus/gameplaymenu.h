@@ -60,7 +60,11 @@ protected:
     //! sets IPA level for defined agent, selector
     void setIPAForAgent(size_t slot, IPAStim::IPAType ipa_type, uint8_t percentage);
     //! Handles the user's click on the map
-    void handleClickOnMap(Point2D point, int button);
+    void handleClickOnMap(fs_knl::TilePoint mapPt, fs_knl::ShootableMapObject *pTarget, int button, bool ctrl);
+    //! Handles a mouse button pressed on the map, detecting Panic Mode
+    void handleMouseDownOnMap(Point2D point, int button);
+    //! Executes the pending map click if any
+    void flushPendingMapClick();
     //! Handles the user's click on the minimap
     void handleClickOnMinimap(Point2D point);
     ///@}
@@ -122,7 +126,7 @@ protected:
     //! updates visual markers for our agents
     void highlightLeaderMarker();
     //! Set basePt param with point on the map where player clicked to shoot
-    bool getAimedAt(fs_knl::TilePoint &basePt);
+    bool getAimedAt(fs_knl::TilePoint &basePt, fs_knl::ShootableMapObject *pTarget);
     void stopShootingEvent();
     //! Centers the minimap on the selection leader
     void centerMinimapOnLeader();
@@ -132,6 +136,8 @@ protected:
 protected:
     /*! Origin of the minimap on the screen.*/
     static const Point2D kMiniMapScreenPos;
+    //! Maximum time in millisecond between left and right buttons to trigger Panic Mode
+    static const uint32_t kPanicModeWindowMs;
     //! Maximum time in millisecond to detect a double press on a key
     static const uint32_t kDoublePressMs;
 
@@ -194,6 +200,25 @@ protected:
         // agent to base IPA's update on
         size_t agent_used;
     } ipa_chng_;
+
+    /*!
+     * A click on the map is held back for a short time, so that pressing
+     * the other button meanwhile triggers Panic Mode instead of moving or shooting.
+     */
+    struct PendingMapClick {
+        //! True if a click is waiting
+        bool active;
+        //! Where the player clicked on the map
+        fs_knl::TilePoint mapPt;
+        //! The object under the cursor when the player clicked
+        fs_knl::ShootableMapObject *pTarget;
+        //! The button that was pressed
+        int button;
+        //! True if control key was pressed
+        bool ctrl;
+        //! Time in millisecond since the button was pressed
+        uint32_t elapsed;
+    } pendingMapClick_;
 };
 
 #endif

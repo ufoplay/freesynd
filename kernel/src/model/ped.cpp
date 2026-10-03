@@ -1222,6 +1222,20 @@ void PedInstance::setIPAAmount(IPAStim::IPAType ipaType, uint8_t percentage) {
 }
 
 /*!
+ * Triggers Panic Mode: the amount of each IPA level is pushed to the maximum.
+ * Nothing else changes, levels then evolve under the normal rules.
+ */
+void PedInstance::triggerPanicMode() {
+    if (isDead()) {
+        return;
+    }
+
+    adrenaline_.setAmount(IPAStim::kMaxLevel);
+    perception_.setAmount(IPAStim::kMaxLevel);
+    intelligence_.setAmount(IPAStim::kMaxLevel);
+}
+
+/*!
  * Recomputes the effective max speed from the base speed, the Legs mod
  * multiplier and the inventory weight penalty. Called whenever one of
  * these factors changes (Legs mod added, weapon added/removed).

@@ -1103,7 +1103,7 @@ void ShootAction::fillDamageDesc(PedInstance *pShooter,
 
 AutomaticShootAction::AutomaticShootAction(const WorldPoint &aimedAt, WeaponInstance *pWeapon) :
         ShootAction(aimedAt, pWeapon),
-        fireRateTimer_(pWeapon->getClass()->fireRate())
+        fireRateTimer_(pWeapon->getClass()->fireRate()), stopRequested_(false)
 {
 }
 
@@ -1131,6 +1131,10 @@ bool AutomaticShootAction::execute(uint32_t elapsed, Mission *pMission, PedInsta
             fillDamageDesc(pPed, pWeapon_, dmg);
             pWeapon_->playSound();
             pWeapon_->fire(pMission, dmg, elapsed);
+
+            if (stopRequested_) {
+                stop();
+            }
         }
     } else if (status_ == kActStatusWaitForTime) {
         if (timeToWaitTimer_.update(elapsed)) {
@@ -1143,7 +1147,10 @@ bool AutomaticShootAction::execute(uint32_t elapsed, Mission *pMission, PedInsta
 }
 
 void AutomaticShootAction::stop() {
-    if (status_ == kActStatusRunning) {
+    if (status_ == kActStatusNotStarted) {
+        // A short click may be released before the first shot
+        stopRequested_ = true;
+    } else if (status_ == kActStatusRunning) {
         PedInstance *pPed = pWeapon_->owner();
         // Shooting animation is finished
         pPed->leaveState(kPedActionStateFiring);

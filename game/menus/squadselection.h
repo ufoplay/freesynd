@@ -177,6 +177,8 @@ class SquadSelection {
     void moveTo(const fs_knl::TilePoint &mapPt, bool addAction);
     //! Every selected armed agent shoot at location
     void shootAt(const fs_knl::WorldPoint &aimedLocW);
+    //! Every selected agent gets its IPA amounts pushed to the maximum
+    void triggerPanicMode();
     //! Return true if target is in range of at least one agent
     bool isTargetInRange(fs_knl::Mission *pMission, fs_knl::ShootableMapObject *pTarget);
  private:

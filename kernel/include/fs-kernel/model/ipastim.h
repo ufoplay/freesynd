@@ -41,6 +41,9 @@ public:
         Intelligence
     };
 
+    //! Highest value of an IPA level, in percent
+    static constexpr uint8_t kMaxLevel = 100;
+
     IPAStim(IPAType ipa_type, uint8_t amount = 50, uint8_t dependency = 50);
 
     IPAType type()   const { return ipa_type_; }

@@ -320,6 +320,15 @@ void SquadSelection::shootAt(const fs_knl::WorldPoint &aimedLocW) {
     }
 }
 
+/*!
+ * Applies Panic Mode to every selected agent: all their IPA amounts
+ * are pushed to the maximum.
+ */
+void SquadSelection::triggerPanicMode() {
+    for (SquadSelection::Iterator it = begin(); it != end(); ++it) {
+        (*it)->triggerPanicMode();
+    }
+}
 
 /**
  * Return true if the given object is in the line of fire of at least

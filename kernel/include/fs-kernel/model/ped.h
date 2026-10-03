@@ -366,6 +366,13 @@ public:
 
     //! Set the amount for the given IPA Type
     void setIPAAmount(IPAStim::IPAType type, uint8_t amount);
+
+    /*!
+     * @brief Triggers Panic Mode: sets the amount of all three IPA levels to 100.
+     * Effect and dependency are unchanged and then evolve under the normal rules.
+     * Does nothing if the ped is dead. Unrelated to civilian panic.
+     */
+    void triggerPanicMode();
     
     //! Update the state for each IPA
     void updateAllIPA(uint32_t elapsed) {

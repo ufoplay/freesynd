@@ -50,6 +50,7 @@ const int kScrollStep = 16;
 
 const Point2D GameplayMenu::kMiniMapScreenPos = {0, 46 + 44 + 10 + 46 + 44 + 15 + 2 * 32 + 2};
 const uint32_t GameplayMenu::kDoublePressMs = 400;
+const uint32_t GameplayMenu::kPanicModeWindowMs = 80;
 
 GameplayMenu::GameplayMenu(fs_eng::MenuManager *m) :
 Menu(m, fs_game_menus::kMenuIdGameplay, fs_game_menus::kMenuIdDebrief),
@@ -62,6 +63,7 @@ mm_renderer_(kMiniMapScreenPos), warningTimer_(20000)
     cursorOnShow_ = kGameplayCursor;
     scroll_ = {0, 0};
     ipa_chng_.ipa_chng = -1;
+    pendingMapClick_.active = false;
     canPlayPoliceWarnSound_ = true;
     lastSelectionTick_ = 0;
 }
@@ -251,6 +253,13 @@ bool GameplayMenu::handleTick(uint32_t elapsed)
         updateMarkersPosition();
     }
 
+    if (pendingMapClick_.active) {
+        pendingMapClick_.elapsed += elapsed;
+        if (pendingMapClick_.elapsed >= kPanicModeWindowMs) {
+            flushPendingMapClick();
+        }
+    }
+
     mm_renderer_.handleTick(elapsed);
 
     updateIPALevelMeters(elapsed);
@@ -330,6 +339,7 @@ void GameplayMenu::handleLeave()
     scroll_ = {0, 0};
     paused_ = false;
     ipa_chng_.ipa_chng = -1;
+    pendingMapClick_.active = false;
 }
 
 void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t state) {
@@ -369,7 +379,7 @@ void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t st
     if (isPlayerShooting_) {
         // update direction for each shooting player
         fs_knl::TilePoint mapPt = map_renderer_.getTilePointFromMouse(point);
-        if (getAimedAt(mapPt)) {
+        if (getAimedAt(mapPt, target_)) {
             fs_knl::WorldPoint aimedAtLocW(mapPt);
             for (SquadSelection::Iterator it = selection_.begin(); it != selection_.end(); ++it) {
                 fs_knl::PedInstance *pAgent = *it;
@@ -424,7 +434,7 @@ bool GameplayMenu::handleMouseDown(Point2D point, int button)
         }
     } else {
         // User clicked on the map
-        handleClickOnMap(point, button);
+        handleMouseDownOnMap(point, button);
     }
 
     return true;
@@ -469,21 +479,23 @@ void GameplayMenu::updateIPALevelMeters(uint32_t elapsed) {
 
 /*!
  * React to a click on the map
- * @param point Where the player clicked in screen coordinates
+ * @param mapPt Where the player clicked on the map
+ * @param pTarget The object under the cursor when he clicked (may be null)
  * @param button The mouse button he clicked
+ * @param ctrl True if control key was pressed when he clicked
  */
-void GameplayMenu::handleClickOnMap(Point2D point, int button) {
-    fs_knl::TilePoint mapPt = map_renderer_.getTilePointFromMouse(point);
+void GameplayMenu::handleClickOnMap(fs_knl::TilePoint mapPt, fs_knl::ShootableMapObject *pTarget,
+        int button, bool ctrl) {
 
 #ifdef _DEBUG
     if (g_System.isKeyModStatePressed(fs_eng::KMD_ALT)) {
         printf("Tile x:%d, y:%d, z:%d, ox:%d, oy:%d\n",
             mapPt.tx, mapPt.ty, mapPt.tz, mapPt.ox, mapPt.oy);
 
-        if (target_) {
+        if (pTarget) {
             printf("   > target(%i) : %s\n",
-                target_->id(), target_->natureName());
-            printf("   >   Tile : %d, %d, %d\n", target_->tileX(), target_->tileY(), target_->tileZ());
+                pTarget->id(), pTarget->natureName());
+            printf("   >   Tile : %d, %d, %d\n", pTarget->tileX(), pTarget->tileY(), pTarget->tileZ());
         }
 
         int tileid = mission_->map()->getTileIdAt(mapPt.tx, mapPt.ty, mapPt.tz);
@@ -492,18 +504,17 @@ void GameplayMenu::handleClickOnMap(Point2D point, int button) {
     }
 #endif //_DEBUG
 
-    bool ctrl = g_System.isKeyModStatePressed(fs_eng::KMD_CTRL);
     if (button == kMouseLeftButton) {
-        if (target_) {
-            switch (target_->nature()) {
+        if (pTarget) {
+            switch (pTarget->nature()) {
             case fs_knl::MapObject::kNatureWeapon:
-                selection_.pickupWeapon(dynamic_cast<fs_knl::WeaponInstance *>(target_), ctrl);
+                selection_.pickupWeapon(dynamic_cast<fs_knl::WeaponInstance *>(pTarget), ctrl);
                 break;
             case fs_knl::MapObject::kNaturePed:
-                selection_.followPed(dynamic_cast<fs_knl::PedInstance *>(target_));
+                selection_.followPed(dynamic_cast<fs_knl::PedInstance *>(pTarget));
                 break;
             case fs_knl::MapObject::kNatureVehicle:
-                selection_.enterOrLeaveVehicle(dynamic_cast<fs_knl::Vehicle *>(target_), ctrl);
+                selection_.enterOrLeaveVehicle(dynamic_cast<fs_knl::Vehicle *>(pTarget), ctrl);
                 break;
             default:
                 break;
@@ -512,11 +523,53 @@ void GameplayMenu::handleClickOnMap(Point2D point, int button) {
             selection_.moveTo(mapPt, ctrl);
         }
     } else if (button == kMouseRightButton) {
-        if (getAimedAt(mapPt)) {
+        if (getAimedAt(mapPt, pTarget)) {
             isPlayerShooting_ = true;
             fs_knl::WorldPoint aimedAtLocW(mapPt);
             selection_.shootAt(aimedAtLocW);
         }
+    }
+}
+
+/*!
+ * A mouse button was pressed on the map. The click is not executed at once:
+ * if the other button among left and right is pressed within kPanicModeWindowMs,
+ * Panic Mode is triggered instead and neither click is executed.
+ * @param point Where the player clicked in screen coordinates
+ * @param button The mouse button he pressed
+ */
+void GameplayMenu::handleMouseDownOnMap(Point2D point, int button) {
+    if (button != kMouseLeftButton && button != kMouseRightButton) {
+        return;
+    }
+
+    if (pendingMapClick_.active) {
+        if (pendingMapClick_.button != button) {
+            pendingMapClick_.active = false;
+            selection_.triggerPanicMode();
+            return;
+        }
+        flushPendingMapClick();
+    }
+
+    // Keep what the player clicked on, as the map may scroll and
+    // the cursor move before the click is executed
+    pendingMapClick_.active = true;
+    pendingMapClick_.mapPt = map_renderer_.getTilePointFromMouse(point);
+    pendingMapClick_.pTarget = target_;
+    pendingMapClick_.button = button;
+    pendingMapClick_.ctrl = g_System.isKeyModStatePressed(fs_eng::KMD_CTRL);
+    pendingMapClick_.elapsed = 0;
+}
+
+/*!
+ * Executes the map click that was held back waiting for a possible Panic Mode.
+ */
+void GameplayMenu::flushPendingMapClick() {
+    if (pendingMapClick_.active) {
+        pendingMapClick_.active = false;
+        handleClickOnMap(pendingMapClick_.mapPt, pendingMapClick_.pTarget,
+            pendingMapClick_.button, pendingMapClick_.ctrl);
     }
 }
 
@@ -544,17 +597,18 @@ void GameplayMenu::handleClickOnMinimap(Point2D point) {
  * or a point on the ground.
  * @param basePt base tilepoint corresponding to the click on the map.
  *  basePt will be updated with the final position.
+ * @param pTarget The object the player is aiming at (may be null)
  * @return True if location has been set.
  */
-bool GameplayMenu::getAimedAt(fs_knl::TilePoint &basePt) {
+bool GameplayMenu::getAimedAt(fs_knl::TilePoint &basePt, fs_knl::ShootableMapObject *pTarget) {
     bool locationSet = false;
 
-    if (target_) {
+    if (pTarget) {
         //  Player has aimed an object
-        basePt = target_->position();
+        basePt = pTarget->position();
         // z is set to half the size of the object
         // TODO : check that the line below is correct as size may not be expressed as Tilepoint coords
-        basePt.oz += target_->sizeZ() >> 1;
+        basePt.oz += pTarget->sizeZ() >> 1;
         locationSet = true;
     } else {
         // Player is shooting on the ground
@@ -584,6 +638,11 @@ void GameplayMenu::handleMouseUp([[maybe_unused]] Point2D point, int button)
 {
     ipa_chng_.ipa_chng = -1;
 
+    // A short click is released before the Panic Mode window ends
+    if (pendingMapClick_.active && pendingMapClick_.button == button) {
+        flushPendingMapClick();
+    }
+
     if (button == kMouseRightButton && isPlayerShooting_) {
         stopShootingEvent();
     }
@@ -597,6 +656,7 @@ bool GameplayMenu::handleUnMappedKey(const fs_eng::FS_Key key) {
     if (key.keyCode == fs_eng::kKeyCode_P) {
         paused_ = !paused_;
         if (paused_) {
+            pendingMapClick_.active = false;
             stopShootingEvent();
             g_MusicMgr.pause();
         } else {

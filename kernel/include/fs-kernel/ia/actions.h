@@ -753,10 +753,16 @@ public:
     AutomaticShootAction(const WorldPoint &aimedAt, WeaponInstance *pWeapon);
 
     bool execute(uint32_t elapsed, Mission *pMission, PedInstance *pPed) override;
-    void stop();
+    /*!
+     * @brief Stops shooting. If the action has not started yet, it stops
+     * right after its first shot.
+     */
+    void stop() override;
 protected:
     /*! Fire rate.*/
     fs_utl::Timer fireRateTimer_;
+    //! True if stop was requested before the action started
+    bool stopRequested_;
 };
 
 /*!

@@ -377,6 +377,50 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             civilian.setSpeedToMax();
             REQUIRE( civilian.speed() == 50 );
         }
+
+        SECTION ("Panic Mode pushes all IPA amounts to 100") {
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 128, 128, 128);
+            cut.initAllLevelsForIPAType(IPAStim::Perception, 0, 0, 0);
+            cut.initAllLevelsForIPAType(IPAStim::Intelligence, 192, 64, 192);
+
+            cut.triggerPanicMode();
+
+            REQUIRE( cut.adrenaline().amount() == 100 );
+            REQUIRE( cut.perception().amount() == 100 );
+            REQUIRE( cut.intelligence().amount() == 100 );
+            // Effect and dependency are left unchanged
+            REQUIRE( cut.adrenaline().effect() == 50 );
+            REQUIRE( cut.adrenaline().dependency() == 50 );
+            REQUIRE( cut.perception().effect() == 0 );
+            REQUIRE( cut.perception().dependency() == 0 );
+            REQUIRE( cut.intelligence().effect() == 75 );
+            REQUIRE( cut.intelligence().dependency() == 25 );
+        }
+
+        SECTION ("IPA levels evolve normally after Panic Mode") {
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 128, 128, 128);
+            cut.triggerPanicMode();
+
+            elapseIPATime(cut, 1001);
+            REQUIRE( cut.adrenaline().effect() == 51 );
+            REQUIRE( cut.adrenaline().amount() == 100 );
+
+            elapseIPATime(cut, 4500 - 1001 + 1);
+            REQUIRE( cut.adrenaline().dependency() == 51 );
+        }
+
+        SECTION ("Panic Mode does nothing on a dead ped") {
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 128, 128, 128);
+            cut.initAllLevelsForIPAType(IPAStim::Perception, 128, 128, 128);
+            cut.initAllLevelsForIPAType(IPAStim::Intelligence, 128, 128, 128);
+            cut.setHealth(0);
+
+            cut.triggerPanicMode();
+
+            REQUIRE( cut.adrenaline().amount() == 50 );
+            REQUIRE( cut.perception().amount() == 50 );
+            REQUIRE( cut.intelligence().amount() == 50 );
+        }
     }
 
     SECTION("Mods") {
