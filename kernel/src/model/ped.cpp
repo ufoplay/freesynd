@@ -878,6 +878,27 @@ void PedInstance::handleModAdded(Mod *pNewMod) {
     if (pNewMod->getType() == Mod::MOD_EYES) {
         updateAccuracyModifier();
     }
+
+    updateIPAHoldMultipliers();
+}
+
+/*!
+ * Called when all mods have been removed.
+ */
+void PedInstance::handleModsCleared() {
+    updateMaxSpeed();
+    updateAccuracyModifier();
+    updateIPAHoldMultipliers();
+}
+
+/*!
+ * Sets the hold multiplier of each IPA level according to its linked mod:
+ * Heart for Adrenaline, Eyes for Perception and Brain for Intelligence.
+ */
+void PedInstance::updateIPAHoldMultipliers() {
+    adrenaline_.setHoldMultiplier(getIPAHoldMultiplier(Mod::MOD_HEART));
+    perception_.setHoldMultiplier(getIPAHoldMultiplier(Mod::MOD_EYES));
+    intelligence_.setHoldMultiplier(getIPAHoldMultiplier(Mod::MOD_BRAIN));
 }
 
 /*!

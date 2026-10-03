@@ -4,14 +4,16 @@
 
 **Blocked by:** 01 (Lock in the current IPA behaviour with tests)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Without the linked mod, the timers behave exactly as pinned in ticket 01
-- [ ] With a V3 Heart and boosted Adrenaline, the effect timer ticks every 2 s and the dependency timer every 9 s
-- [ ] V1 and V2 give ×1.25 and ×1.5 respectively
-- [ ] With the amount at or below the dependency, the base periods apply even with the mod installed
-- [ ] Eyes affect only Perception and Brain only Intelligence
-- [ ] The maximum IPA multiplier is unchanged by any mod
-- [ ] Installing or removing a mod updates the hold multiplier
-- [ ] Hold multiplier values live in one place
-- [ ] Covered by ped tests
+- [x] Without the linked mod, the timers behave exactly as pinned in ticket 01
+- [x] With a V3 Heart and boosted Adrenaline, the effect timer ticks every 2 s and the dependency timer every 9 s
+- [x] V1 and V2 give ×1.25 and ×1.5 respectively
+- [x] With the amount at or below the dependency, the base periods apply even with the mod installed
+- [x] Eyes affect only Perception and Brain only Intelligence
+- [x] The maximum IPA multiplier is unchanged by any mod
+- [x] Installing or removing a mod updates the hold multiplier
+- [x] Hold multiplier values live in one place
+- [x] Covered by ped tests
+
+**Note:** in game, mods are only ever cleared on the persistent `Agent`, never on a ped during a mission. `ModOwner::clearSlots()` now calls a `handleModsCleared()` hook, so a ped also refreshes its speed, accuracy and hold multipliers when its mods are removed.

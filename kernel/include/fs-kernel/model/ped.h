@@ -595,6 +595,10 @@ protected:
     void handleWeaponRemoved(WeaponInstance * wi) override;
     //! See ModOwner::handleModAdded()
     void handleModAdded(Mod *pNewMod) override;
+    //! See ModOwner::handleModsCleared()
+    void handleModsCleared() override;
+    //! Sets the hold multiplier of each IPA level from its linked mod
+    void updateIPAHoldMultipliers();
 
     //! Called when a weapon has no ammo to select another one
     void handleSelectedWeaponHasNoAmmo();

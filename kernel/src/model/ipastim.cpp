@@ -22,6 +22,7 @@
 #include "fs-kernel/model/ipastim.h"
 
 #include <assert.h>
+#include <cmath>
 
 #ifdef _DEBUG
 #include <stdio.h>
@@ -34,7 +35,8 @@ const char * IPAStim::IPANames[3] = {
 #endif
 
 IPAStim::IPAStim(IPAType ipa_type, uint8_t amount, uint8_t dependency)
-:ipa_type_(ipa_type), effect_(50), effect_timer_(1000), dependency_timer_(4500)
+:ipa_type_(ipa_type), effect_(50), effect_timer_(kEffectPeriod), dependency_timer_(kDependencyPeriod),
+hold_multiplier_(1.0f)
 {
     assert(ipa_type_ <= 3);
     setLevels(amount, dependency);
@@ -88,6 +90,16 @@ void IPAStim::setLevels(uint8_t amount, uint8_t dependency, uint8_t effect)
     //printf("%s: A: %d, D: %d, E: %d\n", getName(), amount, dependency, effect_);
 }
 
+uint32_t IPAStim::holdPeriod(uint32_t basePeriod) const
+{
+    // Holding only slows down a boost: recovery keeps the base period
+    if (amount_ > dependency_) {
+        // Hold multipliers are small positive factors, so the period fits in 32 bits
+        return static_cast<uint32_t>(std::lround(static_cast<float>(basePeriod) * hold_multiplier_));
+    }
+    return basePeriod;
+}
+
 void IPAStim::processTicks(uint32_t elapsed)
 {
     // From observation of the original Syndicate:
@@ -98,6 +110,7 @@ void IPAStim::processTicks(uint32_t elapsed)
     // * there appear to be 50 'positions' on the bar so it looks
     //   like the levels move in notches, 1% at a time.
 
+    effect_timer_.setMax(holdPeriod(kEffectPeriod));
     if(effect_timer_.update(elapsed))
     {
         if(effect_ > amount_)
@@ -126,6 +139,7 @@ void IPAStim::processTicks(uint32_t elapsed)
     }
 
     // The dependency indicator always creaps towards amount
+    dependency_timer_.setMax(holdPeriod(kDependencyPeriod));
     if(dependency_timer_.update(elapsed))
     {
         if (dependency_ > amount_) {

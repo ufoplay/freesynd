@@ -506,5 +506,139 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             double expected = weaponAccuracy * (1.0 - baseAccuracy) + (1.0 - weaponAccuracy);
             REQUIRE( base_acc == Catch::Approx(expected) );
         }
+
+        SECTION ("Heart, Eyes and Brain make the linked IPA level hold longer") {
+            // All levels start neutral (amount, dependency and effect at 50).
+            // Timers fire once more than their period has elapsed.
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 128, 128, 128);
+            cut.initAllLevelsForIPAType(IPAStim::Perception, 128, 128, 128);
+            cut.initAllLevelsForIPAType(IPAStim::Intelligence, 128, 128, 128);
+
+            fs_knl::Mod heartV1("HeartV1", fs_knl::Mod::MOD_HEART, fs_knl::Mod::MOD_V1, 0, "", 0);
+            fs_knl::Mod heartV2("HeartV2", fs_knl::Mod::MOD_HEART, fs_knl::Mod::MOD_V2, 0, "", 0);
+            fs_knl::Mod heartV3("HeartV3", fs_knl::Mod::MOD_HEART, fs_knl::Mod::MOD_V3, 0, "", 0);
+            fs_knl::Mod eyesV3("EyesV3", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V3, 0, "", 0);
+            fs_knl::Mod brainV3("BrainV3", fs_knl::Mod::MOD_BRAIN, fs_knl::Mod::MOD_V3, 0, "", 0);
+
+            SECTION ("V3 Heart doubles both timer periods while Adrenaline is boosted") {
+                cut.addMod(&heartV3);
+                cut.setIPAAmount(IPAStim::Adrenaline, 100);
+
+                elapseIPATime(cut, 2000);
+                REQUIRE( cut.adrenaline().effect() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.adrenaline().effect() == 51 );
+
+                elapseIPATime(cut, 9000 - 2001);
+                REQUIRE( cut.adrenaline().dependency() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.adrenaline().dependency() == 51 );
+            }
+
+            SECTION ("V1 Heart gives x1.25") {
+                cut.addMod(&heartV1);
+                cut.setIPAAmount(IPAStim::Adrenaline, 100);
+
+                elapseIPATime(cut, 1250);
+                REQUIRE( cut.adrenaline().effect() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.adrenaline().effect() == 51 );
+
+                elapseIPATime(cut, 5625 - 1251);
+                REQUIRE( cut.adrenaline().dependency() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.adrenaline().dependency() == 51 );
+            }
+
+            SECTION ("V2 Heart gives x1.5") {
+                cut.addMod(&heartV2);
+                cut.setIPAAmount(IPAStim::Adrenaline, 100);
+
+                elapseIPATime(cut, 1500);
+                REQUIRE( cut.adrenaline().effect() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.adrenaline().effect() == 51 );
+
+                elapseIPATime(cut, 6750 - 1501);
+                REQUIRE( cut.adrenaline().dependency() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.adrenaline().dependency() == 51 );
+            }
+
+            SECTION ("Base periods apply when amount is below dependency") {
+                cut.addMod(&heartV3);
+                cut.setIPAAmount(IPAStim::Adrenaline, 0);
+
+                elapseIPATime(cut, 1001);
+                REQUIRE( cut.adrenaline().effect() == 49 );
+
+                elapseIPATime(cut, 4501 - 1001);
+                REQUIRE( cut.adrenaline().dependency() == 49 );
+            }
+
+            SECTION ("Eyes and Brain keep base periods when amount is below dependency") {
+                cut.addMod(&eyesV3);
+                cut.addMod(&brainV3);
+                cut.setIPAAmount(IPAStim::Perception, 0);
+                cut.setIPAAmount(IPAStim::Intelligence, 0);
+
+                elapseIPATime(cut, 1001);
+                REQUIRE( cut.perception().effect() == 49 );
+                REQUIRE( cut.intelligence().effect() == 49 );
+
+                elapseIPATime(cut, 4501 - 1001);
+                REQUIRE( cut.perception().dependency() == 49 );
+                REQUIRE( cut.intelligence().dependency() == 49 );
+            }
+
+            SECTION ("Base period applies when amount equals dependency") {
+                cut.addMod(&heartV3);
+                cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 192, 192, 192);
+
+                elapseIPATime(cut, 4501);
+                REQUIRE( cut.adrenaline().amount() == 74 );
+                REQUIRE( cut.adrenaline().dependency() == 74 );
+            }
+
+            SECTION ("Eyes affect only Perception and Brain only Intelligence") {
+                cut.setIPAAmount(IPAStim::Adrenaline, 100);
+                cut.setIPAAmount(IPAStim::Perception, 100);
+                cut.setIPAAmount(IPAStim::Intelligence, 100);
+
+                cut.addMod(&eyesV3);
+                elapseIPATime(cut, 1001);
+                REQUIRE( cut.adrenaline().effect() == 51 );
+                REQUIRE( cut.perception().effect() == 50 );
+                REQUIRE( cut.intelligence().effect() == 51 );
+
+                cut.addMod(&brainV3);
+                elapseIPATime(cut, 1000);
+                REQUIRE( cut.perception().effect() == 51 );
+                REQUIRE( cut.intelligence().effect() == 51 );
+                elapseIPATime(cut, 1001);
+                REQUIRE( cut.adrenaline().effect() == 52 );
+                REQUIRE( cut.intelligence().effect() == 52 );
+            }
+
+            SECTION ("The maximum IPA multiplier is unchanged by mods") {
+                cut.addMod(&heartV3);
+                cut.addMod(&eyesV3);
+                cut.addMod(&brainV3);
+                cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+                cut.setIPAAmount(IPAStim::Adrenaline, 100);
+                REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(2.0) );
+            }
+
+            SECTION ("Removing mods restores the base periods") {
+                cut.addMod(&heartV3);
+                cut.clearSlots();
+                cut.setIPAAmount(IPAStim::Adrenaline, 100);
+
+                elapseIPATime(cut, 1001);
+                REQUIRE( cut.adrenaline().effect() == 51 );
+                elapseIPATime(cut, 4501 - 1001);
+                REQUIRE( cut.adrenaline().dependency() == 51 );
+            }
+        }
     }
 }

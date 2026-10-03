@@ -62,6 +62,13 @@ public:
         );
     }
 
+    /*!
+     * @brief Sets the factor applied to the timer periods while the amount is above dependency.
+     * Used by the mod linked to this IPA level to make a boost last longer.
+     * @param multiplier The hold multiplier (1 means no change)
+     */
+    void setHoldMultiplier(float multiplier) { hold_multiplier_ = multiplier; }
+
     void processTicks(uint32_t elapsed);
 
 #ifdef _DEBUG
@@ -99,7 +106,19 @@ private:
 
     int getMagnitude() const;
 
+    /*!
+     * @brief Returns the given period, extended by the hold multiplier while amount is above dependency.
+     * @param basePeriod The period in milliseconds without hold multiplier
+     * @return The period to use in milliseconds
+     */
+    uint32_t holdPeriod(uint32_t basePeriod) const;
+
 private:
+    //! Base period in milliseconds between two moves of the effect level
+    static constexpr uint32_t kEffectPeriod = 1000;
+    //! Base period in milliseconds between two moves of the dependency level
+    static constexpr uint32_t kDependencyPeriod = 4500;
+
     //! Used to select colors when rendering
     IPAType ipa_type_;
 
@@ -133,6 +152,8 @@ private:
     fs_utl::Timer effect_timer_;
     //! A timer to control the level of dependency
     fs_utl::Timer dependency_timer_;
+    //! Factor applied to the timer periods while amount is above dependency
+    float hold_multiplier_;
 };
 
 #endif

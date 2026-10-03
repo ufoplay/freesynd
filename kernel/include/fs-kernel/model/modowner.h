@@ -80,6 +80,7 @@ public:
     void clearSlots() {
         for (int i = 0; i < 6; i++)
             slots_[i] = NULL;
+        handleModsCleared();
     }
 
     /*!
@@ -150,6 +151,20 @@ public:
         return 1.0;
     }
 
+    /*!
+     * @brief Returns how much longer the boost of an IPA level lasts with the given mod.
+     * Heart is linked to Adrenaline, Eyes to Perception and Brain to Intelligence.
+     * @param type The type of mod linked to the IPA level
+     * @return x1 if owner has no mod of that type
+     */
+    float getIPAHoldMultiplier(Mod::EModType type) {
+        // No mod, V1, V2, V3
+        static constexpr float kHoldMultipliers[] = { 1.0f, 1.25f, 1.5f, 2.0f };
+
+        Mod *pMod = slots_[type];
+        return kHoldMultipliers[pMod ? pMod->getVersion() + 1 : 0];
+    }
+
     int getMaxWeight() {
         Mod *pMod = slots_[Mod::MOD_ARMS];
         if (pMod) {
@@ -174,6 +189,8 @@ public:
 protected:
     //! Called when a mod has been added/upgraded.
     virtual void handleModAdded([[maybe_unused]] Mod *pNewMod) {}
+    //! Called when all mods have been removed.
+    virtual void handleModsCleared() {}
 
     Mod *slots_[6];
 };
