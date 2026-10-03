@@ -24,6 +24,18 @@
 #include "testcase.h"
 #include "fs-engine/appcontext.h"
 
+/*!
+ * @brief Advances the IPA levels of a ped by the given duration.
+ * Time is fed one millisecond at a time, like a sequence of very short frames.
+ * @param ped The ped whose IPA levels are updated
+ * @param durationMs The duration in milliseconds
+ */
+static void elapseIPATime(fs_knl::PedInstance &ped, uint32_t durationMs) {
+    for (uint32_t i = 0; i < durationMs; ++i) {
+        ped.updateAllIPA(1);
+    }
+}
+
 TEST_CASE( "Ped", "[kernel][ped]" ) {
     fs_eng::AppContext appCtx;
     ConfigFile config;
@@ -51,6 +63,141 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
 
         cut.leaveState(fs_knl::kPedActionStateFiring);
         REQUIRE( cut.isState(fs_knl::kPedActionStateStanding) );
+    }
+
+    SECTION("IPA levels") {
+        // A new ped starts with amount and dependency at 50 (neutral), but
+        // effect at 0; in game, levels are always loaded from mission data.
+        // Levels given to initAllLevelsForIPAType use the 0-255 range of the
+        // original data files: 0 -> 0, 128 -> 50, 192 -> 75.
+
+        SECTION ("IPA multiplier depends on the gap between amount and dependency") {
+            REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(1.0) );
+
+            // Full amount with a neutral dependency gives only x1.5
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(1.5) );
+
+            // x2 needs the dependency to be at its lowest
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(2.0) );
+
+            // An amount below dependency reduces down to x0.5
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 128, 128, 128);
+            cut.setIPAAmount(IPAStim::Adrenaline, 0);
+            REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(1.0 / 1.5) );
+
+            // The same curve applies to all three IPA levels
+            cut.setIPAAmount(IPAStim::Perception, 100);
+            cut.setIPAAmount(IPAStim::Intelligence, 100);
+            REQUIRE( cut.perception().getMultiplier() == Catch::Approx(1.5) );
+            REQUIRE( cut.intelligence().getMultiplier() == Catch::Approx(1.5) );
+        }
+
+        SECTION ("Effect catches up with amount, then amount drifts toward dependency") {
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 128, 128, 128);
+            cut.setIPAAmount(IPAStim::Adrenaline, 60);
+
+            // The effect timer fires once more than 1 s has elapsed
+            elapseIPATime(cut, 1000);
+            REQUIRE( cut.adrenaline().effect() == 50 );
+            elapseIPATime(cut, 1);
+            REQUIRE( cut.adrenaline().effect() == 51 );
+            REQUIRE( cut.adrenaline().amount() == 60 );
+
+            // After 10 effect ticks, effect has reached the amount.
+            // Meanwhile dependency has moved twice (at 4.5 s and 9 s)
+            elapseIPATime(cut, 9 * 1001);
+            REQUIRE( cut.adrenaline().effect() == 60 );
+            REQUIRE( cut.adrenaline().amount() == 60 );
+            REQUIRE( cut.adrenaline().dependency() == 52 );
+
+            // Then amount goes down toward dependency, effect stuck to it
+            elapseIPATime(cut, 1001);
+            REQUIRE( cut.adrenaline().amount() == 59 );
+            REQUIRE( cut.adrenaline().effect() == 59 );
+            elapseIPATime(cut, 1001);
+            REQUIRE( cut.adrenaline().amount() == 58 );
+            REQUIRE( cut.adrenaline().effect() == 58 );
+            REQUIRE( cut.adrenaline().dependency() == 52 );
+        }
+
+        SECTION ("Dependency moves toward amount every 4.5 s") {
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+
+            elapseIPATime(cut, 4500);
+            REQUIRE( cut.adrenaline().dependency() == 50 );
+            elapseIPATime(cut, 1);
+            REQUIRE( cut.adrenaline().dependency() == 51 );
+            elapseIPATime(cut, 4501);
+            REQUIRE( cut.adrenaline().dependency() == 52 );
+        }
+
+        SECTION ("Amount and dependency drift together back to neutral once equal") {
+            // Below neutral (Adrenaline): both go up
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            // Above neutral (Perception): both go down
+            cut.initAllLevelsForIPAType(IPAStim::Perception, 192, 192, 192);
+            REQUIRE( cut.perception().amount() == 75 );
+
+            elapseIPATime(cut, 4501);
+            REQUIRE( cut.adrenaline().amount() == 1 );
+            REQUIRE( cut.adrenaline().dependency() == 1 );
+            REQUIRE( cut.perception().amount() == 74 );
+            REQUIRE( cut.perception().dependency() == 74 );
+
+            elapseIPATime(cut, 4501);
+            REQUIRE( cut.adrenaline().amount() == 2 );
+            REQUIRE( cut.adrenaline().dependency() == 2 );
+            REQUIRE( cut.perception().amount() == 73 );
+            REQUIRE( cut.perception().dependency() == 73 );
+        }
+
+        SECTION ("Adrenaline changes agent speed") {
+            // IPA effects apply only to peds in the agent group
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+
+            cut.setSpeedToMax();
+            REQUIRE( cut.speed() == 50 );
+
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            cut.setSpeedToMax();
+            REQUIRE( cut.speed() == 75 );
+
+            cut.setIPAAmount(IPAStim::Adrenaline, 0);
+            cut.setSpeedToMax();
+            REQUIRE( cut.speed() == 33 );
+        }
+
+        SECTION ("Perception changes agent accuracy, Adrenaline does not") {
+            // Agent base accuracy is 0.5; a result closer to 0 is more precise
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+            const double weaponAccuracy = 0.7;
+            double base_acc = weaponAccuracy;
+
+            cut.getAccuracy(base_acc);
+            REQUIRE( base_acc == Catch::Approx(0.65) );
+
+            // Adrenaline x2 has no effect on accuracy
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            cut.setIPAAmount(IPAStim::Adrenaline, 100);
+            base_acc = weaponAccuracy;
+            cut.getAccuracy(base_acc);
+            REQUIRE( base_acc == Catch::Approx(0.65) );
+
+            // Perception x1.5 adds 0.2 to the agent's accuracy
+            cut.setIPAAmount(IPAStim::Perception, 100);
+            base_acc = weaponAccuracy;
+            cut.getAccuracy(base_acc);
+            REQUIRE( base_acc == Catch::Approx(0.51) );
+
+            // Perception x1/1.5 removes about 0.13
+            cut.setIPAAmount(IPAStim::Perception, 0);
+            base_acc = weaponAccuracy;
+            cut.getAccuracy(base_acc);
+            REQUIRE( base_acc == Catch::Approx(0.7433333) );
+        }
     }
 
     SECTION("Mods") {

@@ -4,12 +4,12 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Tests assert the IPA multiplier: ×1 at neutral, ×1.5 for amount 100 / dependency 50, ×2 for amount 100 / dependency 0, 1/1.5 for amount 0 / dependency 50
-- [ ] Tests assert the effect catches up with the amount by 1 point per second, then the amount drifts toward the dependency with the effect following it
-- [ ] Tests assert the dependency moves 1 point per 4.5 s toward the amount, then both drift together back to 50
-- [ ] Tests assert that agent speed scales with the Adrenaline multiplier and accuracy with the Perception multiplier, and that Adrenaline does not affect accuracy
-- [ ] The multiplier comment describes the real curve
-- [ ] All tests go through the ped's public API only
-- [ ] No production behaviour change; all tests pass, no new warnings
+- [x] Tests assert the IPA multiplier: ×1 at neutral, ×1.5 for amount 100 / dependency 50, ×2 for amount 100 / dependency 0, 1/1.5 for amount 0 / dependency 50
+- [x] Tests assert the effect catches up with the amount by 1 point per second, then the amount drifts toward the dependency with the effect following it
+- [x] Tests assert the dependency moves 1 point per 4.5 s toward the amount, then both drift together back to 50
+- [x] Tests assert that agent speed scales with the Adrenaline multiplier and accuracy with the Perception multiplier, and that Adrenaline does not affect accuracy
+- [x] The multiplier comment describes the real curve
+- [x] All tests go through the ped's public API only
+- [x] No production behaviour change; all tests pass, no new warnings

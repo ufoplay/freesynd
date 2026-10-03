@@ -48,20 +48,15 @@ int IPAStim::getMagnitude() const
 
 float IPAStim::getMultiplier() const
 {
-    // With an agent with no mods and his adrenaline dependency in the
-    // center: his speed will be halved or doubled with the adrenaline
-    // bar at the respective extreme.
+    // The multiplier depends only on the gap between amount and dependency:
+    // - amount above dependency: 1 + gap/100, from 1 up to 2
+    // - amount below dependency: 1 / (1 + gap/100), from 1 down to 0.5
+    // When amount equals dependency, the IPA level is neutral and returns 1.
 
-    // An agent with no adrenaline, no mods and no weaponry walks at
-    // the same speed as a civilian.
-
-    // This function has been implemented to assume that FULL adrenaline
-    // would give a 2x increase in speed and the worst case would leave
-    // you walking at a half speed. With neutral adrenaline it has no
-    // effect and therefore returns 1.
-
-    // Thus, the algortithm used here goes from 0.5 to 1 for 'negative'
-    // adrenaline and 1 to 2 on the positive side.
+    // With dependency at neutral (50), the amount at either extreme gives
+    // only x1.5 or x1/1.5. Reaching x2 (or x0.5) requires the dependency
+    // to be at the opposite extreme, which rewards the player for letting
+    // dependency go down before injecting again.
     int magnitude = getMagnitude();
 
     if(direction() == kIPADirBoost) {
