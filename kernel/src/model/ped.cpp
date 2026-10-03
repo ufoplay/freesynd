@@ -527,6 +527,7 @@ int PedInstance::getTimeBetweenShoots(WeaponInstance *pWeapon) {
     int reactionTime = kDefaultShootReactionTime;
 
     if (obj_group_def_ == PedInstance::og_dmAgent) {
+        // The multiplier is a small positive factor, so the result stays close to the default
         reactionTime = static_cast<int>(std::lround(
             static_cast<float>(kDefaultShootReactionTime) / adrenaline_.getMultiplier()));
     }
@@ -534,7 +535,8 @@ int PedInstance::getTimeBetweenShoots(WeaponInstance *pWeapon) {
     return reactionTime + pWeapon->getClass()->reloadTime();
 }
 
-uint32_t PedInstance::getHealthRegenerationPeriod() {
+uint32_t PedInstance::getHealthRegenerationPeriod() const {
+    // A 16-bit period times a small positive multiplier fits in 32 bits
     return static_cast<uint32_t>(std::lround(
         static_cast<float>(getChestRegenerationPeriod()) * adrenaline_.getMultiplier()));
 }

@@ -302,7 +302,7 @@ public:
      * so a calmed agent heals faster and a boosted one slower.
      * @return Period in milliseconds, 0 if ped does not have a Chest V2+
      */
-    uint32_t getHealthRegenerationPeriod();
+    uint32_t getHealthRegenerationPeriod() const;
 
     //! Return true if ped has activated his energy shield
     bool isEnergyShieldActivated();

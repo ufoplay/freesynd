@@ -79,7 +79,7 @@ public:
 
     void clearSlots() {
         for (int i = 0; i < 6; i++)
-            slots_[i] = NULL;
+            slots_[i] = nullptr;
         handleModsCleared();
     }
 
@@ -97,7 +97,7 @@ public:
      * when a ped owns the right version of Chest.
      * @return Period in milliseconds, 0 if ped does not have a Chest V2+.
      */
-    uint16_t getChestRegenerationPeriod() {
+    uint16_t getChestRegenerationPeriod() const {
         Mod *pMod = slots_[Mod::MOD_CHEST];
         if (pMod) {
             switch(pMod->getVersion()) {
@@ -157,9 +157,12 @@ public:
      * @param type The type of mod linked to the IPA level
      * @return x1 if owner has no mod of that type
      */
-    float getIPAHoldMultiplier(Mod::EModType type) {
-        // No mod, V1, V2, V3
+    float getIPAHoldMultiplier(Mod::EModType type) const {
+        // No mod, V1, V2, V3: a mod's version shifted by one indexes its entry
         static constexpr float kHoldMultipliers[] = { 1.0f, 1.25f, 1.5f, 2.0f };
+        static_assert(Mod::MOD_V1 == 0 && Mod::MOD_V2 == 1 && Mod::MOD_V3 == 2,
+                      "kHoldMultipliers is indexed by mod version + 1");
+        assert(type < Mod::Unknown);
 
         Mod *pMod = slots_[type];
         return kHoldMultipliers[pMod ? pMod->getVersion() + 1 : 0];
