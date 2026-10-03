@@ -4,11 +4,14 @@
 
 **Blocked by:** 01 (Lock in the current IPA behaviour with tests)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Persuader at ×1 → persuaded ped at ×1
-- [ ] Persuader at ×1.8 → persuaded ped at ×1.4
-- [ ] Persuader at ×0.6 → persuaded ped at ×0.8
-- [ ] A non-agent owner gives ×1
-- [ ] The doubled-integer convention and its comment are removed from every caller
-- [ ] Covered by ped tests; in game, followers visibly keep pace with a boosted agent
+- [x] Persuader at ×1 → persuaded ped at ×1
+- [x] Persuader at ×1.8 → persuaded ped at ×1.4
+- [x] Persuader at ×0.6 → persuaded ped at ×0.8
+- [x] A non-agent owner gives ×1
+- [x] The doubled-integer convention and its comment are removed from every caller
+- [x] Covered by ped tests
+- [ ] In game, followers visibly keep pace with a boosted agent (manual check)
+
+**Note:** the old code never applied the `/2` correction (it was commented out), so persuaded peds actually moved at ×4 / ×2 / ×1. With a neutral persuader they now move at their own speed (×1), i.e. half as fast as before this change.

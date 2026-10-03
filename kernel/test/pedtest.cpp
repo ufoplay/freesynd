@@ -330,6 +330,53 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             cut.behaviour().execute(4000, nullptr);
             REQUIRE( cut.health() == 153 );
         }
+
+        SECTION ("Persuaded ped gets half of the persuader's Adrenaline bonus to speed") {
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+            civilian.handlePersuadedBy(&cut);
+
+            // Neutral persuader: the persuaded ped keeps its own speed
+            civilian.setSpeedToMax();
+            REQUIRE( civilian.speed() == 50 );
+
+            // Persuader at x1.8 -> persuaded ped at x1.4
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            cut.setIPAAmount(IPAStim::Adrenaline, 80);
+            REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(1.8) );
+            civilian.setSpeedToMax();
+            REQUIRE( civilian.speed() == 70 );
+
+            // Persuader at about x0.6 -> persuaded ped at about x0.8
+            setLowestAdrenaline(cut);
+            cut.setIPAAmount(IPAStim::Adrenaline, 33);
+            civilian.setSpeedToMax();
+            REQUIRE( civilian.speed() == 39 );
+        }
+
+        SECTION ("Persuader Adrenaline multiplier is halved around x1") {
+            cut.setObjGroupDef(fs_knl::PedInstance::og_dmAgent);
+            REQUIRE( cut.getPersuadedSpeedMultiplier() == Catch::Approx(1.0) );
+
+            cut.initAllLevelsForIPAType(IPAStim::Adrenaline, 0, 0, 0);
+            cut.setIPAAmount(IPAStim::Adrenaline, 80);
+            REQUIRE( cut.getPersuadedSpeedMultiplier() == Catch::Approx(1.4) );
+
+            // Amount 33 with dependency 100 gives about x0.6
+            setLowestAdrenaline(cut);
+            cut.setIPAAmount(IPAStim::Adrenaline, 33);
+            REQUIRE( cut.adrenaline().getMultiplier() == Catch::Approx(0.6).margin(0.01) );
+            REQUIRE( cut.getPersuadedSpeedMultiplier() == Catch::Approx(0.8).margin(0.01) );
+        }
+
+        SECTION ("A non-agent persuader gives no speed bonus") {
+            fs_knl::PedInstance owner(3, nullptr, fs_knl::PedInstance::kPedTypeCivilian, false, 50);
+            owner.setIPAAmount(IPAStim::Adrenaline, 100);
+            REQUIRE( owner.getPersuadedSpeedMultiplier() == Catch::Approx(1.0) );
+
+            civilian.handlePersuadedBy(&owner);
+            civilian.setSpeedToMax();
+            REQUIRE( civilian.speed() == 50 );
+        }
     }
 
     SECTION("Mods") {

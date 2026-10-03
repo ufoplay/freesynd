@@ -1255,27 +1255,25 @@ int PedInstance::applySpeedModifier(int speed) {
     }
 
     if (isPersuaded()) {
-        speed_new *= owner_->getSpeedOwnerBoost();
-        //speed_new >>= 1;
+        speed_new *= owner_->getPersuadedSpeedMultiplier();
     }
 
     return static_cast<int>(speed_new);
 }
 
-// NOTE: returned value is *2, it should be should be corrected
-// during calculations with /2
-int PedInstance::getSpeedOwnerBoost()
+/*!
+ * @brief Returns the speed multiplier this ped gives to the peds it has persuaded.
+ * A persuaded ped gets half of its owner's Adrenaline bonus or malus.
+ * @return 1 + (Adrenaline multiplier - 1) / 2 for agents, 1 for other peds
+ */
+float PedInstance::getPersuadedSpeedMultiplier() const
 {
     if (obj_group_def_ == PedInstance::og_dmAgent)
     {
-        float ipa_adr = adrenaline_.getMultiplier();
-        if (ipa_adr > 1.0)
-            return 4;
-        else if (ipa_adr < 1.0)
-            return 1;
+        return 1.0f + (adrenaline_.getMultiplier() - 1.0f) / 2.0f;
     }
 
-    return 2;
+    return 1.0f;
 }
 
 /*!

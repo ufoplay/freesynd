@@ -570,7 +570,8 @@ public:
         og_dmCriminal = 0x10
     };
 
-    int getSpeedOwnerBoost();
+    //! Returns the speed multiplier given to the peds persuaded by this ped
+    float getPersuadedSpeedMultiplier() const;
 
     void getAccuracy(double &base_acc);
     bool hasAccessCard();
