@@ -561,7 +561,11 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
             fs_knl::Mod heartV1("HeartV1", fs_knl::Mod::MOD_HEART, fs_knl::Mod::MOD_V1, 0, "", 0);
             fs_knl::Mod heartV2("HeartV2", fs_knl::Mod::MOD_HEART, fs_knl::Mod::MOD_V2, 0, "", 0);
             fs_knl::Mod heartV3("HeartV3", fs_knl::Mod::MOD_HEART, fs_knl::Mod::MOD_V3, 0, "", 0);
+            fs_knl::Mod eyesV1("EyesV1", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V1, 0, "", 0);
+            fs_knl::Mod eyesV2("EyesV2", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V2, 0, "", 0);
             fs_knl::Mod eyesV3("EyesV3", fs_knl::Mod::MOD_EYES, fs_knl::Mod::MOD_V3, 0, "", 0);
+            fs_knl::Mod brainV1("BrainV1", fs_knl::Mod::MOD_BRAIN, fs_knl::Mod::MOD_V1, 0, "", 0);
+            fs_knl::Mod brainV2("BrainV2", fs_knl::Mod::MOD_BRAIN, fs_knl::Mod::MOD_V2, 0, "", 0);
             fs_knl::Mod brainV3("BrainV3", fs_knl::Mod::MOD_BRAIN, fs_knl::Mod::MOD_V3, 0, "", 0);
 
             SECTION ("V3 Heart doubles both timer periods while Adrenaline is boosted") {
@@ -607,6 +611,48 @@ TEST_CASE( "Ped", "[kernel][ped]" ) {
                 REQUIRE( cut.adrenaline().dependency() == 50 );
                 elapseIPATime(cut, 1);
                 REQUIRE( cut.adrenaline().dependency() == 51 );
+            }
+
+            SECTION ("V1 Eyes and V1 Brain give x1.25") {
+                cut.addMod(&eyesV1);
+                cut.addMod(&brainV1);
+                cut.setIPAAmount(IPAStim::Perception, 100);
+                cut.setIPAAmount(IPAStim::Intelligence, 100);
+
+                elapseIPATime(cut, 1250);
+                REQUIRE( cut.perception().effect() == 50 );
+                REQUIRE( cut.intelligence().effect() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.perception().effect() == 51 );
+                REQUIRE( cut.intelligence().effect() == 51 );
+
+                elapseIPATime(cut, 5625 - 1251);
+                REQUIRE( cut.perception().dependency() == 50 );
+                REQUIRE( cut.intelligence().dependency() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.perception().dependency() == 51 );
+                REQUIRE( cut.intelligence().dependency() == 51 );
+            }
+
+            SECTION ("V2 Eyes and V2 Brain give x1.5") {
+                cut.addMod(&eyesV2);
+                cut.addMod(&brainV2);
+                cut.setIPAAmount(IPAStim::Perception, 100);
+                cut.setIPAAmount(IPAStim::Intelligence, 100);
+
+                elapseIPATime(cut, 1500);
+                REQUIRE( cut.perception().effect() == 50 );
+                REQUIRE( cut.intelligence().effect() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.perception().effect() == 51 );
+                REQUIRE( cut.intelligence().effect() == 51 );
+
+                elapseIPATime(cut, 6750 - 1501);
+                REQUIRE( cut.perception().dependency() == 50 );
+                REQUIRE( cut.intelligence().dependency() == 50 );
+                elapseIPATime(cut, 1);
+                REQUIRE( cut.perception().dependency() == 51 );
+                REQUIRE( cut.intelligence().dependency() == 51 );
             }
 
             SECTION ("Base periods apply when amount is below dependency") {

@@ -31,6 +31,9 @@ _Avoid_: Addiction
 **IPA multiplier**:
 The factor, from ×0.5 to ×2, that an IPA level applies to the agent's abilities, derived from the gap between amount and dependency.
 
+**Hold multiplier**:
+The factor by which a Heart, Eyes or Brain mod slows the timers of its linked IPA level (Adrenaline, Perception, Intelligence) while the amount is above the dependency, so a boost lasts longer without a higher peak.
+
 **Group mode**:
 An IPA change applied to every selected agent at once rather than to a single agent.
 
