@@ -59,6 +59,8 @@ protected:
     void handleClickOnWeaponSelector(Point2D point, int button);
     //! sets IPA level for defined agent, selector
     void setIPAForAgent(size_t slot, IPAStim::IPAType ipa_type, uint8_t percentage);
+    //! Applies an IPA bar amount to the agent, or to the whole selection if that agent is selected
+    void applyIPAFromBar(size_t slot, IPAStim::IPAType ipa_type, uint8_t percentage);
     //! Handles the user's click on the map
     void handleClickOnMap(fs_knl::TilePoint mapPt, fs_knl::ShootableMapObject *pTarget, int button, bool ctrl);
     //! Handles a mouse button pressed on the map, detecting Panic Mode

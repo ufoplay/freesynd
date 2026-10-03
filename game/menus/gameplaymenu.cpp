@@ -350,18 +350,8 @@ void GameplayMenu::handleMouseMotion(Point2D point, [[maybe_unused]] uint32_t st
             uint8_t percent = agt_sel_renderer_.getPercentageAnyX(
                 ipa_chng_.agent_used, point.x);
 
-            // if agent is in selected group we will update all groups IPA
-            if (selection_.isAgentSelected(ipa_chng_.agent_used)) {
-                for (uint8_t i = 0; i < fs_knl::Squad::kMaxSlot; ++i) {
-                    if (selection_.isAgentSelected(i)) {
-                        setIPAForAgent(i, (IPAStim::IPAType)ipa_chng_.ipa_chng,
-                            percent);
-                    }
-                }
-            } else {
-                setIPAForAgent(ipa_chng_.agent_used,
-                    (IPAStim::IPAType)ipa_chng_.ipa_chng, percent);
-            }
+            applyIPAFromBar(ipa_chng_.agent_used,
+                static_cast<IPAStim::IPAType>(ipa_chng_.ipa_chng), percent);
             return;
         } else
             ipa_chng_.ipa_chng = -1;
@@ -415,7 +405,7 @@ bool GameplayMenu::handleMouseDown(Point2D point, int button)
             case SelectorEvent::kSelectIpa:
                 ipa_chng_.ipa_chng = selEvt.IpaType;
                 ipa_chng_.agent_used = selEvt.agentSlot;
-                setIPAForAgent(selEvt.agentSlot, selEvt.IpaType, selEvt.percentage);
+                applyIPAFromBar(selEvt.agentSlot, selEvt.IpaType, selEvt.percentage);
                 break;
             case SelectorEvent::kNone:
                 break;
@@ -469,6 +459,26 @@ void GameplayMenu::setIPAForAgent(size_t slot, IPAStim::IPAType ipa_type, uint8_
         return;
 
     ped->setIPAAmount(ipa_type, percentage);
+}
+
+/*!
+ * @brief Applies the amount chosen on an agent's IPA bar. If the agent is
+ * selected, every selected agent gets the amount, otherwise only that agent.
+ * Dead agents are ignored.
+ * @param slot The slot of the agent whose bar was used
+ * @param ipa_type The IPA level to change
+ * @param percentage The new amount
+ */
+void GameplayMenu::applyIPAFromBar(size_t slot, IPAStim::IPAType ipa_type, uint8_t percentage) {
+    if (selection_.isAgentSelected(slot)) {
+        for (size_t i = 0; i < fs_knl::Squad::kMaxSlot; ++i) {
+            if (selection_.isAgentSelected(i)) {
+                setIPAForAgent(i, ipa_type, percentage);
+            }
+        }
+    } else {
+        setIPAForAgent(slot, ipa_type, percentage);
+    }
 }
 
 void GameplayMenu::updateIPALevelMeters(uint32_t elapsed) {

@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Clicking a bar of a selected agent sets that amount on all selected living agents
-- [ ] Clicking a bar of an unselected agent changes only that agent
-- [ ] Click and drag share the same group rule (no duplicated logic)
-- [ ] Dead agents are ignored
-- [ ] Checked by hand in game
+- [x] Clicking a bar of a selected agent sets that amount on all selected living agents
+- [x] Clicking a bar of an unselected agent changes only that agent
+- [x] Click and drag share the same group rule (no duplicated logic)
+- [x] Dead agents are ignored
+- [ ] Checked by hand in game (pending)
