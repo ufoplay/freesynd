@@ -1,0 +1,60 @@
+name: Sync from SourceForge
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Mirror SourceForge branches/tags, replaying the workflow commit on top of main
+        env:
+          SF_URL: https://git.code.sf.net/p/freesynd/freesynd
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git remote add sourceforge "$SF_URL"
+          git fetch sourceforge --tags --prune
+
+          OTHER_BRANCHES="feature/update-deps fix-render release/0.8 release/0.9"
+          for b in main $OTHER_BRANCHES; do
+            git fetch sourceforge "refs/heads/$b:refs/remotes/sourceforge/$b"
+          done
+
+          # Preserve the files that exist only in this GitHub mirror (currently just this workflow)
+          # so they survive being rebuilt on top of the latest upstream commit.
+          rm -rf /tmp/overlay && mkdir -p /tmp/overlay
+          cp -r .github /tmp/overlay/.github
+
+          PREV_TREE="$(git rev-parse origin/main^{tree})"
+
+          git checkout -B main sourceforge/main
+          rm -rf .github
+          cp -r /tmp/overlay/.github .github
+          git add -A .github
+          git commit -m "chore: re-add automated SourceForge sync workflow" -q
+
+          NEW_TREE="$(git rev-parse HEAD^{tree})"
+          if [ "$NEW_TREE" != "$PREV_TREE" ]; then
+            git push origin main --force
+          else
+            echo "main unchanged, skipping push"
+          fi
+
+          for b in $OTHER_BRANCHES; do
+            git push origin "refs/remotes/sourceforge/$b:refs/heads/$b" --force
+          done
+          git push origin --tags
